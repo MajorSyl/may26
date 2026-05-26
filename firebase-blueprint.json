@@ -1,0 +1,186 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Stores Rotary member profiles, attendance metrics, and club contributions.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication User ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["Rotarian", "Club Officer", "Guest", "President"],
+          "description": "Role of the user in the club"
+        },
+        "attendanceRate": {
+          "type": "number",
+          "description": "Overall attendance percentage (target is 92%)"
+        },
+        "contributionGoals": {
+          "type": "number",
+          "description": "Annual contribution goal in USD"
+        },
+        "contributedAmount": {
+          "type": "number",
+          "description": "Total amount contributed in USD"
+        },
+        "committee": {
+          "type": "string",
+          "description": "Assigned committee name"
+        },
+        "tasks": {
+          "type": "array",
+          "description": "List of active committee tasks"
+        }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Club service projects in Sierra Leone.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the project"
+        },
+        "title": {
+          "type": "string",
+          "description": "Project title (e.g. Water for Tombo)"
+        },
+        "category": {
+          "type": "string",
+          "description": "One of the 7 Areas of Focus of Rotary"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of the project"
+        },
+        "year": {
+          "type": "number",
+          "description": "Year of completion or current year"
+        },
+        "impact": {
+          "type": "string",
+          "description": "Quantifiable impact (e.g., 5,000 residents served)"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Completed", "Active", "Planning"],
+          "description": "Venture stage"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Illustration or photo of the project"
+        }
+      },
+      "required": ["id", "title", "category", "description", "year", "status"]
+    },
+    "ClubEvent": {
+      "title": "ClubEvent",
+      "description": "Rotary club weekly meetings and community events.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the event"
+        },
+        "title": {
+          "type": "string",
+          "description": "Event title"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date of the event"
+        },
+        "time": {
+          "type": "string",
+          "description": "Time of the event"
+        },
+        "location": {
+          "type": "string",
+          "description": "Location description"
+        },
+        "speaker": {
+          "type": "string",
+          "description": "Guest speaker name if any"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the event"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Weekly Meeting", "Service Project", "Social", "Fundraiser"],
+          "description": "Type of event"
+        }
+      },
+      "required": ["id", "title", "date", "time", "location", "type"]
+    },
+    "ContactInquiry": {
+      "title": "ContactInquiry",
+      "description": "Membership interest, donation contact or general query submissions.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique inquiry ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Inquirer's name"
+        },
+        "email": {
+          "type": "string",
+          "description": "Inquirer's email"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject line"
+        },
+        "message": {
+          "type": "string",
+          "description": "Message text"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["Membership Inquiry", "Donation Inquiry", "General Contact"],
+          "description": "Category of inquiry"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Created timestamp"
+        }
+      },
+      "required": ["id", "name", "email", "message", "type"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "UserProfile",
+      "description": "User profile collection"
+    },
+    "projects": {
+      "schema": "Project",
+      "description": "Service projects directory"
+    },
+    "events": {
+      "schema": "ClubEvent",
+      "description": "Club meetings and service projects calendar"
+    },
+    "inquiries": {
+      "schema": "ContactInquiry",
+      "description": "Contact and membership submissions"
+    }
+  }
+}

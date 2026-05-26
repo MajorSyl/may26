@@ -1,0 +1,8 @@
+{
+  "apiKey": "mock-api-key-placeholder-for-compilation",
+  "authDomain": "mock-auth-domain.firebaseapp.com",
+  "projectId": "mock-project-id",
+  "storageBucket": "mock-project-id.appspot.com",
+  "messagingSenderId": "000000000000",
+  "appId": "1:000000000000:web:000000000000"
+}
