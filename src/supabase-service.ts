@@ -31,6 +31,13 @@ const setLocalData = <T>(key: string, data: T) => {
 // SUPABASE OPERATIONS ENGINE (AUTONOMOUS SWITCHOVER)
 // -------------------------------------------------------------
 
+export interface PageBlock {
+  id: string;
+  title: string;
+  bgColor: 'dark' | 'light' | 'slate' | 'brand' | 'gold';
+  visible: boolean;
+}
+
 export interface SiteSettings {
   homeHeroTitle: string;
   homeHeroSubtitle: string;
@@ -62,7 +69,25 @@ export interface SiteSettings {
   involvedSubtitle: string;
   involvedContactEmail: string;
   involvedContactPhone: string;
+
+  homeLayout?: string;
+  aboutLayout?: string;
 }
+
+export const DEFAULT_HOME_LAYOUT: PageBlock[] = [
+  { id: 'hero', title: 'Hero Banner', bgColor: 'dark', visible: true },
+  { id: 'stats', title: 'Statistics Board', bgColor: 'light', visible: true },
+  { id: 'mission', title: 'Sunset Mission Details', bgColor: 'light', visible: true },
+  { id: 'facebook', title: 'Facebook Media Hub', bgColor: 'slate', visible: true },
+  { id: 'announcements', title: 'Latest Announcements', bgColor: 'light', visible: true }
+];
+
+export const DEFAULT_ABOUT_LAYOUT: PageBlock[] = [
+  { id: 'header', title: 'Introductory Header', bgColor: 'light', visible: true },
+  { id: 'vision_mission', title: 'Vision & Mission', bgColor: 'light', visible: true },
+  { id: 'four_way_test', title: 'Four-Way Test Accordion', bgColor: 'dark', visible: true },
+  { id: 'leadership', title: 'Club Leadership Grid', bgColor: 'light', visible: true }
+];
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   homeHeroTitle: "Service Above Self",
@@ -94,7 +119,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   involvedTitle: "Help Us Empower Freetown Communities",
   involvedSubtitle: "Whether you are a local professional looking to give back or an international partner ready to fund systemic change, there are multiple avenues to work with Freetown Sunset.",
   involvedContactEmail: "freetownsunset@gmail.com",
-  involvedContactPhone: "+232 76 987654"
+  involvedContactPhone: "+232 76 987654",
+
+  homeLayout: JSON.stringify(DEFAULT_HOME_LAYOUT),
+  aboutLayout: JSON.stringify(DEFAULT_ABOUT_LAYOUT)
 };
 
 export const getSiteSettings = async (): Promise<SiteSettings> => {

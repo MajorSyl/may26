@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, CheckCircle, Award, Compass, Heart, Award as Merit } from 'lucide-react';
-import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../supabase-service';
+import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_ABOUT_LAYOUT } from '../supabase-service';
 
 export default function About() {
   const [activeTest, setActiveTest] = useState<number | null>(0);
@@ -60,139 +60,199 @@ export default function About() {
     }
   ];
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16 pb-24">
-      {/* 1. HEADER SECTION */}
-      <section className="text-center space-y-4 max-w-3xl mx-auto">
-        <div className="inline-flex bg-rotary-gold/10 text-rotary-gold px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider font-display">
-          {settings.aboutHeaderBadge}
-        </div>
-        <h1 className="text-4xl font-extrabold font-display text-rotary-dark tracking-tight">
-          {settings.aboutHeaderTitle}
-        </h1>
-        <p className="text-slate-600 text-lg sm:text-slate-500 font-light leading-relaxed whitespace-pre-wrap">
-          {settings.aboutHeaderDesc}
-        </p>
-      </section>
+  const getBgStyles = (bgColor: PageBlock['bgColor']) => {
+    switch (bgColor) {
+      case 'dark':
+        return 'bg-slate-900 border border-slate-800 text-white shadow-xl';
+      case 'slate':
+        return 'bg-slate-50 border border-slate-200 text-slate-850 shadow-sm';
+      case 'brand':
+        return 'bg-sky-50 border border-sky-100 text-slate-850 shadow-sm';
+      case 'gold':
+        return 'bg-amber-50 border border-amber-100 text-slate-850 shadow-sm';
+      case 'light':
+      default:
+        return 'bg-white border border-slate-200 text-slate-850 shadow-sm';
+    }
+  };
 
-      {/* 2. VISION & MISSION CARDS */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow transition-all space-y-4">
-          <div className="p-3 bg-rotary-azure/10 text-rotary-azure rounded-2xl w-fit">
-            <Compass className="h-6 w-6" />
-          </div>
-          <span className="inline-block bg-rotary-azure/5 text-rotary-azure text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">Directional Guide</span>
-          <h3 className="text-xl font-bold font-display text-slate-800">{settings.aboutVisionTitle}</h3>
-          <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">
-            {settings.aboutVisionBody}
-          </p>
-        </div>
+  // Safe parsing block of dynamic sequences
+  let layout: PageBlock[] = DEFAULT_ABOUT_LAYOUT;
+  if (settings.aboutLayout) {
+    try {
+      layout = JSON.parse(settings.aboutLayout);
+    } catch (e) {
+      layout = DEFAULT_ABOUT_LAYOUT;
+    }
+  }
 
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow transition-all space-y-4">
-          <div className="p-3 bg-rotary-gold/10 text-rotary-gold rounded-2xl w-fit">
-            <Heart className="h-6 w-6" />
-          </div>
-          <span className="inline-block bg-rotary-gold/5 text-rotary-gold text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded font-display">Service Standard</span>
-          <h3 className="text-xl font-bold font-display text-slate-800">{settings.aboutMissionTitle}</h3>
-          <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">
-            {settings.aboutMissionBody}
-          </p>
-        </div>
-      </section>
+  // Segment renderer
+  const renderBlock = (b: PageBlock) => {
+    const bgStyles = getBgStyles(b.bgColor);
+    const textStyle = b.bgColor === 'dark' ? 'text-white' : 'text-slate-800';
+    const subtextStyle = b.bgColor === 'dark' ? 'text-slate-400' : 'text-slate-500';
 
-      {/* 3. THE FOUR WAY TEST - INTERACTIVE COMPONENT */}
-      <section className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 border border-slate-800 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative overflow-hidden">
-        {/* Glow ambient bubble */}
-        <div className="absolute bottom-[-20%] right-[-10%] w-72 h-72 bg-rotary-azure/30 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
-        <div className="absolute top-[-20%] left-[-10%] w-72 h-72 bg-rotary-gold/10 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+    switch (b.id) {
+      case 'header':
+        return (
+          <section key={b.id} className={`text-center space-y-4 max-w-5xl mx-auto p-8 sm:p-12 rounded-3xl transition-colors duration-500 ${bgStyles}`}>
+            <div className="inline-flex bg-rotary-gold/15 text-rotary-gold px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider font-display border border-rotary-gold/25">
+              {settings.aboutHeaderBadge}
+            </div>
+            <h1 className={`text-4xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}>
+              {settings.aboutHeaderTitle}
+            </h1>
+            <p className={`text-sm sm:text-base font-light leading-relaxed whitespace-pre-wrap max-w-3xl mx-auto ${subtextStyle}`}>
+              {settings.aboutHeaderDesc}
+            </p>
+          </section>
+        );
 
-        <div className="lg:col-span-5 space-y-4 relative z-10">
-          <div className="inline-flex bg-rotary-gold/20 text-rotary-gold border border-rotary-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider font-display">
-            Ethical Guardrails
-          </div>
-          <h2 className="text-3xl font-extrabold font-display tracking-tight text-white leading-tight">
-            The Four-Way Test
-          </h2>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Of the things we think, say or do, Rotarians apply this ethical crucible. It governs every project commitment, budget vote, and community discussion.
-          </p>
-        </div>
-
-        <div className="lg:col-span-7 space-y-3 relative z-10">
-          {fourWayTest.map((test, index) => {
-            const isOpen = activeTest === index;
-            return (
-              <div 
-                key={test.num}
-                className={`border rounded-2xl transition-all duration-300 overflow-hidden cursor-pointer ${
-                  isOpen 
-                    ? 'bg-slate-800 border-rotary-gold/50 shadow-md' 
-                    : 'bg-slate-950/40 border-slate-850 hover:border-slate-800'
-                }`}
-                onClick={() => setActiveTest(isOpen ? null : index)}
-              >
-                <div className="p-4 sm:p-5 flex justify-between items-center select-none">
-                  <div className="flex items-center gap-4">
-                    <span className="w-8 h-8 rounded-xl bg-slate-800/80 text-rotary-gold font-bold font-display flex items-center justify-center border border-slate-700">
-                      {test.num}
-                    </span>
-                    <span className="font-extrabold font-display text-xs sm:text-sm text-white">
-                      {test.q}
-                    </span>
-                  </div>
-                  <span className="text-xl text-rotary-gold">
-                    {isOpen ? '−' : '+'}
-                  </span>
-                </div>
-                
-                {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 bg-slate-800/30 font-light">
-                    {test.desc}
-                  </div>
-                )}
+      case 'vision_mission':
+        return (
+          <section key={b.id} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div className={`p-8 rounded-3xl space-y-4 transition-colors duration-500 ${bgStyles}`}>
+              <div className="p-3 bg-rotary-azure/10 text-rotary-azure rounded-2xl w-fit">
+                <Compass className="h-6 w-6" />
               </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 4. CLUB LEADERSHIP PROFILES */}
-      <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-wider text-rotary-azure font-display">Board of Directors</div>
-          <h2 className="text-3xl font-bold font-display text-rotary-dark">Club Leadership</h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {leadership.map((leader, index) => (
-            <div 
-              key={index} 
-              className="bg-white border border-slate-200 rounded-3xl p-6 text-center space-y-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden"
-            >
-              {/* Material Gold band accent */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-rotary-gold"></div>
-
-              <div className="w-20 h-20 rounded-full border-2 border-rotary-azure overflow-hidden mx-auto shadow-sm">
-                <img 
-                  src={leader.avatarUrl} 
-                  alt={leader.name} 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="referrer"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <h4 className="font-extrabold font-display text-sm text-slate-800">{leader.name}</h4>
-                <p className="text-[10px] text-rotary-azure font-bold uppercase tracking-widest leading-none">{leader.role}</p>
-              </div>
-
-              <p className="text-xs text-slate-500 font-light leading-relaxed">
-                {leader.desc}
+              <span className="inline-block bg-rotary-azure/5 text-rotary-azure text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded leading-none">Directional Guide</span>
+              <h3 className={`text-xl font-bold font-display ${textStyle}`}>{settings.aboutVisionTitle}</h3>
+              <p className={`text-xs leading-relaxed whitespace-pre-wrap ${subtextStyle}`}>
+                {settings.aboutVisionBody}
               </p>
             </div>
-          ))}
-        </div>
-      </section>
+
+            <div className={`p-8 rounded-3xl space-y-4 transition-colors duration-500 ${getBgStyles(b.bgColor === 'light' ? 'gold' : b.bgColor)}`}>
+              <div className="p-3 bg-rotary-gold/15 text-rotary-gold rounded-2xl w-fit border border-rotary-gold/25">
+                <Heart className="h-6 w-6" />
+              </div>
+              <span className="inline-block bg-rotary-gold/5 text-rotary-gold text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded font-display leading-none">Service Standard</span>
+              <h3 className={`text-xl font-bold font-display ${textStyle}`}>{settings.aboutMissionTitle}</h3>
+              <p className={`text-xs leading-relaxed whitespace-pre-wrap ${subtextStyle}`}>
+                {settings.aboutMissionBody}
+              </p>
+            </div>
+          </section>
+        );
+
+      case 'four_way_test':
+        return (
+          <section key={b.id} className={`p-8 sm:p-12 shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center rounded-3xl relative overflow-hidden transition-colors duration-500 ${
+            b.bgColor === 'dark' ? 'bg-slate-900 border border-slate-800 text-white' : bgStyles
+          }`}>
+            {/* Glow ambient bubble */}
+            <div className="absolute bottom-[-20%] right-[-10%] w-72 h-72 bg-rotary-azure/10 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
+            <div className="absolute top-[-20%] left-[-10%] w-72 h-72 bg-rotary-gold/5 rounded-full blur-3xl opacity-40 pointer-events-none"></div>
+
+            <div className="lg:col-span-5 space-y-4 relative z-10">
+              <div className="inline-flex bg-rotary-gold/20 text-rotary-gold border border-rotary-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider font-display">
+                Ethical Guardrails
+              </div>
+              <h2 className={`text-3xl font-extrabold font-display tracking-tight leading-tight ${b.bgColor === 'dark' ? 'text-white' : textStyle}`}>
+                The Four-Way Test
+              </h2>
+              <p className={`text-xs leading-relaxed ${b.bgColor === 'dark' ? 'text-slate-400' : subtextStyle}`}>
+                Of the things we think, say or do, Rotarians apply this ethical crucible. It governs every project commitment, budget vote, and community discussion.
+              </p>
+            </div>
+
+            <div className="lg:col-span-7 space-y-3 relative z-10">
+              {fourWayTest.map((test, index) => {
+                const isOpen = activeTest === index;
+                const headingColor = b.bgColor === 'dark' 
+                  ? 'text-white' 
+                  : isOpen ? 'text-indigo-950' : 'text-slate-800';
+
+                return (
+                  <div 
+                    key={test.num}
+                    className={`border rounded-2xl transition-all duration-300 overflow-hidden cursor-pointer ${
+                      isOpen 
+                        ? b.bgColor === 'dark' ? 'bg-slate-800 border-rotary-gold/50 shadow-md' : 'bg-slate-100 border-indigo-200 shadow-xs'
+                        : b.bgColor === 'dark' ? 'bg-slate-950/40 border-slate-850 hover:border-slate-800' : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                    onClick={() => setActiveTest(isOpen ? null : index)}
+                  >
+                    <div className="p-4 sm:p-5 flex justify-between items-center select-none">
+                      <div className="flex items-center gap-4">
+                        <span className="w-8 h-8 rounded-xl bg-slate-850 text-rotary-gold font-bold font-display flex items-center justify-center border border-slate-700/50">
+                          {test.num}
+                        </span>
+                        <span className={`font-extrabold font-display text-xs sm:text-sm ${headingColor}`}>
+                          {test.q}
+                        </span>
+                      </div>
+                      <span className="text-xl text-rotary-gold">
+                        {isOpen ? '−' : '+'}
+                      </span>
+                    </div>
+                    
+                    {isOpen && (
+                      <div className={`px-5 pb-5 pt-1 text-xs leading-relaxed border-t font-light ${
+                        b.bgColor === 'dark' 
+                          ? 'text-slate-300 border-slate-800 bg-slate-800/30' 
+                          : 'text-slate-600 border-slate-150 bg-slate-50/50'
+                      }`}>
+                        {test.desc}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+
+      case 'leadership':
+        return (
+          <section key={b.id} className="space-y-8 max-w-5xl mx-auto">
+            <div className="text-center space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-rotary-azure font-display">Board of Directors</div>
+              <h2 className="text-3xl font-bold font-display text-rotary-dark">Club Leadership</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {leadership.map((leader, index) => (
+                <div 
+                  key={index} 
+                  className={`border p-6 text-center space-y-4 rounded-3xl transition-colors duration-500 relative overflow-hidden ${bgStyles}`}
+                >
+                  {/* Gold band accent */}
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-rotary-gold"></div>
+
+                  <div className="w-20 h-20 rounded-full border-2 border-rotary-azure overflow-hidden mx-auto shadow-sm">
+                    <img 
+                      src={leader.avatarUrl} 
+                      alt={leader.name} 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="referrer"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h4 className={`font-extrabold font-display text-sm ${textStyle}`}>{leader.name}</h4>
+                    <p className="text-[10px] text-rotary-azure font-bold uppercase tracking-widest leading-none">{leader.role}</p>
+                  </div>
+
+                  <p className={`text-xs font-light leading-relaxed ${subtextStyle}`}>
+                    {leader.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16 pb-24">
+      {layout
+        .filter(b => b.visible !== false)
+        .map(b => renderBlock(b))}
     </div>
   );
 }
