@@ -5,7 +5,8 @@ import {
   getEvents as getFirebaseEvents,
   saveEvent as saveFirebaseEvent,
   submitInquiry as submitFirebaseInquiry,
-  updateUserProfile as updateFirebaseProfile
+  updateUserProfile as updateFirebaseProfile,
+  getFirebaseUsers
 } from './firebase-service';
 import { 
   getSupabaseProjects, 
@@ -14,7 +15,8 @@ import {
   saveSupabaseEvent, 
   submitSupabaseInquiry, 
   upsertSupabaseUser,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  getSupabaseUsers
 } from './supabase-service';
 import { isFirebaseSimulated } from './firebase-service';
 
@@ -101,6 +103,17 @@ export const updateDbProfile = async (profile: UserProfile): Promise<UserProfile
   } else {
     console.log('Synchronizing user profile to Firebase');
     return updateFirebaseProfile(profile);
+  }
+};
+
+export const getDbUsers = async (): Promise<UserProfile[]> => {
+  const driver = getActiveDbDriver();
+  if (driver === 'supabase') {
+    console.log('Routing all Users query via Supabase');
+    return getSupabaseUsers();
+  } else {
+    console.log('Routing all Users query via Firebase');
+    return getFirebaseUsers();
   }
 };
 

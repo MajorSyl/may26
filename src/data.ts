@@ -1,4 +1,4 @@
-import { Project, ClubEvent } from './types';
+import { Project, ClubEvent, UserProfile } from './types';
 
 export const INITIAL_PROJECTS: Project[] = [
   {
@@ -142,5 +142,110 @@ export const ROTARY_FOCUS_AREAS = [
   {
     title: 'Supporting the Environment',
     description: 'Conserving forest resources, promoting sustainable farming, waste cleanup, and ecosystem restoration.'
+  }
+];
+
+export const INITIAL_MEMBER_DIRECTORY: UserProfile[] = [
+  {
+    uid: 'mem_sahr_kamanda',
+    name: 'Sahr Kamanda',
+    email: 'rtn.president@freetownsunset.org',
+    role: 'President',
+    attendanceRate: 98,
+    contributionGoals: 2000,
+    contributedAmount: 2000,
+    committee: 'Executive Board',
+    tasks: ['Chair weekly board synergy roundtables', 'Oversee Waterloo solar borehole development program'],
+    isPaulHarrisFellow: true,
+    paulHarrisLevel: 'PHF+3',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
+    classification: 'Engineering - Infrastructure Consultancy',
+    phone: '+232 77 459 321',
+    joinedDate: '2021-08-15'
+  },
+  {
+    uid: 'mem_fatmata_sesay',
+    name: 'Dr. Fatmata Sesay',
+    email: 'rtn.officer@freetownsunset.org',
+    role: 'Club Officer',
+    attendanceRate: 95,
+    contributionGoals: 1500,
+    contributedAmount: 1200,
+    committee: 'Service Projects Committee',
+    tasks: ['Supervise Safe Motherhood midwifery deliveries', 'Liaise with Connaught Hospital child health officers'],
+    isPaulHarrisFellow: true,
+    paulHarrisLevel: 'PHF+1',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200',
+    classification: 'Medicine - Pediatric Consultant',
+    phone: '+232 76 882 104',
+    joinedDate: '2022-03-10'
+  },
+  {
+    uid: 'mem_lansana_bangura',
+    name: 'Lansana Bangura',
+    email: 'rtn.membership@freetownsunset.org',
+    role: 'Club Officer',
+    attendanceRate: 91,
+    contributionGoals: 1000,
+    contributedAmount: 800,
+    committee: 'Membership Committee',
+    tasks: ['Organize weekly beachside fellowship hours', 'Run guest orientations for prospective leaders'],
+    isPaulHarrisFellow: true,
+    paulHarrisLevel: 'PHF',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
+    classification: 'Education - Vocational Training Advisor',
+    phone: '+232 78 514 209',
+    joinedDate: '2022-11-20'
+  },
+  {
+    uid: 'mem_marie_conteh',
+    name: 'Marie Conteh',
+    email: 'rtn.member@freetownsunset.org',
+    role: 'Rotarian',
+    attendanceRate: 94,
+    contributionGoals: 500,
+    contributedAmount: 500,
+    committee: 'Water, Sanitation, & Environmental Care',
+    tasks: ['Count Aberdeen beachfront mangrove seedlings', 'Audit Waterloo borehole water filter distribution list'],
+    isPaulHarrisFellow: false,
+    paulHarrisLevel: 'None',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+    classification: 'Environmental Science - Coastal Flora Specialist',
+    phone: '+232 30 119 547',
+    joinedDate: '2023-05-14'
+  },
+  {
+    uid: 'mem_alieu_kamara',
+    name: 'Alieu Kamara',
+    email: 'rtn.alieu@freetownsunset.org',
+    role: 'Rotarian',
+    attendanceRate: 88,
+    contributionGoals: 500,
+    contributedAmount: 300,
+    committee: 'Public Relations & Communication',
+    tasks: ['Publish weekly Rotary facebook activity feeds', 'Design brochures for Safe Motherhood benefit gala'],
+    isPaulHarrisFellow: true,
+    paulHarrisLevel: 'PHF+2',
+    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
+    classification: 'Media - Corporate PR Director',
+    phone: '+232 33 241 855',
+    joinedDate: '2024-01-08'
+  },
+  {
+    uid: 'mem_evelyn_cole',
+    name: 'Dr. Evelyn Cole',
+    email: 'evelyn.cole@freetownsunset.org',
+    role: 'Rotarian',
+    attendanceRate: 93,
+    contributionGoals: 1000,
+    contributedAmount: 1000,
+    committee: 'Service Projects Committee',
+    tasks: ['Distribute Safe Motherhood birth kits', 'Support adolescent clinics near Wellington district'],
+    isPaulHarrisFellow: true,
+    paulHarrisLevel: 'Major Donor',
+    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+    classification: 'Medicine - Midwifery Director',
+    phone: '+232 77 623 915',
+    joinedDate: '2020-04-12'
   }
 ];

@@ -4,6 +4,7 @@ import { logInUser } from '../firebase-service';
 import { 
   getDbProjects,
   getDbEvents,
+  getDbUsers,
   saveDbProject, 
   saveDbEvent, 
   updateDbProfile, 
@@ -32,7 +33,13 @@ import {
   Settings,
   RefreshCw,
   Sliders,
-  Check
+  Check,
+  Award,
+  Phone,
+  Search,
+  Filter,
+  Shield,
+  Briefcase
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -89,6 +96,32 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const [mcpCopied, setMcpCopied] = useState(false);
   const [mcpKeyType, setMcpKeyType] = useState<'anon' | 'service_role'>('anon');
   const [customServiceRoleKey, setCustomServiceRoleKey] = useState('');
+
+  // Member Directory states
+  const [membersList, setMembersList] = useState<UserProfile[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [directorySearch, setDirectorySearch] = useState('');
+  const [directoryCommitteeFilter, setDirectoryCommitteeFilter] = useState('All');
+  const [directoryPhfFilter, setDirectoryPhfFilter] = useState('All');
+
+  // Load member list whenever dependencies change
+  const fetchMembersList = async () => {
+    setMembersLoading(true);
+    try {
+      const uList = await getDbUsers();
+      setMembersList(uList);
+    } catch (err) {
+      console.error('Failed to load member profiles:', err);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchMembersList();
+    }
+  }, [user, activeDriver]);
 
   // Sync active local states on render
   useEffect(() => {
@@ -489,6 +522,26 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const isPresident = user.role === 'President';
   const isOfficer = user.role === 'Club Officer' || isPresident;
 
+  // Filter member profiles for Directory rendering
+  const filteredMembers = membersList.filter(member => {
+    const term = directorySearch.toLowerCase().trim();
+    const matchesSearch = !term || 
+      member.name.toLowerCase().includes(term) ||
+      member.email.toLowerCase().includes(term) ||
+      (member.classification && member.classification.toLowerCase().includes(term)) ||
+      (member.committee && member.committee.toLowerCase().includes(term)) ||
+      (member.role && member.role.toLowerCase().includes(term));
+
+    const matchesCommittee = directoryCommitteeFilter === 'All' || 
+      (member.committee && member.committee.toLowerCase() === directoryCommitteeFilter.toLowerCase());
+
+    const matchesPhf = directoryPhfFilter === 'All' ||
+      (directoryPhfFilter === 'PHF' && member.isPaulHarrisFellow) ||
+      (directoryPhfFilter === 'Non-PHF' && !member.isPaulHarrisFellow);
+
+    return matchesSearch && matchesCommittee && matchesPhf;
+  });
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 pb-24">
       {/* 1. PERSONAL HEADER ZONE */}
@@ -731,6 +784,256 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
           </div>
         ) : (
           <p className="text-xs text-slate-400 italic">No active tasks are assigned. Enjoy Sunset fellowship circles!</p>
+        )}
+      </section>
+
+      {/* 4.1 SECURE MEMBER DIRECTORY (EXCLUSIVE TO ACCESS-AUTHENTICATED MEMBERS) */}
+      <section id="member-directory-section" className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm space-y-8">
+        <div className="border-b border-slate-100 pb-5 space-y-2">
+          <div className="inline-flex items-center gap-1.5 bg-rotary-azure/10 text-rotary-azure font-bold px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-display border border-rotary-azure/20 font-sans">
+            <Users className="w-3.5 h-3.5" />
+            <span>Fellowship Register</span>
+          </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-extrabold font-display text-slate-800 text-xl tracking-tight">
+                Sunset Member Directory
+              </h3>
+              <p className="text-xs text-slate-400 font-light mt-0.5">
+                Authenticated member registry containing Paul Harris Fellows, Sunset committees, active task assignments, and contact channels.
+              </p>
+            </div>
+            
+            <div className="text-[10px] bg-slate-50 text-slate-500 border border-slate-150 px-3 py-2 rounded-xl shrink-0 self-start md:self-center font-display space-y-1">
+              <span className="block font-bold uppercase tracking-wider">Access Clearance Granted:</span>
+              <span className="block text-slate-700 font-medium">✔️ Full Registry decrypt online ({membersList.length} members loaded)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* CONTROLS (SEARCH & FILTERS) */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-100">
+          <div className="md:col-span-5 relative">
+            <Search className="absolute left-3 top-3 text-slate-400 h-4 w-4" />
+            <input
+              id="directory-search-input"
+              type="text"
+              placeholder="Search by name, email, role, classification..."
+              value={directorySearch}
+              onChange={(e) => setDirectorySearch(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+            />
+          </div>
+
+          <div className="md:col-span-4 relative">
+            <div className="flex items-center">
+              <Filter className="absolute left-3 text-slate-400 h-3.5 w-3.5 pointer-events-none" />
+              <select
+                id="directory-committee-select"
+                value={directoryCommitteeFilter}
+                onChange={(e) => setDirectoryCommitteeFilter(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-1 focus:ring-rotary-azure text-slate-705 font-semibold cursor-pointer"
+              >
+                <option value="All">All Committees</option>
+                <option value="Executive Board">Executive Board</option>
+                <option value="Service Projects Committee">Service Projects Committee</option>
+                <option value="Membership Committee">Membership Committee</option>
+                <option value="Water, Sanitation, & Environmental Care">Water & Environment</option>
+                <option value="Public Relations & Communication">Public Relations / PR</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="md:col-span-3">
+            <select
+              id="directory-phf-select"
+              value={directoryPhfFilter}
+              onChange={(e) => setDirectoryPhfFilter(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure text-slate-705 font-semibold cursor-pointer"
+            >
+              <option value="All">All Members (Fellows & Non-Fellows)</option>
+              <option value="PHF">Paul Harris Fellows Only 🎖️</option>
+              <option value="Non-PHF">Non-Fellows Only</option>
+            </select>
+          </div>
+        </div>
+
+        {/* LOADING & RENDER SECTION */}
+        {membersLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <RefreshCw className="h-8 w-8 text-rotary-azure animate-spin" />
+            <p className="text-xs text-slate-400 font-medium">Decrypting Sunset membership rolls...</p>
+          </div>
+        ) : filteredMembers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredMembers.map((member) => {
+              const matchesProfileSelf = member.email === user.email;
+              return (
+                <div 
+                  key={member.uid} 
+                  id={`member-card-${member.uid}`}
+                  className={`bg-white rounded-2xl border p-5 relative overflow-hidden transition-all duration-300 hover:shadow-md flex flex-col justify-between ${
+                    member.isPaulHarrisFellow 
+                      ? 'border-amber-300 shadow-sm ring-1 ring-amber-100/35' 
+                      : 'border-slate-150 shadow-xs'
+                  }`}
+                >
+                  {/* Decorative Amber glow for Paul Harris Fellows */}
+                  {member.isPaulHarrisFellow && (
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
+                  )}
+
+                  {/* Header zone with Avatar & Core info */}
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          {member.avatarUrl ? (
+                            <img 
+                              src={member.avatarUrl} 
+                              alt={member.name}
+                              referrerPolicy="no-referrer"
+                              className="w-12 h-12 rounded-full object-cover border-2 border-slate-100 shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-extrabold font-display text-sm flex items-center justify-center border border-slate-200 shadow-xs uppercase">
+                              {member.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                            </div>
+                          )}
+                          {matchesProfileSelf && (
+                            <span className="absolute -bottom-1 -right-1 bg-rotary-azure text-white p-0.5 rounded-full border border-white text-[7px] font-black uppercase tracking-wider font-display">
+                              YOU
+                            </span>
+                          )}
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-extrabold text-slate-805 leading-tight flex items-center gap-1 font-display">
+                            Rtn. {member.name}
+                          </h4>
+                          <span className="block text-[9px] font-bold text-slate-400 tracking-wider mt-0.5 uppercase font-display">
+                            {member.role || 'Rotarian'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Paul Harris Fellow Star Medal */}
+                      {member.isPaulHarrisFellow ? (
+                        <div className="bg-amber-50/80 text-amber-800 border border-amber-200/70 rounded-lg px-2 py-1 text-right shrink-0">
+                          <span className="flex items-center gap-0.5 justify-end text-[9px] font-black uppercase tracking-wider font-display text-amber-700">
+                            <Award className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                            {member.paulHarrisLevel || 'PHF'}
+                          </span>
+                          <span className="block text-[7px] text-amber-500 font-bold uppercase tracking-widest mt-0.5">Fellow</span>
+                        </div>
+                      ) : (
+                        <span className="text-[8px] bg-slate-50 text-slate-400 border border-slate-200 px-2 py-0.5 rounded font-bold uppercase font-display select-none">
+                          Rotarian
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Rotary Classification Section */}
+                    {member.classification && (
+                      <div className="bg-slate-50/70 rounded-xl p-2.5 flex items-center gap-2 border border-slate-100">
+                        <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-wider font-display leading-none">Rotary Classification</span>
+                          <span className="block text-xs text-slate-700 font-semibold mt-0.5 leading-none truncate">{member.classification}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Detail listing */}
+                    <div className="space-y-2 text-xs pt-1">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-400">Assigned Committee:</span>
+                        <span className="font-semibold text-slate-700 text-right text-xs truncate max-w-[170px]">{member.committee || 'General Fellowship'}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-400">Email Address:</span>
+                        <a 
+                          href={`mailto:${member.email}`} 
+                          className="font-mono text-rotary-azure hover:underline truncate max-w-[170px] text-right font-medium"
+                          title={`Email Rtn. ${member.name}`}
+                        >
+                          {member.email}
+                        </a>
+                      </div>
+
+                      {member.phone && (
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-slate-400">Phone Number:</span>
+                          <a 
+                            href={`tel:${member.phone}`} 
+                            className="font-semibold text-slate-700 hover:text-rotary-azure hover:underline text-right"
+                          >
+                            {member.phone}
+                          </a>
+                        </div>
+                      )}
+
+                      {member.joinedDate && (
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-slate-400">Admission Date:</span>
+                          <span className="text-slate-600 text-right font-medium">{new Date(member.joinedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-slate-100 my-2 pointer-events-none" />
+
+                    {/* Tasks assigned section */}
+                    <div className="space-y-2">
+                      <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider font-display">Active Action Files</span>
+                      {member.tasks && member.tasks.length > 0 ? (
+                        <div className="space-y-1.5 pl-0.5">
+                          {member.tasks.slice(0, 3).map((task, idx) => (
+                            <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                              <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                              <span className="leading-tight">{task}</span>
+                            </div>
+                          ))}
+                          {member.tasks.length > 3 && (
+                            <span className="block text-[9px] text-slate-400 italic pl-3">+ {member.tasks.length - 3} more files</span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-400 italic pl-0.5">No active program tasks assigned currently.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Progression gauges */}
+                  <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Attendance Rate</span>
+                      <span className={`text-xs font-black font-display leading-normal mt-0.5 ${
+                        (member.attendanceRate || 0) >= 92 ? 'text-emerald-600' : 'text-amber-500'
+                      }`}>
+                        {member.attendanceRate || 92}%
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col text-right">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Pledged Contribution</span>
+                      <span className="text-xs font-extrabold text-slate-800 font-display mt-0.5">
+                        ${member.contributedAmount || 0} <span className="text-[10px] font-normal text-slate-400">/ ${member.contributionGoals || 500}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+            <Users className="h-8 w-8 text-slate-300 mx-auto" />
+            <h4 className="font-bold text-slate-700 text-sm">No Rotarians Match Your Filters</h4>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto">Try refining your search text or choosing another Sunset committee lookup.</p>
+          </div>
         )}
       </section>
 

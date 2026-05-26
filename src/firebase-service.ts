@@ -23,7 +23,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from './firebase-applet-config.json';
 import { UserProfile, Project, ClubEvent, ContactInquiry } from './types';
-import { INITIAL_PROJECTS, INITIAL_EVENTS } from './data';
+import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 
 enum OperationType {
   CREATE = 'create',
@@ -178,7 +178,7 @@ export const subscribeToAuth = (
     const activeSession = getLocalData<SimulatedAuthUser | null>('rcfs_auth_session', null);
     if (activeSession) {
       // Get associated user profile
-      const profiles = getLocalData<UserProfile[]>('rcfs_user_profiles', []);
+      const profiles = getLocalData<UserProfile[]>('rcfs_user_profiles', INITIAL_MEMBER_DIRECTORY);
       let profile = profiles.find(p => p.uid === activeSession.uid);
       if (!profile) {
         profile = {
@@ -248,7 +248,7 @@ export const logInUser = async (emailText?: string, nameText?: string): Promise<
     };
     setLocalData('rcfs_auth_session', activeSession);
 
-    const profiles = getLocalData<UserProfile[]>('rcfs_user_profiles', []);
+    const profiles = getLocalData<UserProfile[]>('rcfs_user_profiles', INITIAL_MEMBER_DIRECTORY);
     let profile = profiles.find(p => p.email === email);
     if (!profile) {
       profile = {
@@ -391,6 +391,26 @@ export const submitInquiry = async (inquiry: ContactInquiry): Promise<ContactInq
   }
 };
 
+// Fetch All User Profiles (Authorized Only)
+export const getFirebaseUsers = async (): Promise<UserProfile[]> => {
+  if (!IS_MOCK_CONFIG && rawDb) {
+    try {
+      const colRef = collection(rawDb, 'users');
+      const snapshot = await getDocs(colRef);
+      const profiles: UserProfile[] = [];
+      snapshot.forEach(docSnap => {
+        profiles.push(docSnap.data() as UserProfile);
+      });
+      return profiles;
+    } catch (err) {
+      console.error("Firebase error listing users:", err);
+      return [];
+    }
+  } else {
+    return getLocalData<UserProfile[]>('rcfs_user_profiles', INITIAL_MEMBER_DIRECTORY);
+  }
+};
+
 // Update User Profile
 export const updateUserProfile = async (profile: UserProfile): Promise<UserProfile> => {
   if (!IS_MOCK_CONFIG && rawDb) {
@@ -401,7 +421,7 @@ export const updateUserProfile = async (profile: UserProfile): Promise<UserProfi
       return handleFirestoreError(err, OperationType.WRITE, `users/${profile.uid}`);
     }
   } else {
-    const list = getLocalData<UserProfile[]>('rcfs_user_profiles', []);
+    const list = getLocalData<UserProfile[]>('rcfs_user_profiles', INITIAL_MEMBER_DIRECTORY);
     const existingIdx = list.findIndex(p => p.uid === profile.uid);
     if (existingIdx > -1) {
       list[existingIdx] = profile;

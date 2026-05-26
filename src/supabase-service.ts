@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Project, ClubEvent, UserProfile, ContactInquiry } from './types';
-import { INITIAL_PROJECTS, INITIAL_EVENTS } from './data';
+import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 
 // Read configuration from Vite environment
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
@@ -334,7 +334,7 @@ export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> 
     }
   } else {
     // Simulated Sandbox Mode
-    const list = getLocalData<UserProfile[]>('sb_supabase_users', []);
+    const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
     return list.find(u => u.uid === uid) || null;
   }
 };
@@ -362,7 +362,7 @@ export const upsertSupabaseUser = async (profile: UserProfile): Promise<UserProf
     return profile;
   } else {
     // Simulated Sandbox Mode
-    const list = getLocalData<UserProfile[]>('sb_supabase_users', []);
+    const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
     const idx = list.findIndex(u => u.uid === profile.uid);
     if (idx > -1) {
       list[idx] = profile;
@@ -472,7 +472,7 @@ export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
       return [];
     }
   } else {
-    return getLocalData<UserProfile[]>('sb_supabase_users', []);
+    return getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
   }
 };
 
@@ -489,7 +489,7 @@ export const deleteSupabaseUser = async (uid: string): Promise<boolean> => {
     }
     return true;
   } else {
-    const list = getLocalData<UserProfile[]>('sb_supabase_users', []);
+    const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
     const updated = list.filter(u => u.uid !== uid);
     setLocalData('sb_supabase_users', updated);
     return true;

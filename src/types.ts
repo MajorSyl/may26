@@ -8,6 +8,12 @@ export interface UserProfile {
   contributedAmount?: number;
   committee?: string;
   tasks?: string[];
+  isPaulHarrisFellow?: boolean;
+  paulHarrisLevel?: 'PHF' | 'PHF+1' | 'PHF+2' | 'PHF+3' | 'PHF+4' | 'PHF+8' | 'Major Donor' | 'None';
+  avatarUrl?: string;
+  classification?: string;
+  phone?: string;
+  joinedDate?: string;
 }
 
 export interface Project {
