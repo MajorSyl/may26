@@ -1,13 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;605;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-rotary-azure: #019fcb;
+  --color-rotary-azure: #0056e3;
+  --color-rotary-azure-dark: #0045bc;
   --color-rotary-gold: #F7A81B;
-  --color-rotary-dark: #1E293B;
-  --color-rotary-light: #f1f5f9;
+  --color-rotary-dark: #0f172a;
+  --color-rotary-light: #f8f9fa;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-display: "Montserrat", sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
   --animate-ripple: ripple 0.6s linear;
 }
 
@@ -17,29 +19,30 @@
   }
 }
 
-/* Material styles and fine polish */
+/* Material styles and fine polish matching iOS clean messenger themes */
 body {
   font-family: var(--font-sans);
-  background-color: #f1f5f9;
-  color: #1e293b;
+  background-color: #f8f9fa;
+  color: #0f172a;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f8f9fa;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #e5e7eb;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #d1d5db;
 }

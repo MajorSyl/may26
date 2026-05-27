@@ -1,5 +1,5 @@
-import React from 'react';
-import { Compass, Users, BookOpen, Image, Calendar, Heart, LayoutDashboard, LogOut, Sun, Facebook, ShieldAlert } from 'lucide-react';
+import React, { useState } from 'react';
+import { Compass, Users, BookOpen, Image, Calendar, Heart, LayoutDashboard, LogOut, Sun, Facebook, ShieldAlert, Menu, X } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface NavbarProps {
@@ -10,6 +10,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ activeTab, setActiveTab, user, onLogout }: NavbarProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const tabs = [
     { id: 'home', label: 'Home', icon: Compass },
     { id: 'about', label: 'About Us', icon: Users },
@@ -23,38 +24,10 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-light shadow-sm">
-      {/* Top Bar for Brand Identity & Social Shortcuts */}
-      <div className="bg-rotary-dark text-white text-xs py-2 px-4 flex flex-col sm:flex-row justify-between items-center gap-2 sm:gap-0 select-none">
-        <div className="flex items-center gap-2">
-          <Sun className="h-4 w-4 text-rotary-gold animate-spin-slow animate-pulse" />
-          <span className="font-semibold tracking-wider uppercase font-display">Rotary Club of Freetown Sunset</span>
-        </div>
-        <div className="flex items-center gap-4 flex-wrap justify-center">
-          <span className="text-gray-300 hidden md:inline">Sierra Leone | District 9101</span>
-          <a 
-            href="https://www.facebook.com/profile.php?id=100071187714639" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            id="nav-facebook-link"
-            className="inline-flex items-center gap-1.5 bg-[#1877F2] hover:bg-[#1565C0] text-white font-bold py-1 px-3 rounded-full text-[10px] uppercase tracking-wider shadow-xs hover:shadow-md transition-all active:scale-95"
-          >
-            <Facebook className="h-3 w-3 fill-current" />
-            <span>Visit Facebook Feed</span>
-          </a>
-          {user ? (
-            <div className="flex items-center gap-2 bg-slate-800 px-2.5 py-0.5 rounded text-rotary-gold font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>{user.name} ({user.role})</span>
-            </div>
-          ) : (
-            <span className="text-rotary-gold font-bold tracking-wide uppercase text-[10px]">Service Above Self</span>
-          )}
-        </div>
-      </div>
-
       {/* Main Nav Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        {/* DESKTOP HEADER (widths lg and up) */}
+        <div className="hidden lg:flex justify-between h-16">
           {/* Logo & Brand title */}
           <div className="flex items-center cursor-pointer" onClick={() => setActiveTab('home')}>
             {/* Minimal SVG emblem that matches Rotary professional colors */}
@@ -72,7 +45,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
           </div>
 
           {/* Desktop Links */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="flex items-center space-x-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -109,56 +82,93 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
               </button>
             )}
           </div>
+        </div>
 
-          {/* Mobile indicator layout */}
-          <div className="flex lg:hidden items-center gap-1.5">
+        {/* MOBILE HEADER (widths below lg) matching screenshots */}
+        <div className="flex lg:hidden justify-between items-center h-16 select-none bg-white">
+          <div className="flex items-center cursor-pointer font-display" onClick={() => { setActiveTab('home'); setIsMenuOpen(false); }}>
+            <div className="w-8 h-8 rounded-full bg-rotary-gold flex items-center justify-center mr-2 shadow-sm border border-rotary-azure font-black text-white text-[13px]">R</div>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-slate-900 tracking-tight text-xs block uppercase leading-none">
+                ROTARY CLUB OF
+              </span>
+              <span className="text-[10px] font-bold text-rotary-azure uppercase tracking-wider block leading-none mt-0.5">
+                Freetown Sunset
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Quick dashboard shortcut button for mobile logged-in members */}
+            {user && (
+              <button
+                onClick={() => { setActiveTab('dashboard'); setIsMenuOpen(false); }}
+                className={`p-2 rounded-lg transition-colors ${
+                  activeTab === 'dashboard' ? 'bg-amber-100 text-amber-700' : 'bg-slate-50 text-slate-600'
+                }`}
+                title="Member Dashboard"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Custom square blue-bordered hamburger action button */}
             <button
-              id="mobile-dash"
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold uppercase ${
-                activeTab === 'dashboard'
-                  ? 'bg-rotary-gold text-white'
-                  : 'bg-slate-100 text-slate-700'
-              }`}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="w-[38px] h-[38px] border-2 border-[#0056e3] text-[#0056e3] bg-white flex items-center justify-center cursor-pointer transition-all active:scale-95 text-center focus:outline-none shrink-0"
+              style={{ borderRadius: '4px' }}
+              title={isMenuOpen ? "Close Menu" : "Open Menu"}
             >
-              <LayoutDashboard className="h-3 w-3" />
-              <span>Portal</span>
-            </button>
-            <button
-              id="mobile-admin"
-              onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold uppercase ${
-                activeTab === 'admin'
-                  ? 'bg-rotary-azure text-white font-bold'
-                  : 'bg-slate-100 text-slate-700'
-              }`}
-            >
-              <ShieldAlert className="h-3 w-3" />
-              <span>CMS</span>
+              {isMenuOpen ? (
+                <X className="h-5 w-5 stroke-[2.2px]" />
+              ) : (
+                <Menu className="h-5 w-5 stroke-[2.2px]" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile navigation tab rail bottom for excellent touch targets on compact screens */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 shadow-lg px-2 py-1 flex justify-around">
-        {tabs.slice(0, 6).map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-[10px] font-medium transition-colors ${
-                isActive ? 'text-rotary-azure font-semibold' : 'text-slate-500'
-              }`}
-            >
-              <Icon className="h-5 w-5 mb-0.5" />
-              <span>{tab.label.split(' ')[0]}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* MOBILE MENU DROPDOWN LIST AND PANEL exactly matching screenshot list divider aesthetics */}
+      {isMenuOpen && (
+        <div className="lg:hidden bg-white border-b border-slate-150 font-sans select-none shadow-sm animate-fade-in relative z-50">
+          <div className="flex flex-col">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              
+              // Only display specialized tabs if authenticated/admin
+              if (tab.isAdmin && (!user || (user.role !== 'President' && user.role !== 'Club Officer'))) return null;
+              if (tab.isDash && !user) return null;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-6 py-4 text-[14px] font-semibold tracking-wide border-b border-slate-100 transition-colors duration-155 hover:bg-slate-50/50 cursor-pointer ${
+                    isActive ? 'text-[#0056e3]' : 'text-slate-600 hover:text-[#0056e3]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+            {user && (
+              <button
+                onClick={() => {
+                  onLogout();
+                  setIsMenuOpen(false);
+                }}
+                className="w-full text-left px-6 py-4 text-[14px] font-semibold tracking-wide border-b border-rose-100 text-rose-600 hover:bg-rose-50/30 transition-colors cursor-pointer"
+              >
+                Log Out
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

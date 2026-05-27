@@ -15,7 +15,11 @@ import {
   Award, 
   Send,
   MessageCircle,
-  Sparkles
+  Sparkles,
+  Play,
+  Pause,
+  FileText,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_HOME_LAYOUT } from '../supabase-service';
@@ -46,6 +50,7 @@ interface FbPost {
 
 export default function Home({ onLearnMore }: HomeProps) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
+  const [isVoicePlaying, setIsVoicePlaying] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -178,16 +183,16 @@ export default function Home({ onLearnMore }: HomeProps) {
   const getBgStyles = (bgColor: PageBlock['bgColor']) => {
     switch (bgColor) {
       case 'dark':
-        return 'bg-gradient-to-br from-slate-900 to-slate-800 text-white';
+        return 'bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white border-b border-slate-900/50 shadow-inner';
       case 'slate':
-        return 'bg-slate-50 text-slate-805 border-y border-slate-200/60';
+        return 'bg-slate-50 text-slate-800 border-y border-slate-200/50';
       case 'brand':
-        return 'bg-sky-50/50 text-slate-805 border-y border-sky-100/40';
+        return 'bg-sky-50/40 text-slate-800 border-y border-sky-100/30';
       case 'gold':
-        return 'bg-amber-50/40 text-slate-805 border-y border-amber-100/35';
+        return 'bg-amber-50/30 text-slate-800 border-y border-amber-100/25';
       case 'light':
       default:
-        return 'bg-white text-slate-805';
+        return 'bg-white text-slate-850';
     }
   };
 
@@ -279,32 +284,32 @@ export default function Home({ onLearnMore }: HomeProps) {
         return (
           <section key={b.id} className={`w-full py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-500 ${bgStyles}`}>
             <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow transition-all text-center flex flex-col justify-between text-slate-800">
-                  <p className="text-slate-450 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Residents Served</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-rotary-azure/20 transition-all duration-300 text-center flex flex-col justify-between text-slate-800">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Residents Served</p>
                   <h3 className="text-4xl font-extrabold text-rotary-azure font-display leading-none">{settings.homeResidentsServed}</h3>
-                  <span className="mt-3 inline-block px-2.5 py-1 bg-rotary-azure/10 text-rotary-azure text-[10px] font-bold rounded uppercase">Clean Water</span>
+                  <span className="mt-4 inline-block px-2.5 py-1 bg-rotary-azure/10 text-rotary-azure text-[10px] font-bold rounded uppercase">Clean Water</span>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow transition-all text-center flex flex-col justify-between text-slate-800">
-                  <p className="text-slate-450 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Resources Shipped</p>
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-rotary-gold/20 transition-all duration-300 text-center flex flex-col justify-between text-slate-800">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Resources Shipped</p>
                   <h3 className="text-4xl font-extrabold text-rotary-gold font-display leading-none">{settings.homeResourcesShipped}</h3>
-                  <span className="mt-3 inline-block px-2.5 py-1 bg-rotary-gold/10 text-rotary-gold text-[10px] font-bold rounded uppercase">Literacy books</span>
+                  <span className="mt-4 inline-block px-2.5 py-1 bg-rotary-gold/10 text-rotary-gold text-[10px] font-bold rounded uppercase">Literacy books</span>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow transition-all text-center flex flex-col justify-between text-slate-800">
-                  <p className="text-slate-455 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Maternal Delivery</p>
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-indigo-200 transition-all duration-300 text-center flex flex-col justify-between text-slate-800">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Maternal Delivery</p>
                   <h3 className="text-4xl font-extrabold text-indigo-600 font-display leading-none">{settings.homeMaternalKits}</h3>
-                  <span className="mt-3 inline-block px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase">Midwife Kits</span>
+                  <span className="mt-4 inline-block px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase">Midwife Kits</span>
                 </div>
 
-                <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 shadow-md text-center flex flex-col justify-between relative overflow-hidden">
+                <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-center flex flex-col justify-between relative overflow-hidden">
                   <div className="relative z-10 space-y-1">
                     <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-wider mb-2 font-display">Financial Trail</p>
                     <h3 className="text-4xl font-extrabold text-rotary-gold font-display leading-none">{settings.homeFinancingAudit}</h3>
-                    <span className="mt-3 inline-block px-2.5 py-1 bg-slate-800 text-rotary-gold text-[10px] font-bold rounded uppercase">Direct Project Funding</span>
+                    <span className="mt-4 inline-block px-2.5 py-1 bg-slate-800 text-rotary-gold text-[10px] font-bold rounded uppercase">Direct Project Funding</span>
                   </div>
-                  <div className="absolute bottom-[-40%] right-[-20%] w-32 h-32 bg-rotary-gold/20 rounded-full blur-2xl"></div>
+                  <div className="absolute bottom-[-30%] right-[-15%] w-32 h-32 bg-rotary-gold/20 rounded-full blur-2xl"></div>
                 </div>
               </div>
             </div>
@@ -420,57 +425,178 @@ export default function Home({ onLearnMore }: HomeProps) {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 {/* LEFT COLUMN: Facebook Activity Feeds (8 Spans) */}
                 <div className="lg:col-span-8 space-y-6">
-                  {fbPosts.map((post) => (
-                    <div 
-                      key={post.id}
-                      id={`fb-item-${post.id}`}
-                      className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden text-slate-800"
-                    >
-                      {/* Author Header */}
-                      <div className="p-4 sm:p-5 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {/* Avatar sphere */}
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rotary-dark to-rotary-azure text-white flex items-center justify-center font-bold text-xs shadow-inner">
-                            {post.avatarInitials}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <h4 className="font-extrabold text-sm text-slate-800 tracking-tight leading-none">{post.author}</h4>
-                              <span className="w-4 h-4 bg-[#1877F2] rounded-full text-white flex items-center justify-center text-[8px] font-black" title="Verified Organization">
-                                ✓
-                              </span>
+                  {fbPosts.map((post) => {
+                    const isVoicePost = post.id === 'fb_post_fellowship';
+                    const isPdfPost = post.id === 'fb_post_maternal';
+
+                    return (
+                      <div 
+                        key={post.id}
+                        id={`fb-item-${post.id}`}
+                        className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden text-slate-800"
+                      >
+                        {/* Author Header */}
+                        <div className="p-4 sm:p-5 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {/* Avatar sphere */}
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rotary-dark to-rotary-azure text-white flex items-center justify-center font-bold text-xs shadow-inner uppercase font-display">
+                              {post.avatarInitials}
                             </div>
-                            <span className="text-[10px] text-slate-400 font-medium">{post.timeAgo} • Freetown, SL</span>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <h4 className="font-extrabold text-sm text-slate-800 tracking-tight leading-none">{post.author}</h4>
+                                <span className="w-4 h-4 bg-[#0056e3] rounded-full text-white flex items-center justify-center text-[8px] font-black" title="Verified Organization">
+                                  ✓
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-medium">{post.timeAgo} • Freetown, SL</span>
+                            </div>
                           </div>
+
+                          <a 
+                            href="https://www.facebook.com/profile.php?id=100071187714639" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-2 text-slate-400 hover:text-[#0056e3] rounded-full hover:bg-slate-50 transition-colors"
+                            title="View original post"
+                          >
+                            <Facebook className="w-4 h-4" />
+                          </a>
                         </div>
 
-                        <a 
-                          href="https://www.facebook.com/profile.php?id=100071187714639" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="p-2 text-slate-400 hover:text-[#1877F2] rounded-full hover:bg-slate-50 transition-colors"
-                          title="View original post"
-                        >
-                          <Facebook className="w-4 h-4" />
-                        </a>
-                      </div>
+                        {/* Post Content text */}
+                        <div className="px-5 pb-4 text-xs text-slate-600 leading-relaxed font-normal font-sans">
+                          {post.content}
+                        </div>
 
-                      {/* Post Content text */}
-                      <div className="px-5 pb-4 text-xs text-slate-600 leading-relaxed font-light font-sans">
-                        {post.content}
-                      </div>
+                        {/* Interactive Sound Wave Player adapted for the Fellowship meeting post */}
+                        {isVoicePost && (
+                          <div className="px-5 pb-6">
+                            <div className="bg-[#f3f4f6] rounded-[24px] p-4 flex items-center justify-between gap-4 border border-slate-100/50 shadow-inner">
+                              
+                              {/* Play/Pause CTA trigger */}
+                              <button 
+                                onClick={() => setIsVoicePlaying(!isVoicePlaying)}
+                                className="w-11 h-11 bg-[#0056e3] hover:bg-opacity-90 rounded-full flex items-center justify-center cursor-pointer transition-all duration-150 shadow-xs text-white shrink-0 active:scale-95"
+                                title={isVoicePlaying ? "Pause Audio Summary" : "Play Sunset Voice Summary"}
+                              >
+                                {isVoicePlaying ? (
+                                  <Pause className="h-4.5 w-4.5 fill-current" />
+                                ) : (
+                                  <Play className="h-4.5 w-4.5 fill-current ml-0.5" />
+                                )}
+                              </button>
 
-                      {/* Image Attachment inside cards */}
-                      <div className="relative h-64 sm:h-80 bg-slate-100 overflow-hidden border-y border-slate-105">
-                        <img 
-                          src={post.imageUrl} 
-                          alt="Field operations" 
-                          className="w-full h-full object-cover hover:scale-103 transition-transform duration-700"
-                        />
-                      </div>
+                              {/* Sound waveform simulator representing varying sound levels */}
+                              <div className="flex items-end gap-[3px] flex-1 h-12 px-2 select-none overflow-hidden">
+                                {[
+                                  18, 24, 10, 32, 45, 14, 28, 38, 52, 20, 16, 36, 44, 12, 
+                                  26, 48, 58, 16, 30, 42, 50, 24, 14, 34, 46, 22, 18, 30
+                                ].map((height, barIdx) => {
+                                  // Animate waves nicely if audio summary is playing
+                                  const animStyle = isVoicePlaying 
+                                    ? { 
+                                        animation: `ripple 0.6s ease-in-out infinite alternate`, 
+                                        animationDelay: `${barIdx * 0.04}s`,
+                                        height: `${height * 0.8}px`
+                                      } 
+                                    : { height: `${height * 0.5 + 4}px` };
 
-                      {/* Interaction Counter stats */}
-                      <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold select-none">
+                                  return (
+                                    <div 
+                                      key={barIdx} 
+                                      className={`w-[3px] rounded-full transition-all duration-305 ${
+                                        isVoicePlaying 
+                                          ? 'bg-[#0056e3]' 
+                                          : 'bg-slate-300'
+                                      }`}
+                                      style={animStyle}
+                                    />
+                                  );
+                                })}
+                              </div>
+
+                              {/* Member Status & Timestamp metadata */}
+                              <div className="flex flex-col items-end shrink-0 text-right">
+                                {/* Profile Avatar badge inside the audio wave message overlay */}
+                                <div className="flex items-center gap-1">
+                                  <img 
+                                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=40&h=40" 
+                                    alt="Marie"
+                                    className="w-5 h-5 rounded-full object-cover border border-white shrink-0"
+                                  />
+                                  {/* Double Check Delivered Icon Indicator */}
+                                  <div className="flex text-[#0056e3]">
+                                    <Check className="h-3 w-3 -mr-1" />
+                                    <Check className="h-3 w-3" />
+                                  </div>
+                                </div>
+                                <span className="text-[9px] font-bold text-slate-500 font-mono mt-0.5 leading-none">
+                                  {isVoicePlaying ? "0:14 / 0:40" : "0:40"}
+                                </span>
+                              </div>
+
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Interactive Delivered PDF Card Block adapted (Safe Motherhood guidelines) */}
+                        {isPdfPost && (
+                          <div className="px-5 pb-5 space-y-3">
+                            {/* Graphic Cover Portion */}
+                            <div className="relative h-44 sm:h-52 bg-slate-100 overflow-hidden rounded-t-[20px] border border-b-0 border-slate-150">
+                              <img 
+                                src={post.imageUrl} 
+                                alt="Clinics kits dispatch" 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+
+                            {/* Crisp PDF Description Segment as in screenshot */}
+                            <div className="bg-[#f3f4f6] rounded-b-[20px] p-4 flex items-center justify-between gap-4 border border-t-0 border-slate-150">
+                              <div className="flex items-center gap-3.5 min-w-0">
+                                {/* Red Crimson PDF Icon Symbol */}
+                                <div className="w-10 h-10 bg-rose-500 rounded-xl text-white font-extrabold text-[11px] flex flex-col items-center justify-center shrink-0 shadow-sm font-display tracking-wider">
+                                  <FileText className="h-4.5 w-4.5 mt-0.5 text-white" />
+                                  <span className="text-[8px] leading-none mt-0.5">PDF</span>
+                                </div>
+
+                                {/* File Text Name metadata description */}
+                                <div className="min-w-0">
+                                  <h4 className="text-[13px] font-bold text-slate-800 leading-tight truncate">
+                                    Safe_Motherhood_Midwifery_Deployment_Brief_2026.pdf
+                                  </h4>
+                                  <p className="text-[10px] text-slate-400 font-medium font-sans mt-0.5 leading-none">
+                                    8 pages • 1.9 MB • Delivered Blueprint
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Checklist Delivered Indicator Status */}
+                              <div className="flex flex-col items-end shrink-0">
+                                <div className="flex text-[#0056e3]" title="Delivered and Read by Club">
+                                  <Check className="h-3.5 w-3.5 -mr-1" />
+                                  <Check className="h-3.5 w-3.5" />
+                                </div>
+                                <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mt-1 opacity-75">SENT</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Normal cover image inside standard post cards */}
+                        {!isVoicePost && !isPdfPost && (
+                          <div className="relative h-64 sm:h-80 bg-slate-100 overflow-hidden border-y border-slate-105">
+                            <img 
+                              src={post.imageUrl} 
+                              alt="Sunset environment team" 
+                              className="w-full h-full object-cover hover:scale-103 transition-transform duration-700"
+                            />
+                          </div>
+                        )}
+
+                        {/* Interaction Counter stats */}
+                        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold select-none">
                         <div className="flex items-center gap-1">
                           <span className="w-5 h-5 bg-[#1877F2] rounded-full text-white flex items-center justify-center text-[10px] shadow-sm">
                             👍
@@ -567,7 +693,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                         )}
                       </AnimatePresence>
                     </div>
-                  ))}
+                  )})}
                 </div>
 
                 {/* RIGHT COLUMN: Desktop Info box (4 Spans) */}

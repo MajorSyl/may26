@@ -811,219 +811,191 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
           </div>
         </div>
 
-        {/* CONTROLS (SEARCH & FILTERS) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-100">
-          <div className="md:col-span-5 relative">
-            <Search className="absolute left-3 top-3 text-slate-400 h-4 w-4" />
+        {/* CONTROLS (SEARCH & FILTERS) WITH SCROLLABLE PILLS ADAPTING THE UPLOADED STYLE */}
+        <div className="space-y-4">
+          {/* iOS Style Search Pill Bar */}
+          <div className="flex items-center gap-2 bg-[#f3f4f6] rounded-full px-4 py-2.5">
+            <Search className="text-slate-400 h-4.5 w-4.5 shrink-0" />
             <input
               id="directory-search-input"
               type="text"
-              placeholder="Search by name, email, role, classification..."
+              placeholder="Search by name, role, classification..."
               value={directorySearch}
               onChange={(e) => setDirectorySearch(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+              className="w-full bg-transparent border-none outline-none text-xs text-slate-800 placeholder-slate-400 font-semibold"
             />
-          </div>
-
-          <div className="md:col-span-4 relative">
-            <div className="flex items-center">
-              <Filter className="absolute left-3 text-slate-400 h-3.5 w-3.5 pointer-events-none" />
-              <select
-                id="directory-committee-select"
-                value={directoryCommitteeFilter}
-                onChange={(e) => setDirectoryCommitteeFilter(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:ring-1 focus:ring-rotary-azure text-slate-705 font-semibold cursor-pointer"
+            {directorySearch && (
+              <button 
+                onClick={() => setDirectorySearch('')} 
+                className="text-[11px] text-[#0056e3] font-semibold tracking-tight hover:underline shrink-0"
               >
-                <option value="All">All Committees</option>
-                <option value="Executive Board">Executive Board</option>
-                <option value="Service Projects Committee">Service Projects Committee</option>
-                <option value="Membership Committee">Membership Committee</option>
-                <option value="Water, Sanitation, & Environmental Care">Water & Environment</option>
-                <option value="Public Relations & Communication">Public Relations / PR</option>
-              </select>
-            </div>
+                Clear
+              </button>
+            )}
           </div>
 
-          <div className="md:col-span-3">
-            <select
-              id="directory-phf-select"
-              value={directoryPhfFilter}
-              onChange={(e) => setDirectoryPhfFilter(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure text-slate-705 font-semibold cursor-pointer"
+          {/* Interactive Horizontal Scrollable Pills Layout */}
+          <div className="flex items-center justify-between gap-4 overflow-x-auto pb-1 scrollbar-none select-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {/* Committee Filters */}
+              {[
+                { id: 'All', label: 'All Committees' },
+                { id: 'Executive Board', label: 'Board' },
+                { id: 'Service Projects Committee', label: 'Projects' },
+                { id: 'Membership Committee', label: 'Membership' },
+                { id: 'Water, Sanitation, & Environmental Care', label: 'Water & Environment' },
+                { id: 'Public Relations & Communication', label: 'PR' }
+              ].map((pill) => {
+                const isActive = directoryCommitteeFilter === pill.id;
+                return (
+                  <button
+                    key={pill.id}
+                    onClick={() => setDirectoryCommitteeFilter(pill.id)}
+                    className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-tight whitespace-nowrap transition-all duration-150 active:scale-95 ${
+                      isActive 
+                        ? 'bg-[#0056e3] text-white shadow-xs' 
+                        : 'bg-[#f3f4f6] text-slate-705 hover:bg-slate-200'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+
+              {/* PHF Filter Pill */}
+              <button
+                onClick={() => setDirectoryPhfFilter(directoryPhfFilter === 'PHF' ? 'All' : 'PHF')}
+                className={`px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-tight whitespace-nowrap transition-all duration-150 active:scale-95 flex items-center gap-1 ${
+                  directoryPhfFilter === 'PHF' 
+                    ? 'bg-amber-500 text-white shadow-xs' 
+                    : 'bg-[#f3f4f6] text-slate-705 hover:bg-slate-200'
+                }`}
+              >
+                <span>🎖️ Paul Harris Fellows</span>
+                {directoryPhfFilter === 'PHF' && <span className="text-[10px] bg-white/20 px-1 rounded">On</span>}
+              </button>
+            </div>
+
+            {/* Advanced Filters Settings Slider Button */}
+            <button 
+              onClick={() => {
+                setDirectoryCommitteeFilter('All');
+                setDirectoryPhfFilter('All');
+                setDirectorySearch('');
+              }}
+              title="Reset Filters"
+              className="p-2 bg-[#f3f4f6] hover:bg-slate-200 rounded-full text-slate-605 transition-colors shrink-0"
             >
-              <option value="All">All Members (Fellows & Non-Fellows)</option>
-              <option value="PHF">Paul Harris Fellows Only 🎖️</option>
-              <option value="Non-PHF">Non-Fellows Only</option>
-            </select>
+              <Sliders className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
         {/* LOADING & RENDER SECTION */}
         {membersLoading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-3">
-            <RefreshCw className="h-8 w-8 text-rotary-azure animate-spin" />
-            <p className="text-xs text-slate-400 font-medium">Decrypting Sunset membership rolls...</p>
+            <RefreshCw className="h-8 w-8 text-[#0056e3] animate-spin" />
+            <p className="text-xs text-slate-400 font-semibold font-display tracking-wider">SECURE DIRECTORY HANDSHAKE...</p>
           </div>
         ) : filteredMembers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          /* HIGH-FIDELITY INTERACTIVE LIST DESIGN ADAPTED TO FIND PEOPLE SCREENSHOT */
+          <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden divide-y divide-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
             {filteredMembers.map((member) => {
               const matchesProfileSelf = member.email === user.email;
               return (
                 <div 
                   key={member.uid} 
-                  id={`member-card-${member.uid}`}
-                  className={`bg-white rounded-2xl border p-5 relative overflow-hidden transition-all duration-300 hover:shadow-md flex flex-col justify-between ${
-                    member.isPaulHarrisFellow 
-                      ? 'border-amber-300 shadow-sm ring-1 ring-amber-100/35' 
-                      : 'border-slate-150 shadow-xs'
-                  }`}
+                  id={`member-item-${member.uid}`}
+                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors duration-150"
                 >
-                  {/* Decorative Amber glow for Paul Harris Fellows */}
-                  {member.isPaulHarrisFellow && (
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />
-                  )}
-
-                  {/* Header zone with Avatar & Core info */}
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3 justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="relative shrink-0">
-                          {member.avatarUrl ? (
-                            <img 
-                              src={member.avatarUrl} 
-                              alt={member.name}
-                              referrerPolicy="no-referrer"
-                              className="w-12 h-12 rounded-full object-cover border-2 border-slate-100 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 font-extrabold font-display text-sm flex items-center justify-center border border-slate-200 shadow-xs uppercase">
-                              {member.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                            </div>
-                          )}
-                          {matchesProfileSelf && (
-                            <span className="absolute -bottom-1 -right-1 bg-rotary-azure text-white p-0.5 rounded-full border border-white text-[7px] font-black uppercase tracking-wider font-display">
-                              YOU
-                            </span>
-                          )}
-                        </div>
-
-                        <div>
-                          <h4 className="text-sm font-extrabold text-slate-805 leading-tight flex items-center gap-1 font-display">
-                            Rtn. {member.name}
-                          </h4>
-                          <span className="block text-[9px] font-bold text-slate-400 tracking-wider mt-0.5 uppercase font-display">
-                            {member.role || 'Rotarian'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Paul Harris Fellow Star Medal */}
-                      {member.isPaulHarrisFellow ? (
-                        <div className="bg-amber-50/80 text-amber-800 border border-amber-200/70 rounded-lg px-2 py-1 text-right shrink-0">
-                          <span className="flex items-center gap-0.5 justify-end text-[9px] font-black uppercase tracking-wider font-display text-amber-700">
-                            <Award className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                            {member.paulHarrisLevel || 'PHF'}
-                          </span>
-                          <span className="block text-[7px] text-amber-500 font-bold uppercase tracking-widest mt-0.5">Fellow</span>
-                        </div>
+                  {/* Left Column: Avatar & Contact Taglines */}
+                  <div className="flex items-start gap-4 flex-1">
+                    {/* Circle Profile Avatar sphere */}
+                    <div className="relative shrink-0 w-11 h-11">
+                      {member.avatarUrl ? (
+                        <img 
+                          src={member.avatarUrl} 
+                          alt={member.name}
+                          className="w-11 h-11 rounded-full object-cover border border-slate-100 shadow-inner"
+                        />
                       ) : (
-                        <span className="text-[8px] bg-slate-50 text-slate-400 border border-slate-200 px-2 py-0.5 rounded font-bold uppercase font-display select-none">
-                          Rotarian
-                        </span>
+                        <div className="w-11 h-11 rounded-full bg-slate-100 text-slate-705 font-extrabold text-[13px] tracking-tight flex items-center justify-center border border-slate-250/50 shadow-xs uppercase font-display">
+                          {member.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                        </div>
                       )}
+                      {/* Active green status active dot like in iOS mockups */}
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" title="Active sunset status"></span>
                     </div>
 
-                    {/* Rotary Classification Section */}
-                    {member.classification && (
-                      <div className="bg-slate-50/70 rounded-xl p-2.5 flex items-center gap-2 border border-slate-100">
-                        <Briefcase className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-wider font-display leading-none">Rotary Classification</span>
-                          <span className="block text-xs text-slate-700 font-semibold mt-0.5 leading-none truncate">{member.classification}</span>
+                    {/* Detailed Name / Title taglines */}
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <h4 className="font-extrabold text-[14px] text-[#0f172a] tracking-tight leading-none font-sans">
+                          Rtn. {member.name}
+                        </h4>
+                        {/* Blue verification checkmark element matching Harry Stebbings design */}
+                        <div className="w-3.5 h-3.5 bg-[#0056e3] rounded-full text-white flex items-center justify-center text-[8px] font-black pointer-events-none" title="Verified Sunset Rotarian">
+                          ✓
                         </div>
-                      </div>
-                    )}
-
-                    {/* Detail listing */}
-                    <div className="space-y-2 text-xs pt-1">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-slate-400">Assigned Committee:</span>
-                        <span className="font-semibold text-slate-700 text-right text-xs truncate max-w-[170px]">{member.committee || 'General Fellowship'}</span>
-                      </div>
-
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-slate-400">Email Address:</span>
-                        <a 
-                          href={`mailto:${member.email}`} 
-                          className="font-mono text-rotary-azure hover:underline truncate max-w-[170px] text-right font-medium"
-                          title={`Email Rtn. ${member.name}`}
-                        >
-                          {member.email}
-                        </a>
+                        {matchesProfileSelf && (
+                          <span className="text-[8px] font-black text-white bg-[#0056e3] px-1 py-0.5 rounded uppercase leading-none font-display">
+                            You
+                          </span>
+                        )}
                       </div>
 
-                      {member.phone && (
-                        <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-400">Phone Number:</span>
-                          <a 
-                            href={`tel:${member.phone}`} 
-                            className="font-semibold text-slate-700 hover:text-rotary-azure hover:underline text-right"
-                          >
-                            {member.phone}
-                          </a>
-                        </div>
-                      )}
+                      {/* Professional Title statement */}
+                      <p className="text-xs text-slate-505 leading-tight font-medium font-sans truncate">
+                        {member.classification ? member.classification : 'Sunset Service Representative'} at {member.committee || 'Freetown General Committee'}
+                      </p>
 
-                      {member.joinedDate && (
-                        <div className="flex justify-between items-center text-[11px]">
-                          <span className="text-slate-400">Admission Date:</span>
-                          <span className="text-slate-600 text-right font-medium">{new Date(member.joinedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="border-t border-slate-100 my-2 pointer-events-none" />
-
-                    {/* Tasks assigned section */}
-                    <div className="space-y-2">
-                      <span className="block text-[9px] text-slate-400 font-bold uppercase tracking-wider font-display">Active Action Files</span>
-                      {member.tasks && member.tasks.length > 0 ? (
-                        <div className="space-y-1.5 pl-0.5">
-                          {member.tasks.slice(0, 3).map((task, idx) => (
-                            <div key={idx} className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                              <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                              <span className="leading-tight">{task}</span>
-                            </div>
-                          ))}
-                          {member.tasks.length > 3 && (
-                            <span className="block text-[9px] text-slate-400 italic pl-3">+ {member.tasks.length - 3} more files</span>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[10px] text-slate-400 italic pl-0.5">No active program tasks assigned currently.</p>
-                      )}
+                      {/* Location metadata pin exactly like "Find People" screenshot */}
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium font-sans">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span>Freetown, Sierra Leone</span>
+                        <span className="text-[10px] text-slate-300">•</span>
+                        <span className="font-mono text-[10px] uppercase font-bold tracking-wider">{member.role || 'Rotarian'}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Progression gauges */}
-                  <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Attendance Rate</span>
-                      <span className={`text-xs font-black font-display leading-normal mt-0.5 ${
+                  {/* Right Column: Key performance markers & actions */}
+                  <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0">
+                    {/* Attendance status badge */}
+                    <div className="flex flex-col text-left sm:text-right">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Attendance</span>
+                      <span className={`text-[13px] font-black font-display leading-normal mt-0.5 ${
                         (member.attendanceRate || 0) >= 92 ? 'text-emerald-600' : 'text-amber-500'
                       }`}>
                         {member.attendanceRate || 92}%
                       </span>
                     </div>
 
-                    <div className="flex flex-col text-right">
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Pledged Contribution</span>
-                      <span className="text-xs font-extrabold text-slate-800 font-display mt-0.5">
+                    {/* Pledged financials status */}
+                    <div className="flex flex-col text-left sm:text-right font-sans">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Financials</span>
+                      <span className="text-[13px] font-extrabold text-[#0f172a] font-display mt-0.5">
                         ${member.contributedAmount || 0} <span className="text-[10px] font-normal text-slate-400">/ ${member.contributionGoals || 500}</span>
                       </span>
                     </div>
-                  </div>
 
+                    {/* Paul Harris star badge or direct link button */}
+                    <div className="shrink-0">
+                      {member.isPaulHarrisFellow ? (
+                        <div className="bg-amber-50 text-amber-800 border border-amber-200/50 rounded-full px-3 py-1 flex items-center gap-1 select-none">
+                          <Award className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider font-display">{member.paulHarrisLevel || 'PHF'}</span>
+                        </div>
+                      ) : (
+                        <a 
+                          href={`mailto:${member.email}`} 
+                          className="px-3.5 py-1.5 border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-3xs"
+                        >
+                          CONTACT
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
