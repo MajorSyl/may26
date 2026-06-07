@@ -68,6 +68,19 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (activeTab === 'admin') {
+      if (path !== '/admin' && !path.endsWith('/admin')) {
+        window.history.pushState(null, '', '/admin');
+      }
+    } else {
+      if (path === '/admin' || path.endsWith('/admin')) {
+        window.history.pushState(null, '', '/');
+      }
+    }
+  }, [activeTab]);
+
   const handleLogout = async () => {
     await logOutUser();
     setUser(null);
@@ -219,8 +232,8 @@ export default function App() {
             {/* CONTACT INQUIRY & INTEGRATED MAP PREVIEW (6 Spans) */}
             <div className="lg:col-span-6 space-y-6">
               <div className="space-y-1">
-                <span className="text-[10px] text-rotary-gold font-bold font-display uppercase tracking-widest font-bold">Contact Us</span>
-                <h2 className="text-2xl font-extrabold font-display text-slate-800">Aberdeen Headquarters</h2>
+                <span className="text-[10px] text-rotary-gold font-bold font-display uppercase tracking-widest">Get In Touch</span>
+                <h2 className="text-2xl font-extrabold font-display text-slate-800">Contact Us</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
