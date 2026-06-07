@@ -221,15 +221,19 @@ export default function Home({ onLearnMore }: HomeProps) {
     switch (b.id) {
       case 'hero':
         return (
-          <section key={b.id} className={`relative overflow-hidden py-24 px-4 sm:px-6 lg:px-8 transition-colors duration-500 ${bgStyles}`}>
+          <section 
+            key={b.id} 
+            className="relative overflow-hidden py-28 md:py-36 px-4 sm:px-6 lg:px-8 transition-colors duration-500 bg-cover bg-center"
+            style={{ backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('/src/assets/images/rotary_fundraising_gala_1780856649745.png')` }}
+          >
             {glowNode}
-            <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8">
+            <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8 text-white">
               {settings.homeHeroBadge && !settings.homeHeroBadge.toLowerCase().includes('9101') && (
                 <motion.div 
                   initial={{ opacity: 0, y: 15 }} 
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="inline-flex items-center gap-2 bg-rotary-gold/20 border border-rotary-gold/30 px-4 py-1.5 rounded-full text-rotary-gold text-xs font-semibold tracking-wider uppercase font-display"
+                  className="inline-flex items-center gap-2 bg-rotary-gold/25 border border-rotary-gold/40 px-4 py-1.5 rounded-full text-rotary-gold text-xs font-semibold tracking-wider uppercase font-display"
                 >
                   <ShieldCheck className="h-4 w-4 text-rotary-gold" />
                   {settings.homeHeroBadge}
@@ -240,7 +244,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className={`text-4xl sm:text-5xl md:text-6xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}
+                className="text-4xl sm:text-5xl md:text-6xl font-extrabold font-display tracking-tight leading-snug text-white"
               >
                 {settings.homeHeroTitle}
               </motion.h1>
@@ -249,7 +253,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className={`text-base sm:text-xl font-light leading-relaxed max-w-3xl mx-auto ${subtextStyle}`}
+                className="text-base sm:text-xl font-light leading-relaxed max-w-3xl mx-auto text-slate-100"
               >
                 {settings.homeHeroSubtitle}
               </motion.p>
@@ -271,9 +275,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                 <button
                   id="cta-get-involved-btn"
                   onClick={() => onLearnMore('get-involved')}
-                  className={`w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/10 font-semibold font-display rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-2 ${
-                    b.bgColor === 'dark' ? 'border-slate-500 text-white' : 'border-slate-300 text-slate-800 hover:bg-slate-100'
-                  }`}
+                  className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/10 font-semibold font-display rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-2 border-white/30 text-white"
                 >
                   Partner or Sponsor
                 </button>
