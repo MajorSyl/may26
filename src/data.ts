@@ -59,7 +59,7 @@ export const INITIAL_EVENTS: ClubEvent[] = [
     title: 'Expansion of Youth Literacy in Sierra Leone',
     date: '2026-06-04',
     time: '18:30 - 20:00',
-    location: 'Radisson Blu Mammy Yoko, Lumley Beach Road, Freetown',
+    location: 'Lagoonda Hotel, Cape Road, Aberdeen, Freetown',
     speaker: 'Hon. Dr. David Sengeh (Minister of Basic Education)',
     description: 'Join us for our weekly sunset meeting as we host Dr. David Sengeh to discuss collaborative models for Rotary initiatives to support secondary school libraries and digital literacy training centers across Freetown.',
     type: 'Weekly Meeting'

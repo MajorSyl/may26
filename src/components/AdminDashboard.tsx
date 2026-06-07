@@ -53,10 +53,10 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   useEffect(() => {
     if (siteSettings) {
       try {
-        const hb = siteSettings.homeLayout ? JSON.parse(siteSettings.homeLayout) : DEFAULT_HOME_LAYOUT;
+        const hb = (siteSettings.homeLayout ? JSON.parse(siteSettings.homeLayout) : DEFAULT_HOME_LAYOUT).filter((b: any) => b.id !== 'stats');
         setHomeBlocks(hb);
       } catch (e) {
-        setHomeBlocks(DEFAULT_HOME_LAYOUT);
+        setHomeBlocks(DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats'));
       }
       try {
         const ab = siteSettings.aboutLayout ? JSON.parse(siteSettings.aboutLayout) : DEFAULT_ABOUT_LAYOUT;
@@ -259,7 +259,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     setEvTitle('');
     setEvDate('');
     setEvTime('18:30 - 20:00');
-    setEvLocation('Radisson Blu Mammy Yoko, Freetown');
+    setEvLocation('Lagoonda Hotel, Freetown');
     setEvSpeaker('');
     setEvDescription('');
     setEvType('Weekly Meeting');
@@ -336,7 +336,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
           title: evTitle,
           date: evDate,
           time: evTime || '18:30 - 20:00',
-          location: evLocation || 'Radisson Blu Mammy Yoko, Freetown',
+          location: evLocation || 'Lagoonda Hotel, Freetown',
           speaker: evSpeaker || undefined,
           description: evDescription || undefined,
           type: evType
@@ -1105,7 +1105,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                           required
                           value={evLocation}
                           onChange={(e) => setEvLocation(e.target.value)}
-                          placeholder="e.g., Radisson Blu Mammy Yoko, Lumley Beach, Freetown"
+                          placeholder="e.g., Lagoonda Hotel, Freetown"
                           className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800"
                         />
                       </div>

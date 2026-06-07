@@ -65,37 +65,37 @@ export default function Home({ onLearnMore }: HomeProps) {
   // Pre-configured official looking facebook highlights from rcfsunset profile feed
   const [fbPosts, setFbPosts] = useState<FbPost[]>([
     {
-      id: 'fb_post_mangroves',
+      id: 'fb_post_toilets',
       author: 'Rotary Club of Freetown Sunset',
       avatarInitials: 'RFS',
       timeAgo: '2 days ago',
-      content: '🌊 Coastal Environmental Action! Sunset Coastal volunteers successfully planted over 1,200 protective mangrove seedlings and cleaned up critical plastic debris near Aberdeen beach. Preserving Freetown\'s majestic coastlines is our shared duty, protecting marine biodiversity and curbing soil erosion. High-five to our youth service partners! 🌱 #ServiceAboveSelf #RotarySunset #SierraLeone #FocusOnEnvironment',
-      imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800',
-      likes: 124,
+      content: '🚽 Landmark Sanitation Handover! Today, the Rotary Club of Freetown-Sunset officially completed and handed over the fully refurbished, clean, modern public bathroom block on Aberdeen Beach Road. This facility provides running water, solid hygiene fixtures, and reliable waste management for beach visitors and local traders. Together, we are keeping our coastline clean and healthy! 🇸🇱🤝 #WaterAndSanitation #AberdeenBeach #ServiceAboveSelf #RotaryInSierraLeone',
+      imageUrl: '/src/assets/images/rotary_toilet_handover_1780856626145.png',
+      likes: 189,
       liked: false,
-      shares: 32,
+      shares: 42,
       commentsCount: 3,
       comments: [
-        { id: 'c1', author: 'Sahr John', text: 'Stellar effort team! Aberdeen estuary has been needing this intervention so badly.', time: '1d ago' },
-        { id: 'c2', author: 'Mariama Turay', text: 'Proud to see our local Rotary taking absolute lead on climate resilience.', time: '1d ago' },
-        { id: 'c3', author: 'David V.', text: 'Inspiring work! Greets from Rotary Club Munich.', time: '18h ago' }
+        { id: 'c1', author: 'Sahr John', text: 'Splendid intervention! Aberdeen beach road was in serious need of real sanitation facilities.', time: '1d ago' },
+        { id: 'c2', author: 'Mariama Turay', text: 'This is what service above self really means. Real development!', time: '1d ago' },
+        { id: 'c3', author: 'David V.', text: 'Superb project finish. Big congratulations from Rotary Germany!', time: '18h ago' }
       ],
       showComments: false
     },
     {
-      id: 'fb_post_maternal',
+      id: 'fb_post_gala',
       author: 'Rotary Club of Freetown Sunset',
       avatarInitials: 'RFS',
       timeAgo: '1 week ago',
-      content: '🤰 Saving lives in underserved Freetown areas. This week, we completed our flagship Safe Motherhood delivery, shipping 1,500 midwifery birth kits and critical supplies to maternal health clinics. Special praise to the medical officers who worked around the clock with us! ☀️👶 #MaternalHealth #HealthyMoms #RotaryInvests #FreetownCare',
-      imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800',
+      content: '🎉 Celebrating continuous service and solidarity! Highlights from our beautiful Annual Fundraising Dinner & Gala Banquet. From cutting our celebratory cake to securing funding commitments for upcoming borehole systems in marginalized sectors, it was an evening of friendship and generous hearts. Thank you to everyone who made this possible! 🍾🍰 #AnnualFundraiser #FreetownRotary #ServiceAboveSelf #RotarySunset',
+      imageUrl: '/src/assets/images/rotary_fundraising_gala_1780856649745.png',
       likes: 247,
       liked: false,
       shares: 58,
       commentsCount: 2,
       comments: [
-        { id: 'c4', author: 'Dr. Evelyn Cole', text: 'The birth kits are already in use. Thank you Sunset Rotarians for safeguarding mothers.', time: '5d ago' },
-        { id: 'c5', author: 'Alusine Bangura', text: 'True grassroots contribution. District 9101 is proud.', time: '4d ago' }
+        { id: 'c4', author: 'Patricia Cole', text: 'Stunning evening! Proud of the fellowship and alignment to help our communities.', time: '5d ago' },
+        { id: 'c5', author: 'Alusine Bangura', text: 'A truly elegant night for a life-saving cause.', time: '4d ago' }
       ],
       showComments: false
     },
@@ -104,14 +104,14 @@ export default function Home({ onLearnMore }: HomeProps) {
       author: 'Rotary Club of Freetown Sunset',
       avatarInitials: 'RFS',
       timeAgo: '2 weeks ago',
-      content: '🤝 A majestic sunset of fellowship and leadership synergy! Delightful joint evening meeting at the Radisson Blu Mammy Yoko. We finalized funding blueprints for our upcoming solar borehole pipeline setups. Service meets action! Join us as a guest next Thursday or get in touch. 🌅 #WeeklySunsetFellowship #FreetownLeaders #RotaryGlobal',
-      imageUrl: 'https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&q=80&w=800',
+      content: '🤝 A majestic sunset of fellowship and leadership synergy! Delightful joint evening meeting at our default weekly venue, the Lagoonda Hotel. We finalized funding blueprints for our upcoming solar borehole pipeline setups. Service meets action! Join us as a guest next Thursday or get in touch. 🌅 #WeeklySunsetFellowship #FreetownLeaders #RotaryGlobal',
+      imageUrl: '/src/assets/images/rotary_meeting_dinner_1780856599930.png',
       likes: 98,
       liked: false,
       shares: 14,
       commentsCount: 1,
       comments: [
-        { id: 'c6', author: 'John Rogers', text: 'Wonderful atmosphere. Looking forward to attending next month.', time: '1w ago' }
+        { id: 'c6', author: 'John Rogers', text: 'Excellent energy. Good to gather and align once again.', time: '1w ago' }
       ],
       showComments: false
     }
@@ -197,12 +197,12 @@ export default function Home({ onLearnMore }: HomeProps) {
   };
 
   // Safe parsing block of dynamic sequences
-  let layout: PageBlock[] = DEFAULT_HOME_LAYOUT;
+  let layout: PageBlock[] = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats');
   if (settings.homeLayout) {
     try {
-      layout = JSON.parse(settings.homeLayout);
+      layout = JSON.parse(settings.homeLayout).filter((block: any) => block.id !== 'stats');
     } catch (e) {
-      layout = DEFAULT_HOME_LAYOUT;
+      layout = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats');
     }
   }
 
@@ -224,15 +224,17 @@ export default function Home({ onLearnMore }: HomeProps) {
           <section key={b.id} className={`relative overflow-hidden py-24 px-4 sm:px-6 lg:px-8 transition-colors duration-500 ${bgStyles}`}>
             {glowNode}
             <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8">
-              <motion.div 
-                initial={{ opacity: 0, y: 15 }} 
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 bg-rotary-gold/20 border border-rotary-gold/30 px-4 py-1.5 rounded-full text-rotary-gold text-xs font-semibold tracking-wider uppercase font-display"
-              >
-                <ShieldCheck className="h-4 w-4 text-rotary-gold" />
-                {settings.homeHeroBadge}
-              </motion.div>
+              {settings.homeHeroBadge && !settings.homeHeroBadge.toLowerCase().includes('9101') && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 15 }} 
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="inline-flex items-center gap-2 bg-rotary-gold/20 border border-rotary-gold/30 px-4 py-1.5 rounded-full text-rotary-gold text-xs font-semibold tracking-wider uppercase font-display"
+                >
+                  <ShieldCheck className="h-4 w-4 text-rotary-gold" />
+                  {settings.homeHeroBadge}
+                </motion.div>
+              )}
 
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
@@ -704,7 +706,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                     <span className="inline-flex bg-rotary-gold/15 text-rotary-gold px-2.5 py-0.5 rounded text-[10px] uppercase font-black font-display leading-tight border border-rotary-gold/20">Meeting Schedule</span>
                     <h3 className="text-base font-extrabold text-slate-850 font-display">Fellowship & Synergy</h3>
                     <p className="text-xs text-slate-500 leading-relaxed font-light">
-                      The Rotary Club of Freetown Sunset gathers weekly at the Radisson Blu Mammy Yoko on Aberdeen, Freetown. 
+                      The Rotary Club of Freetown Sunset gathers weekly at the Lagoonda Hotel in Freetown. 
                     </p>
                     <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] font-medium text-slate-650 space-y-1">
                       <div className="flex justify-between">
@@ -717,7 +719,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                       </div>
                       <div className="flex justify-between">
                         <span>Venue:</span>
-                        <span className="font-extrabold text-slate-850 text-right">Mammy Yoko, Aberdeen</span>
+                        <span className="font-extrabold text-slate-850 text-right">Lagoonda Hotel, Aberdeen</span>
                       </div>
                     </div>
                     <button 
@@ -762,7 +764,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                   <span className="inline-block bg-rotary-gold/10 text-rotary-gold text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">June Meeting Highlights</span>
                   <h3 className="text-lg font-bold text-slate-800 leading-snug">Hosting Dr. David Sengeh</h3>
                   <p className="text-xs text-slate-500 leading-relaxed font-light">
-                    Our upcoming meeting at the Radisson Blu will feature a presentation by Sierra Leone's leading educational and tech innovator, discussing customized solutions for school reading materials in outer Freetown.
+                    Our upcoming meeting at the Lagoonda Hotel will feature a presentation by Sierra Leone's leading educational and tech innovator, discussing customized solutions for school reading materials in outer Freetown.
                   </p>
                   <button onClick={() => onLearnMore('events')} className="text-xs font-bold text-rotary-azure hover:text-rotary-gold flex items-center gap-1 font-display cursor-pointer">
                     RSVP for Meeting <ArrowRight className="h-3.5 w-3.5" />

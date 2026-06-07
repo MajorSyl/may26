@@ -73,7 +73,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const [evTitle, setEvTitle] = useState('');
   const [evDate, setEvDate] = useState('2026-06-18');
   const [evTime, setEvTime] = useState('18:30 - 20:00');
-  const [evLocation, setEvLocation] = useState('Radisson Blu, Freetown');
+  const [evLocation, setEvLocation] = useState('Lagoonda Hotel, Freetown');
   const [evSpeaker, setEvSpeaker] = useState('');
   const [evDesc, setEvDesc] = useState('');
   const [evType, setEvType] = useState<'Weekly Meeting' | 'Service Project' | 'Social' | 'Fundraiser'>('Weekly Meeting');
@@ -685,7 +685,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-normal">
-                Make sure to join weekly meetings at Radisson Blu or record online make-ups on the dashboard to retain continuous standing.
+                Make sure to join weekly meetings at Lagoonda Hotel or record online make-ups on the dashboard to retain continuous standing.
               </p>
             </div>
           </div>
@@ -1605,7 +1605,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                     <input
                       id="create-ev-loc"
                       type="text"
-                      placeholder="Radisson Blu Hotel"
+                      placeholder="Lagoonda Hotel"
                       value={evLocation}
                       onChange={(e) => setEvLocation(e.target.value)}
                       className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"

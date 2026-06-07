@@ -76,7 +76,6 @@ export interface SiteSettings {
 
 export const DEFAULT_HOME_LAYOUT: PageBlock[] = [
   { id: 'hero', title: 'Hero Banner', bgColor: 'dark', visible: true },
-  { id: 'stats', title: 'Statistics Board', bgColor: 'light', visible: true },
   { id: 'mission', title: 'Sunset Mission Details', bgColor: 'light', visible: true },
   { id: 'facebook', title: 'Facebook Media Hub', bgColor: 'slate', visible: true },
   { id: 'announcements', title: 'Latest Announcements', bgColor: 'light', visible: true }
@@ -92,7 +91,7 @@ export const DEFAULT_ABOUT_LAYOUT: PageBlock[] = [
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   homeHeroTitle: "Service Above Self",
   homeHeroSubtitle: "We are a community of dedicated local and international professionals taking action in Freetown to pioneer sustainable clean water access, secondary education, and healthcare.",
-  homeHeroBadge: "Rotary District 9101 • Freetown, Sierra Leone",
+  homeHeroBadge: "",
   homeResidentsServed: "5,000+",
   homeResourcesShipped: "4,500+",
   homeMaternalKits: "1,500+",

@@ -8,6 +8,9 @@ import Events from './components/Events';
 import GetInvolved from './components/GetInvolved';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
+import MembersDirectory from './components/MembersDirectory';
+import ClubGallery from './components/ClubGallery';
+import Contact from './components/Contact';
 
 import { UserProfile, ContactInquiry } from './types';
 import { subscribeToAuth, logOutUser } from './firebase-service';
@@ -107,14 +110,18 @@ export default function App() {
         return <Home onLearnMore={(tabId) => setActiveTab(tabId)} />;
       case 'about':
         return <About />;
-      case 'rotary':
-        return <WhatIsRotary />;
-      case 'gallery':
+      case 'members':
+        return <MembersDirectory />;
+      case 'club-gallery':
+        return <ClubGallery />;
+      case 'impact':
         return <Gallery key={refreshKey} />;
-      case 'events':
-        return <Events key={refreshKey} />;
       case 'get-involved':
         return <GetInvolved />;
+      case 'events':
+        return <Events key={refreshKey} />;
+      case 'contact':
+        return <Contact />;
       case 'dashboard':
         return (
           <Dashboard 
@@ -167,175 +174,155 @@ export default function App() {
       </main>
 
       {/* FAQs & FREETOWN CONTACT CONTAINER (Sites Architecture: "Contact Us: inquiry form, integrated Freetown map and FAQs") */}
-      <section className="bg-white border-t border-slate-100 py-16 px-4 sm:px-6 lg:px-8 mt-12">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
-          
-          {/* FAQ Accordion (6 Spans) */}
-          <div className="lg:col-span-6 space-y-6">
-            <div className="space-y-1">
-              <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest">Help Center</span>
-              <h2 className="text-2xl font-extrabold font-display text-slate-800">Frequently Asked Questions</h2>
-            </div>
-
-            <div className="space-y-3">
-              {GENERAL_FAQS.map((faq, index) => {
-                const isOpen = openFaq === index;
-                return (
-                  <div 
-                    key={index} 
-                    className={`border rounded-2xl overflow-hidden cursor-pointer transition-colors ${
-                      isOpen ? 'border-rotary-azure bg-rotary-azure/5' : 'border-slate-100 hover:border-slate-200 bg-slate-50/20'
-                    }`}
-                    onClick={() => setOpenFaq(isOpen ? null : index)}
-                  >
-                    <div className="p-4 flex justify-between items-center select-none">
-                      <span className="font-bold text-slate-700 font-display text-xs sm:text-sm">
-                        {faq.q}
-                      </span>
-                      <span className="text-rotary-azure font-black tracking-tight shrink-0 ml-4">
-                        {isOpen ? '−' : '+'}
-                      </span>
-                    </div>
-
-                    {isOpen && (
-                      <div className="px-4 pb-4 pt-1 text-xs text-slate-500 leading-relaxed border-t border-slate-100/50">
-                        {faq.a}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* CONTACT INQUIRY & INTEGRATED MAP PREVIEW (6 Spans) */}
-          <div className="lg:col-span-6 space-y-6">
-            <div className="space-y-1">
-              <span className="text-[10px] text-rotary-gold font-bold font-display uppercase tracking-widest font-bold">Contact Us</span>
-              <h2 className="text-2xl font-extrabold font-display text-slate-800">Aberdeen Headquarters</h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Form Card */}
-              <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
-                <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display">Message Board</span>
-                
-                <form onSubmit={handleContactSubmit} className="space-y-3 text-xs font-medium text-slate-700">
-                  <input
-                    id="foot-name-input"
-                    type="text"
-                    placeholder="Full Name"
-                    value={contName}
-                    onChange={(e) => setContName(e.target.value)}
-                    className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
-                    required
-                  />
-
-                  <input
-                    id="foot-email-input"
-                    type="email"
-                    placeholder="Email Address"
-                    value={contEmail}
-                    onChange={(e) => setContEmail(e.target.value)}
-                    className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
-                    required
-                  />
-
-                  <textarea
-                    id="foot-msg-input"
-                    placeholder="Write message..."
-                    value={contMsg}
-                    onChange={(e) => setContMsg(e.target.value)}
-                    className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 h-16 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure resize-none"
-                    required
-                  />
-
-                  <button
-                    id="foot-submit-btn"
-                    type="submit"
-                    disabled={contLoading}
-                    className="w-full py-2 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold font-display uppercase text-[10px] rounded-lg tracking-wider shadow-xs"
-                  >
-                    {contLoading ? 'Sending...' : 'Transmit Inquiry'}
-                  </button>
-                </form>
-
-                {contSuccess && (
-                  <div className="p-2 border border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-bold text-center rounded-lg uppercase tracking-wider font-display select-none">
-                    ✔ Written to logs!
-                  </div>
-                )}
+      {activeTab === 'home' && (
+        <section className="bg-white border-t border-slate-100 py-16 px-4 sm:px-6 lg:px-8 mt-12">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+            
+            {/* FAQ Accordion (6 Spans) */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="space-y-1">
+                <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest">Help Center</span>
+                <h2 className="text-2xl font-extrabold font-display text-slate-800">Frequently Asked Questions</h2>
               </div>
 
-              {/* Freetown Map visual representation card */}
-              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <span className="block text:[10px] text-slate-500 font-bold uppercase tracking-wider font-display">Sunset Meeting Location</span>
+              <div className="space-y-3">
+                {GENERAL_FAQS.map((faq, index) => {
+                  const isOpen = openFaq === index;
+                  return (
+                    <div 
+                      key={index} 
+                      className={`border rounded-2xl overflow-hidden cursor-pointer transition-colors ${
+                        isOpen ? 'border-rotary-azure bg-rotary-azure/5' : 'border-slate-100 hover:border-slate-200 bg-slate-50/20'
+                      }`}
+                      onClick={() => setOpenFaq(isOpen ? null : index)}
+                    >
+                      <div className="p-4 flex justify-between items-center select-none">
+                        <span className="font-bold text-slate-700 font-display text-xs sm:text-sm">
+                          {faq.q}
+                        </span>
+                        <span className="text-rotary-azure font-black tracking-tight shrink-0 ml-4">
+                          {isOpen ? '−' : '+'}
+                        </span>
+                      </div>
+
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1 text-xs text-slate-500 leading-relaxed border-t border-slate-100/50">
+                          {faq.a}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CONTACT INQUIRY & INTEGRATED MAP PREVIEW (6 Spans) */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="space-y-1">
+                <span className="text-[10px] text-rotary-gold font-bold font-display uppercase tracking-widest font-bold">Contact Us</span>
+                <h2 className="text-2xl font-extrabold font-display text-slate-800">Aberdeen Headquarters</h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Form Card */}
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
+                  <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display">Message Board</span>
                   
-                  <div className="rounded-xl overflow-hidden h-28 border border-slate-200 relative">
-                    {/* Generates a stylized material-designed map preview layout for Freetown sunset coastal branch */}
-                    <div className="absolute inset-0 bg-sky-50 flex items-center justify-center text-center p-2">
-                      <div className="space-y-1">
-                        <MapPin className="h-5 w-5 text-rose-500 mx-auto animate-bounce" />
-                        <span className="text-[9px] font-bold text-slate-700 block font-display leading-tight">Lumley Beach Road</span>
-                        <span className="text-[8px] text-slate-400 block font-display leading-none">Aberdeen, Freetown, SL</span>
+                  <form onSubmit={handleContactSubmit} className="space-y-3 text-xs font-medium text-slate-700">
+                    <input
+                      id="foot-name-input"
+                      type="text"
+                      placeholder="Full Name"
+                      value={contName}
+                      onChange={(e) => setContName(e.target.value)}
+                      className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
+                      required
+                    />
+
+                    <input
+                      id="foot-email-input"
+                      type="email"
+                      placeholder="Email Address"
+                      value={contEmail}
+                      onChange={(e) => setContEmail(e.target.value)}
+                      className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
+                      required
+                    />
+
+                    <textarea
+                      id="foot-msg-input"
+                      placeholder="Write message..."
+                      value={contMsg}
+                      onChange={(e) => setContMsg(e.target.value)}
+                      className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 h-16 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure resize-none"
+                      required
+                    />
+
+                    <button
+                      id="foot-submit-btn"
+                      type="submit"
+                      disabled={contLoading}
+                      className="w-full py-2 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold font-display uppercase text-[10px] rounded-lg tracking-wider shadow-xs"
+                    >
+                      {contLoading ? 'Sending...' : 'Transmit Inquiry'}
+                    </button>
+                  </form>
+
+                  {contSuccess && (
+                    <div className="p-2 border border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-bold text-center rounded-lg uppercase tracking-wider font-display select-none">
+                      ✔ Written to logs!
+                    </div>
+                  )}
+                </div>
+
+                {/* Freetown Map visual representation card */}
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <span className="block text:[10px] text-slate-500 font-bold uppercase tracking-wider font-display">Sunset Meeting Location</span>
+                    
+                    <div className="rounded-xl overflow-hidden h-28 border border-slate-200 relative">
+                      {/* Generates a stylized material-designed map preview layout for Freetown sunset coastal branch */}
+                      <div className="absolute inset-0 bg-sky-50 flex items-center justify-center text-center p-2">
+                         <div className="space-y-1">
+                          <MapPin className="h-5 w-5 text-rose-500 mx-auto animate-bounce" />
+                          <span className="text-[9px] font-bold text-slate-700 block font-display leading-tight">Lagoonda Hotel</span>
+                          <span className="text-[8px] text-slate-400 block font-display leading-none">Cape Road, Aberdeen, Freetown</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-1 text-slate-500 font-medium text-[10px] mt-4">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3 w-3 text-rotary-gold" />
-                    <span>Radisson Blu Mammy Yoko</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Phone className="h-3 w-3 text-rotary-gold" />
-                    <span>+232 76 543210</span>
+                  <div className="space-y-1 text-slate-500 font-medium text-[10px] mt-4">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3 text-rotary-gold" />
+                      <span>Lagoonda Hotel</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="h-3 w-3 text-rotary-gold" />
+                      <span>076827035</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 5. BRAND FOOTER BAR */}
-      <footer className="bg-rotary-dark text-white py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-850">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-center md:text-left space-y-1 select-none">
-            <h4 className="font-extrabold font-display text-sm uppercase tracking-widest text-[#F7A81B]">Rotary Club of Freetown Sunset</h4>
-            <p className="text-xs text-slate-400 leading-none">Sierra Leone • District 9101 • Service Above Self</p>
+      <footer className="bg-rotary-dark text-white py-8 px-4 sm:px-6 lg:px-8 border-t border-slate-850">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center text-[12px] font-bold uppercase tracking-widest font-display">
+            <button id="foot-nav-admin" onClick={() => setActiveTab('admin')} className="text-rotary-azure hover:text-rotary-azure-dark cursor-pointer transition-colors">Admin CMS</button>
           </div>
 
-          <div className="flex flex-wrap justify-center items-center gap-4 text-xs font-semibold uppercase tracking-wider font-display text-slate-400">
-            <button id="foot-nav-home" onClick={() => setActiveTab('home')} className="hover:text-white cursor-pointer">Home</button>
-            <span>•</span>
-            <button id="foot-nav-about" onClick={() => setActiveTab('about')} className="hover:text-white cursor-pointer">Story</button>
-            <span>•</span>
-            <button id="foot-nav-gallery" onClick={() => setActiveTab('gallery')} className="hover:text-white cursor-pointer">Projects</button>
-            <span>•</span>
-            <button id="foot-nav-dash" onClick={() => setActiveTab('dashboard')} className="hover:text-white text-rotary-gold font-bold cursor-pointer">Portal</button>
-            <span>•</span>
-            <button id="foot-nav-admin" onClick={() => setActiveTab('admin')} className="hover:text-white text-emerald-450 font-extrabold cursor-pointer">Admin CMS</button>
-            <span>•</span>
-            <a 
-              href="https://www.facebook.com/profile.php?id=100071187714639" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 bg-[#1877F2] text-white px-2.5 py-1 rounded-md text-[10px] font-bold hover:bg-[#1565C0] transition-colors"
-            >
-              <span>Facebook</span>
-            </a>
-          </div>
-
-          <p className="text-[10px] text-slate-500 text-center md:text-right select-none">
-            © {new Date().getFullYear()} Rotary Sunset. All Rights Reserved. Created under strict Brand compliance parameters.
+          <p className="text-[10px] text-slate-400 text-center sm:text-right select-none">
+            © {new Date().getFullYear()} Rotary Sunset. All Rights Reserved.
           </p>
         </div>
         
         {/* Safe spacing pad for mobile touch bars */}
-        <div className="h-12 lg:hidden"></div>
+        <div className="h-6 lg:hidden"></div>
       </footer>
     </div>
   );

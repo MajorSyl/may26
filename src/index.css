@@ -1,14 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;605;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-rotary-azure: #0056e3;
-  --color-rotary-azure-dark: #0045bc;
+  --color-rotary-azure: #0284c7;
+  --color-rotary-azure-dark: #0369a1;
   --color-rotary-gold: #F7A81B;
   --color-rotary-dark: #0f172a;
   --color-rotary-light: #f8f9fa;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Playfair Display", "Georgia", serif;
   --font-mono: "JetBrains Mono", monospace;
   --animate-ripple: ripple 0.6s linear;
 }
@@ -17,13 +18,16 @@
   .font-display {
     font-family: var(--font-display);
   }
+  .font-serif {
+    font-family: var(--font-serif);
+  }
 }
 
 /* Material styles and fine polish matching iOS clean messenger themes */
 body {
   font-family: var(--font-sans);
   background-color: #f8f9fa;
-  color: #0f172a;
+  color: #1e293b;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -45,4 +49,36 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #d1d5db;
+}
+
+/* Custom design settings block matching Rotary parameters */
+.body, .grop-silder_caption_text p, .grop-section_text p, .grop-ftr_sngl_widget p, .grop-footer_newsletter p {
+    font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif; /* Rotary's official web font stack */
+    color: #333333; /* Official Rotary Charcoal for crisp, readable body text */
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+/* Target the specific links inside that block for the Rotary color punch */
+.grop-ftr_sngl_widget ul li a, 
+#grop-latest_tweets a, 
+.woocommerce .entry-summary .woocommerce-review-link {
+    color: #019FCB; /* Official Rotary Sky Blue for interactive links */
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+/* Hover state for those links */
+.grop-ftr_sngl_widget ul li a:hover, 
+#grop-latest_tweets a:hover {
+    color: #00246B; /* Changes to Rotary Royal Blue on hover */
+    text-decoration: underline;
+}
+
+/* Target the price tags and highlights inside that block */
+.woocommerce ul.products li.product .price ins,
+.woocommerce div.product span.price,
+.grop-dnatrsd_amount {
+    color: #00246B; /* Royal Blue for important data like donation amounts and prices */
+    font-weight: 700;
 }
