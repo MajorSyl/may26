@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, Users, BookOpen, Image, Calendar, Heart, LayoutDashboard, LogOut, Sun, Facebook, ShieldAlert, Menu, X, Mail } from 'lucide-react';
+import { Compass, Users, BookOpen, Image, Calendar, Heart, LayoutDashboard, LogOut, Sun, Facebook, Menu, X, Mail } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface NavbarProps {
@@ -20,8 +20,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
     { id: 'get-involved', label: 'Get Involved', icon: Heart },
     { id: 'events', label: 'Meetings & Events', icon: Calendar },
     { id: 'contact', label: 'Contact', icon: Mail },
-    { id: 'dashboard', label: 'Portal', icon: LayoutDashboard, isDash: true },
-    { id: 'admin', label: 'Admin CMS', icon: ShieldAlert, isAdmin: true }
+    { id: 'dashboard', label: 'Portal', icon: LayoutDashboard, isDash: true }
   ];
 
   return (
@@ -49,7 +48,6 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
               const isActive = activeTab === tab.id;
 
               // Only display specialized tabs if authenticated/admin
-              if (tab.isAdmin && (!user || (user.role !== 'President' && user.role !== 'Club Officer'))) return null;
               if (tab.isDash && !user) return null;
 
               return (
@@ -60,8 +58,6 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
                   className={`flex items-center gap-1 px-1.5 py-1.5 xl:px-2.5 xl:py-2 rounded-lg text-[10px] xl:text-xs font-bold transition-all duration-200 shrink-0 ${
                     isActive
                       ? 'bg-rotary-azure text-white shadow-sm'
-                      : tab.isAdmin
-                      ? 'bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25'
                       : tab.isDash && user
                       ? 'bg-rotary-gold/10 text-rotary-gold hover:bg-rotary-gold/20'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-rotary-dark'
@@ -138,8 +134,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               
-              // Only display specialized tabs if authenticated/admin
-              if (tab.isAdmin && (!user || (user.role !== 'President' && user.role !== 'Club Officer'))) return null;
+              // Only display specialized tabs if authenticated
               if (tab.isDash && !user) return null;
 
               return (

@@ -312,8 +312,8 @@ export default function App() {
       {/* 5. BRAND FOOTER BAR */}
       <footer className="bg-rotary-dark text-white py-8 px-4 sm:px-6 lg:px-8 border-t border-slate-850">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center text-[12px] font-bold uppercase tracking-widest font-display">
-            <button id="foot-nav-admin" onClick={() => setActiveTab('admin')} className="text-rotary-azure hover:text-rotary-azure-dark cursor-pointer transition-colors">Admin CMS</button>
+          <div className="flex items-center text-[12px] font-bold uppercase tracking-widest font-display text-slate-450 hover:text-slate-350 select-none">
+            Service Above Self
           </div>
 
           <p className="text-[10px] text-slate-400 text-center sm:text-right select-none">
