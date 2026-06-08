@@ -241,24 +241,46 @@ export default function MembersDirectory() {
             {filteredPastPresidents.map((p, idx) => (
               <div 
                 key={idx}
-                className="bg-white rounded-3xl border border-slate-150 p-6 flex items-center gap-4 hover:shadow-md transition-shadow relative overflow-hidden"
+                className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:shadow-lg transition-all duration-300 relative flex flex-col justify-between group"
               >
                 {/* Visual marker of previous leadership */}
-                <div className="absolute top-0 right-0 w-12 h-12 bg-rotary-gold/10 rounded-bl-full flex items-center justify-end pr-3 pb-3">
-                  <Crown className="w-3.5 h-3.5 text-rotary-gold" />
+                <div className="h-14 w-full bg-gradient-to-r from-rotary-azure/80 to-rotary-gold/50 relative overflow-hidden shrink-0">
+                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs p-1.5 rounded-full shadow-xs">
+                    <Crown className="w-3.5 h-3.5 text-rotary-gold" />
+                  </div>
                 </div>
 
-                <img 
-                  src={p.avatarUrl} 
-                  alt={p.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-rotary-gold shrink-0 bg-slate-100"
-                  referrerPolicy="no-referrer"
-                />
-                
-                <div className="space-y-1">
-                  <h3 className="font-extrabold text-slate-800 text-sm font-display leading-tight">{p.name}</h3>
-                  <p className="text-[10px] text-rotary-azure font-display font-bold leading-none tracking-widest uppercase">{p.year}</p>
-                  <p className="text-[11px] text-slate-500 italic font-light">{p.classification}</p>
+                <div className="px-6 pb-6 pt-2 space-y-4 relative flex-1 flex flex-col justify-between">
+                  {/* Floating Overlapping Avatar */}
+                  <div className="flex items-start gap-4">
+                    <img 
+                      src={p.avatarUrl} 
+                      alt={p.name}
+                      className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md -mt-10 bg-slate-100 shrink-0 transform group-hover:scale-105 transition-transform"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="pt-2">
+                      <h3 className="font-extrabold text-slate-850 text-sm font-display leading-tight">{p.name}</h3>
+                      <p className="text-[9px] text-rotary-azure font-display font-bold leading-none tracking-wider uppercase mt-1">Past President</p>
+                    </div>
+                  </div>
+
+                  {/* Classification Details */}
+                  <div className="space-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500 flex-1">
+                    <div className="flex items-start gap-2">
+                      <Shield className="w-3.5 h-3.5 text-rotary-azure/60 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider leading-none">Rotary Classification</span>
+                        <span className="font-semibold text-[11px] text-slate-700">{p.classification}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Past President Service Year Badge (Footer element inside content card) */}
+                  <div className="bg-rotary-gold/10 border border-rotary-gold/25 rounded-2xl p-2.5 text-center flex items-center justify-center gap-1.5 shrink-0">
+                    <Award className="w-3.5 h-3.5 text-rotary-gold-dark" />
+                    <span className="text-[10px] font-bold text-rotary-gold-dark font-display uppercase tracking-wider">Distinguished Year: {p.year}</span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -278,84 +300,104 @@ export default function MembersDirectory() {
               return (
                 <div 
                   key={m.uid}
-                  className="bg-white rounded-3xl border border-slate-150 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all group"
+                  className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden flex flex-col justify-between hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group"
                 >
-                  <div className="p-6 space-y-4">
-                    {/* Header line */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={m.avatarUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'} 
-                          alt={m.name}
-                          className="w-14 h-14 rounded-full object-cover border-2 border-slate-100 shrink-0 bg-slate-100"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div>
-                          <h3 className="font-extrabold text-slate-800 group-hover:text-rotary-azure transition-colors text-sm font-display leading-tight">{m.name}</h3>
-                          <p className="text-[10px] text-slate-400 font-medium font-mono">{m.email}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Executive status mark */}
-                      {isExec && (
-                        <span className="bg-amber-100 border border-amber-200 text-amber-800 text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider font-display">
+                  {/* Decorative Profile Banner */}
+                  <div className={`h-16 w-full relative overflow-hidden shrink-0 ${
+                    isExec 
+                      ? 'bg-gradient-to-r from-rotary-azure to-rotary-gold/85' 
+                      : m.isPaulHarrisFellow 
+                        ? 'bg-gradient-to-r from-rotary-azure/90 via-slate-700 to-indigo-900/60' 
+                        : 'bg-gradient-to-r from-slate-200/80 to-slate-200/30'
+                  }`}>
+                    {/* Floating Leadership Stamp */}
+                    {isExec && (
+                      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-amber-200 shadow-xs">
+                        <span className="text-[8px] font-extrabold text-amber-800 font-display uppercase tracking-wider">
                           {m.role === 'President' ? 'President' : m.committee === 'Finance Committee' ? 'Treasurer' : m.name.includes('Dennis') ? 'Secretary' : 'Director'}
                         </span>
-                      )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="px-6 pb-6 pt-2 space-y-4 relative flex-1 flex flex-col justify-between">
+                    {/* Floating Circular Avatar overlapping banner */}
+                    <div className="flex items-start gap-4">
+                      <img 
+                        src={m.avatarUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'} 
+                        alt={m.name}
+                        className="w-18 h-18 rounded-full object-cover border-4 border-white shadow-md -mt-11 bg-white shrink-0 transform group-hover:scale-105 transition-transform duration-300"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="pt-1.5 flex-1 min-w-0">
+                        <h3 className="font-extrabold text-slate-850 group-hover:text-rotary-azure transition-colors text-sm font-display leading-tight truncate">{m.name}</h3>
+                        <p className="text-[9px] text-slate-400 font-mono font-medium truncate mt-0.5">{m.email}</p>
+                      </div>
                     </div>
 
                     {/* Member Details */}
-                    <div className="space-y-2 border-t border-slate-100/75 pt-3.5 text-xs text-slate-500">
+                    <div className="space-y-2.5 border-t border-slate-100 pt-3 text-xs text-slate-500 flex-1 leading-snug">
                       {m.classification && (
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-3.5 h-3.5 text-rotary-azure/70 shrink-0" />
-                          <span className="font-semibold text-[11px] text-slate-700">{m.classification}</span>
+                        <div className="flex items-start gap-2.5">
+                          <Shield className="w-3.5 h-3.5 text-rotary-azure/60 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider leading-none">Roster Classification</span>
+                            <span className="font-semibold text-[11px] text-slate-700">{m.classification}</span>
+                          </div>
                         </div>
                       )}
 
                       {m.committee && (
-                        <div className="flex items-center gap-2">
-                          <UserCheck className="w-3.5 h-3.5 text-indigo-500/70 shrink-0" />
-                          <span className="text-[11px]">Committee: <strong className="text-slate-650 font-semibold">{m.committee}</strong></span>
+                        <div className="flex items-start gap-2.5">
+                          <UserCheck className="w-3.5 h-3.5 text-indigo-500/60 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider leading-none">Active Committee</span>
+                            <span className="text-[11px] text-slate-700 font-medium">{m.committee}</span>
+                          </div>
                         </div>
                       )}
 
                       {m.joinedDate && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="text-[10px]">Joined Sunset: {new Date(m.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
+                          <span className="text-[10px] text-slate-400">Joined Sunset: {new Date(m.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Dynamic PHF highlight base footer bar */}
-                  <div className="bg-slate-50 border-t border-slate-100 px-6 py-3 flex items-center justify-between text-[10px] select-none">
+                  {/* Custom Paul Harris Fellow or Active Roster Footer */}
+                  <div className={`px-6 py-3.5 flex items-center justify-between text-[10px] border-t select-none ${
+                    m.isPaulHarrisFellow 
+                      ? 'bg-amber-50/55 border-amber-200/60 text-amber-900' 
+                      : 'bg-slate-50/65 border-slate-100 text-slate-500'
+                  }`}>
                     {m.isPaulHarrisFellow ? (
-                      <div className="flex items-center gap-1 text-rotary-gold font-bold uppercase tracking-wider font-display">
-                        <Award className="w-4 h-4 fill-rotary-gold text-white" />
+                      <div className="flex items-center gap-1.5 text-rotary-gold-dark font-extrabold uppercase tracking-wider font-display shrink-0">
+                        <Award className="w-4 h-4 fill-rotary-gold text-white animate-pulse" />
                         <span>{m.paulHarrisLevel || 'Paul Harris Fellow'}</span>
                       </div>
                     ) : (
-                      <span className="text-slate-450 font-medium">Active Sunset Member</span>
+                      <span className="text-slate-400 font-bold uppercase tracking-wider font-display text-[9px]">Active Sunset Member</span>
                     )}
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Quick Dial & Contact Row */}
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {m.phone && (
                         <a 
                           href={`tel:${m.phone}`}
                           title={`Call ${m.name}`}
-                          className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-rotary-azure hover:border-rotary-azure transition-colors"
+                          className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-rotary-azure hover:border-rotary-azure hover:shadow-2xs transition-all active:scale-95"
                         >
-                          <Phone className="w-3 h-3" />
+                          <Phone className="w-3.5 h-3.5" />
                         </a>
                       )}
                       <a 
                         href={`mailto:${m.email}`}
                         title={`Email ${m.name}`}
-                        className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-rotary-azure hover:border-rotary-azure transition-colors"
+                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-rotary-azure hover:border-rotary-azure hover:shadow-2xs transition-all active:scale-95"
                       >
-                        <Mail className="w-3 h-3" />
+                        <Mail className="w-3.5 h-3.5" />
                       </a>
                     </div>
                   </div>

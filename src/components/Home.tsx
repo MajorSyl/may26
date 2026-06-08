@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_HOME_LAYOUT } from '../supabase-service';
+import { getDbProjects } from '../db-router';
+import { Project } from '../types';
 
 interface HomeProps {
   onLearnMore: (tabId: string) => void;
@@ -51,12 +53,18 @@ interface FbPost {
 export default function Home({ onLearnMore }: HomeProps) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [isVoicePlaying, setIsVoicePlaying] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     let active = true;
     getSiteSettings().then(res => {
       if (active) {
         setSettings(res);
+      }
+    });
+    getDbProjects().then(res => {
+      if (active) {
+        setProjects(res);
       }
     });
     return () => { active = false; };
@@ -200,7 +208,19 @@ export default function Home({ onLearnMore }: HomeProps) {
   let layout: PageBlock[] = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats');
   if (settings.homeLayout) {
     try {
-      layout = JSON.parse(settings.homeLayout).filter((block: any) => block.id !== 'stats');
+      const parsed = JSON.parse(settings.homeLayout).filter((block: any) => block.id !== 'stats');
+      const hasAboutUs = parsed.some((b: any) => b.id === 'about_us');
+      const hasRecentProjects = parsed.some((b: any) => b.id === 'recent_projects');
+      
+      layout = [...parsed];
+      if (!hasAboutUs) {
+        const heroIdx = layout.findIndex(b => b.id === 'hero');
+        layout.splice(heroIdx !== -1 ? heroIdx + 1 : 1, 0, { id: 'about_us', title: 'About Us & Fellowship', bgColor: 'light', visible: true });
+      }
+      if (!hasRecentProjects) {
+        const aboutIdx = layout.findIndex(b => b.id === 'about_us');
+        layout.splice(aboutIdx !== -1 ? aboutIdx + 1 : 2, 0, { id: 'recent_projects', title: 'Recent Completed Projects', bgColor: 'slate', visible: true });
+      }
     } catch (e) {
       layout = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats');
     }
@@ -787,6 +807,156 @@ export default function Home({ onLearnMore }: HomeProps) {
             </div>
           </section>
         );
+
+      case 'about_us':
+        return (
+          <section key={b.id} id="home-about" className={`py-16 px-4 sm:px-6 lg:px-8 border-y border-slate-105 relative overflow-hidden transition-colors duration-500 ${bgStyles}`}>
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              {/* Writeup Column (7 Spans) */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="space-y-2">
+                  <span className="inline-flex bg-rotary-azure/10 text-rotary-azure border border-rotary-azure/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest font-display">
+                    About Our Club
+                  </span>
+                  <h2 className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}>
+                    Fellowship, Integrity, and Direct Local Service
+                  </h2>
+                </div>
+                
+                <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
+                  Founded on Freetown's beautiful shores, the <strong>Rotary Club of Freetown Sunset (RCFS)</strong> gathers a diverse cohort of passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
+                </p>
+                <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
+                  Using the core guidelines of Rotary International and our District 9101, our actions focus on pioneering clean solar water access, distributing vital maternal clinical resources, maintaining educational libraries, and running beach reforestation efforts. We turn values into durable, local infrastructure for Freetown.
+                </p>
+
+                <div className="pt-2 flex flex-wrap gap-4">
+                  <button
+                    id="home-about-learn-more"
+                    onClick={() => onLearnMore('about')}
+                    className="px-5 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 font-display"
+                  >
+                    <span>Read Our Core Values</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    id="home-about-contact"
+                    onClick={() => onLearnMore('contact')}
+                    className="px-5 py-2.5 bg-transparent hover:bg-slate-100/10 text-slate-700 hover:text-slate-900 border border-slate-350 rounded-xl transition-all cursor-pointer font-display font-semibold text-xs uppercase tracking-wider"
+                  >
+                    Contact Our Officers
+                  </button>
+                </div>
+              </div>
+
+              {/* Members Image Column (5 Spans) */}
+              <div className="lg:col-span-5 relative group">
+                <div className="absolute inset-0 bg-rotary-gold/20 rounded-3xl transform rotate-2 group-hover:rotate-1 transition-transform duration-300"></div>
+                <div className="relative overflow-hidden rounded-3xl border border-slate-200/50 shadow-md">
+                  <img 
+                    id="home-about-members-image"
+                    src="/src/assets/images/club_members_photo_1780923864987.png" 
+                    alt="Rotary Club of Freetown Sunset members posing together at sunset" 
+                    className="w-full h-auto object-cover aspect-[4/3] group-hover:scale-102 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 text-white">
+                    <p className="text-xs font-bold font-display">Rotary Freetown Sunset Fellowship</p>
+                    <p className="text-[10px] text-slate-200 font-light font-sans">Active leaders and members planning next action programs.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        );
+
+      case 'recent_projects': {
+        const completedProjects = projects
+          .filter(p => p.status === 'Completed')
+          .slice(0, 3);
+
+        return (
+          <section key={b.id} id="home-recent-projects" className={`py-16 px-4 sm:px-6 lg:px-8 border-y border-slate-105 relative overflow-hidden transition-colors duration-500 ${bgStyles}`}>
+            <div className="max-w-7xl mx-auto space-y-12">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-2">
+                  <span className="inline-flex bg-rotary-gold/15 text-rotary-gold-dark border border-rotary-gold/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest font-display">
+                    Pioneering Action
+                  </span>
+                  <h2 className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}>
+                    Recent Completed Projects
+                  </h2>
+                  <p className={`text-xs max-w-xl font-light ${subtextStyle}`}>
+                    Take an authentic look at our recently accomplished civic campaigns in Tombo, Waterloo, and Aberdeen beach zones, proving our model of fully self-sustaining grassroots installations.
+                  </p>
+                </div>
+
+                <button
+                  id="view-all-projects"
+                  onClick={() => onLearnMore('gallery')}
+                  className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-250 font-bold py-3 px-6 rounded-2xl text-xs uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-2xs font-display"
+                >
+                  <span>Examine All Projects</span>
+                  <ExternalLink className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Grid of completed projects */}
+              {completedProjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 lg:gap-8">
+                  {completedProjects.map((project) => (
+                    <div 
+                      key={project.id}
+                      id={`project-card-${project.id}`}
+                      className="bg-white rounded-3xl border border-slate-200 hover:border-rotary-azure/30 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full text-slate-850"
+                    >
+                      {/* Thumbnail Cover */}
+                      <div className="relative h-48 bg-slate-100 overflow-hidden shrink-0">
+                        <img 
+                          src={project.imageUrl || 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800'} 
+                          alt={project.title}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute top-4 left-4 bg-emerald-500 text-white font-extrabold px-3 py-1 rounded-full text-[10px] uppercase tracking-wider shadow-sm">
+                          Completed • {project.year}
+                        </div>
+                      </div>
+
+                      {/* Content Area */}
+                      <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest block">
+                            {project.category}
+                          </span>
+                          <h3 className="text-base font-extrabold text-slate-850 leading-snug line-clamp-2">
+                            {project.title}
+                          </h3>
+                          <p className="text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
+                            {project.description}
+                          </p>
+                        </div>
+
+                        {/* Impact Stat Banner */}
+                        {project.impact && (
+                          <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-800 space-y-1 mt-auto">
+                            <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-600 block">Verified Community Impact</span>
+                            <p className="text-[11px] leading-relaxed font-light">{project.impact}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-slate-50 rounded-3xl p-12 border border-dashed border-slate-250 text-center text-slate-400">
+                  <p className="text-sm">No completed projects returned from public lists.</p>
+                </div>
+              )}
+            </div>
+          </section>
+        );
+      }
 
       default:
         return null;

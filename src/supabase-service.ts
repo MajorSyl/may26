@@ -76,6 +76,8 @@ export interface SiteSettings {
 
 export const DEFAULT_HOME_LAYOUT: PageBlock[] = [
   { id: 'hero', title: 'Hero Banner', bgColor: 'dark', visible: true },
+  { id: 'about_us', title: 'About Us & Fellowship', bgColor: 'light', visible: true },
+  { id: 'recent_projects', title: 'Recent Completed Projects', bgColor: 'slate', visible: true },
   { id: 'mission', title: 'Sunset Mission Details', bgColor: 'light', visible: true },
   { id: 'facebook', title: 'Facebook Media Hub', bgColor: 'slate', visible: true },
   { id: 'announcements', title: 'Latest Announcements', bgColor: 'light', visible: true }
