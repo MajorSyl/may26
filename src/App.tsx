@@ -18,12 +18,22 @@ import { submitDbInquiry } from './db-router';
 import { GENERAL_FAQS } from './data';
 import { Mail, Phone, MapPin, Send, Check, Heart, Shield, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LanguageProvider, useLanguage } from './LanguageContext';
 
 export default function App() {
+  return (
+    <LanguageProvider>
+      <MainApp />
+    </LanguageProvider>
+  );
+}
+
+function MainApp() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [user, setUser] = useState<UserProfile | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [refreshKey, setRefreshKey] = useState<number>(0);
+  const { t, language } = useLanguage();
 
   // Bottom FAQ section state
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -194,12 +204,37 @@ export default function App() {
             {/* FAQ Accordion (6 Spans) */}
             <div className="lg:col-span-6 space-y-6">
               <div className="space-y-1">
-                <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest">Help Center</span>
-                <h2 className="text-2xl font-extrabold font-display text-slate-800">Frequently Asked Questions</h2>
+                <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest">{t('helpCenter')}</span>
+                <h2 className="text-2xl font-extrabold font-display text-slate-800">{t('faqTitle')}</h2>
               </div>
 
               <div className="space-y-3">
-                {GENERAL_FAQS.map((faq, index) => {
+                {[
+                  {
+                    q: language === 'krio' ? 'Wetin a fɔ du fɔ kam join di Rotari Klɔb fɔ Fritɔŋ Sunset?' : 'How can I become a member of the Rotary Club of Freetown Sunset?',
+                    a: language === 'krio' 
+                      ? 'Wi de invite mɛmba dɛn afta we dɛn dɔn kam na wi miting dɛn dɔn wi nominat dɛn. If yu gɛt pasɛn fɔ sɔpɔt yu kɔmuniti, fit wi profesional standard dɛn, and de want fɔ spɛnd tɛm, wi de sɔpɔt yu fɔ sin wi "Kam Join Wi" (Get Involved) pech fɔ sɔpɔt.'
+                      : 'Membership is by invitation following attendance at some of our meetings and a nomination process. If you enjoy serving your community, meet the professional or business standards, and are willing to dedicate time, we encourage you to submit your details on our "Get Involved" page so we can invite you as a guest.'
+                  },
+                  {
+                    q: language === 'krio' ? 'Wetin na di "Four-Way Test" na Rotari?' : 'What is the "Four-Way Test" in Rotary?',
+                    a: language === 'krio'
+                      ? 'In na ethical gayd fɔ Rotarian dɛn fɔ apply na dɛn kɔmuniti and profesional tɛm: 1) In na di TRUTH? 2) In de treat evribodi FAIR? 3) In de build GOODWILL and tin di bɛtɛ friendship dɛn? 4) In de help EVRIBODI?'
+                      : 'It is a nonpartisan ethical guide for Rotarians to apply in their personal and professional relationships: 1) Is it the TRUTH? 2) Is it FAIR to all concerned? 3) Will it build GOODWILL and BETTER FRIENDSHIPS? 4) Will it be BENEFICIAL to all concerned?'
+                  },
+                  {
+                    q: language === 'krio' ? 'Ustaym di mɔni we mɛmba dɛn de giv and public donations de go?' : 'Where do membership dues and public donations go?',
+                    a: language === 'krio'
+                      ? '100% fɔ di sɔpɔt we di public de giv de go fɔ di mɔni projects dɛn (lɛk clean borehole wells, maternal health kits and skul library dɛn). Di mɛmba dɛn de de sɔpɔt klɔb expenses wit dɛn yon annual dues.'
+                      : '100% of public donations go directly to funding our local service projects (like clean water wells, health kits, and school libraries). General club administrative fees are covered exclusively by members through annual subscription dues.'
+                  },
+                  {
+                    q: language === 'krio' ? 'Ɔlman kin kam na di Sunset miting dɛn?' : 'Are your meetings open to the public?',
+                    a: language === 'krio'
+                      ? 'Yes! Ɔl mɛmba we kɔmɔt bifo de waka, bɔku guests dɛn we de want fɔ join wi kɔmuniti projects dɛn, can join wi Sunset miting. We ask say make make una contact wi bifo tɛm so wi go arrange proper hospitality for una.'
+                      : 'Yes, visiting Rotarians from other clubs worldwide and guests interested in our work or service programs are always welcome to join our weekly Sunset meetings. We do ask that local guests contact us ahead of time so we can arrange proper hospitality.'
+                  }
+                ].map((faq, index) => {
                   const isOpen = openFaq === index;
                   return (
                     <div 
@@ -232,20 +267,20 @@ export default function App() {
             {/* CONTACT INQUIRY & INTEGRATED MAP PREVIEW (6 Spans) */}
             <div className="lg:col-span-6 space-y-6">
               <div className="space-y-1">
-                <span className="text-[10px] text-rotary-gold font-bold font-display uppercase tracking-widest">Get In Touch</span>
-                <h2 className="text-2xl font-extrabold font-display text-slate-800">Contact Us</h2>
+                <span className="text-[10px] text-rotary-gold font-bold font-display uppercase tracking-widest">{t('getInTouch')}</span>
+                <h2 className="text-2xl font-extrabold font-display text-slate-800">{t('contactUs')}</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {/* Form Card */}
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
-                  <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display">Message Board</span>
+                  <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display">{t('messageBoard')}</span>
                   
                   <form onSubmit={handleContactSubmit} className="space-y-3 text-xs font-medium text-slate-700">
                     <input
                       id="foot-name-input"
                       type="text"
-                      placeholder="Full Name"
+                      placeholder={t('fullName')}
                       value={contName}
                       onChange={(e) => setContName(e.target.value)}
                       className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
@@ -255,7 +290,7 @@ export default function App() {
                     <input
                       id="foot-email-input"
                       type="email"
-                      placeholder="Email Address"
+                      placeholder={t('emailAddress')}
                       value={contEmail}
                       onChange={(e) => setContEmail(e.target.value)}
                       className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
@@ -264,7 +299,7 @@ export default function App() {
 
                     <textarea
                       id="foot-msg-input"
-                      placeholder="Write message..."
+                      placeholder={t('writeMessage')}
                       value={contMsg}
                       onChange={(e) => setContMsg(e.target.value)}
                       className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 h-16 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure resize-none"
@@ -277,13 +312,13 @@ export default function App() {
                       disabled={contLoading}
                       className="w-full py-2 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold font-display uppercase text-[10px] rounded-lg tracking-wider shadow-xs"
                     >
-                      {contLoading ? 'Sending...' : 'Transmit Inquiry'}
+                      {contLoading ? t('sending') : t('transmitInquiry')}
                     </button>
                   </form>
 
                   {contSuccess && (
                     <div className="p-2 border border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-bold text-center rounded-lg uppercase tracking-wider font-display select-none">
-                      ✔ Written to logs!
+                      {t('successLog')}
                     </div>
                   )}
                 </div>
@@ -291,15 +326,15 @@ export default function App() {
                 {/* Freetown Map visual representation card */}
                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col justify-between">
                   <div className="space-y-3">
-                    <span className="block text:[10px] text-slate-500 font-bold uppercase tracking-wider font-display">Sunset Meeting Location</span>
+                    <span className="block text:[10px] text-slate-500 font-bold uppercase tracking-wider font-display">{t('meetingLocation')}</span>
                     
                     <div className="rounded-xl overflow-hidden h-28 border border-slate-200 relative">
                       {/* Generates a stylized material-designed map preview layout for Freetown sunset coastal branch */}
                       <div className="absolute inset-0 bg-sky-50 flex items-center justify-center text-center p-2">
                          <div className="space-y-1">
                           <MapPin className="h-5 w-5 text-rose-500 mx-auto animate-bounce" />
-                          <span className="text-[9px] font-bold text-slate-700 block font-display leading-tight">Lagoonda Hotel</span>
-                          <span className="text-[8px] text-slate-400 block font-display leading-none">Cape Road, Aberdeen, Freetown</span>
+                          <span className="text-[9px] font-bold text-slate-700 block font-display leading-tight">{t('lagoondaHotel')}</span>
+                          <span className="text-[8px] text-slate-400 block font-display leading-none">{t('lagoondaAddress')}</span>
                         </div>
                       </div>
                     </div>
@@ -308,7 +343,7 @@ export default function App() {
                   <div className="space-y-1 text-slate-500 font-medium text-[10px] mt-4">
                     <div className="flex items-center gap-1.5">
                       <MapPin className="h-3 w-3 text-rotary-gold" />
-                      <span>Lagoonda Hotel</span>
+                      <span>{t('lagoondaHotel')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Phone className="h-3 w-3 text-rotary-gold" />
@@ -326,11 +361,11 @@ export default function App() {
       <footer className="bg-rotary-dark text-white py-8 px-4 sm:px-6 lg:px-8 border-t border-slate-850">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center text-[12px] font-bold uppercase tracking-widest font-display text-slate-450 hover:text-slate-350 select-none">
-            Service Above Self
+            {t('serviceAboveSelf')}
           </div>
 
           <p className="text-[10px] text-slate-400 text-center sm:text-right select-none">
-            © {new Date().getFullYear()} Rotary Sunset. All Rights Reserved.
+            © {new Date().getFullYear()} {t('rightsReserved')}
           </p>
         </div>
         

@@ -295,7 +295,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                 <button
                   id="cta-get-involved-btn"
                   onClick={() => onLearnMore('get-involved')}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/10 font-semibold font-display rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-2 border-white/30 text-white"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/10 font-semibold font-display rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-2 border-white/30 text-white animate-pulse"
                 >
                   Partner or Sponsor
                 </button>
