@@ -25,6 +25,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_HOME_LAYOUT } from '../supabase-service';
 import { getDbProjects } from '../db-router';
 import { Project } from '../types';
+import MemberSpotlight from './MemberSpotlight';
+import SafeImage from './SafeImage';
+
+import clubMembersPhoto from '../assets/images/club_members_photo_1780923864987.png';
+import rotaryToiletHandover from '../assets/images/rotary_toilet_handover_1780856626145.png';
+import rotaryFundraisingGala from '../assets/images/rotary_fundraising_gala_1780856649745.png';
+import rotaryMeetingDinner from '../assets/images/rotary_meeting_dinner_1780856599930.png';
 
 interface HomeProps {
   onLearnMore: (tabId: string) => void;
@@ -78,7 +85,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '2 days ago',
       content: '🚽 Landmark Sanitation Handover! Today, the Rotary Club of Freetown-Sunset officially completed and handed over the fully refurbished, clean, modern public bathroom block on Aberdeen Beach Road. This facility provides running water, solid hygiene fixtures, and reliable waste management for beach visitors and local traders. Together, we are keeping our coastline clean and healthy! 🇸🇱🤝 #WaterAndSanitation #AberdeenBeach #ServiceAboveSelf #RotaryInSierraLeone',
-      imageUrl: '/src/assets/images/rotary_toilet_handover_1780856626145.png',
+      imageUrl: rotaryToiletHandover,
       likes: 189,
       liked: false,
       shares: 42,
@@ -96,7 +103,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '3 days ago',
       content: '🇸🇱 Radiant fellowship and unity under the banner of Service Above Self! Here we are posing together at our West African Goodwill convention, feeling proud and magnificent in our vibrant coordinated African print garments and official partner Goodwill jute bags. Together, we continue to impact lives, foster international peace, and strengthen our local ties! 🌌✨ #RotarySunset #RotaryInternational #ServiceAboveSelf #FreetownSuperstars #AfricanFashionUnity',
-      imageUrl: '/src/assets/images/club_members_photo_1780923864987.png',
+      imageUrl: clubMembersPhoto,
       likes: 352,
       liked: true,
       shares: 88,
@@ -113,7 +120,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '1 week ago',
       content: '🎉 Celebrating continuous service and solidarity! Highlights from our beautiful Annual Fundraising Dinner & Gala Banquet. From cutting our celebratory cake to securing funding commitments for upcoming borehole systems in marginalized sectors, it was an evening of friendship and generous hearts. Thank you to everyone who made this possible! 🍾🍰 #AnnualFundraiser #FreetownRotary #ServiceAboveSelf #RotarySunset',
-      imageUrl: '/src/assets/images/rotary_fundraising_gala_1780856649745.png',
+      imageUrl: rotaryFundraisingGala,
       likes: 247,
       liked: false,
       shares: 58,
@@ -130,7 +137,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '2 weeks ago',
       content: '🤝 A majestic sunset of fellowship and leadership synergy! Delightful joint evening meeting at our default weekly venue, the Lagoonda Hotel. We finalized funding blueprints for our upcoming solar borehole pipeline setups. Service meets action! Join us as a guest next Thursday or get in touch. 🌅 #WeeklySunsetFellowship #FreetownLeaders #RotaryGlobal',
-      imageUrl: '/src/assets/images/rotary_meeting_dinner_1780856599930.png',
+      imageUrl: rotaryMeetingDinner,
       likes: 98,
       liked: false,
       shares: 14,
@@ -228,6 +235,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       const parsed = JSON.parse(settings.homeLayout).filter((block: any) => block.id !== 'stats' && block.id !== 'facebook');
       const hasAboutUs = parsed.some((b: any) => b.id === 'about_us');
       const hasRecentProjects = parsed.some((b: any) => b.id === 'recent_projects');
+      const hasMemberSpotlight = parsed.some((b: any) => b.id === 'member_spotlight');
       
       layout = [...parsed];
       if (!hasAboutUs) {
@@ -237,6 +245,10 @@ export default function Home({ onLearnMore }: HomeProps) {
       if (!hasRecentProjects) {
         const aboutIdx = layout.findIndex(b => b.id === 'about_us');
         layout.splice(aboutIdx !== -1 ? aboutIdx + 1 : 2, 0, { id: 'recent_projects', title: 'Recent Completed Projects', bgColor: 'slate', visible: true });
+      }
+      if (!hasMemberSpotlight) {
+        const projectIdx = layout.findIndex(b => b.id === 'recent_projects');
+        layout.splice(projectIdx !== -1 ? projectIdx + 1 : 3, 0, { id: 'member_spotlight', title: 'Member Spotlight', bgColor: 'light', visible: true });
       }
     } catch (e) {
       layout = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats' && block.id !== 'facebook');
@@ -261,7 +273,7 @@ export default function Home({ onLearnMore }: HomeProps) {
           <section 
             key={b.id} 
             className="relative overflow-hidden py-28 md:py-36 px-4 sm:px-6 lg:px-8 transition-colors duration-500 bg-cover bg-center"
-            style={{ backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), url('/src/assets/images/club_members_photo_1780923864987.png')` }}
+            style={{ backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), url('${clubMembersPhoto}')` }}
           >
             {glowNode}
             <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8 text-white">
@@ -561,11 +573,13 @@ export default function Home({ onLearnMore }: HomeProps) {
                               <div className="flex flex-col items-end shrink-0 text-right">
                                 {/* Profile Avatar badge inside the audio wave message overlay */}
                                 <div className="flex items-center gap-1">
-                                  <img 
-                                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=40&h=40" 
-                                    alt="Marie"
-                                    className="w-5 h-5 rounded-full object-cover border border-white shrink-0"
-                                  />
+                                  <div className="w-5 h-5 rounded-full border border-white shrink-0 overflow-hidden flex items-center justify-center bg-slate-100">
+                                    <SafeImage 
+                                      src="" 
+                                      alt="Marie"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
                                   {/* Double Check Delivered Icon Indicator */}
                                   <div className="flex text-[#0056e3]">
                                     <Check className="h-3 w-3 -mr-1" />
@@ -585,8 +599,8 @@ export default function Home({ onLearnMore }: HomeProps) {
                         {isPdfPost && (
                           <div className="px-5 pb-5 space-y-3">
                             {/* Graphic Cover Portion */}
-                            <div className="relative h-44 sm:h-52 bg-slate-100 overflow-hidden rounded-t-[20px] border border-b-0 border-slate-150">
-                              <img 
+                            <div className="relative h-44 sm:h-52 bg-slate-100 overflow-hidden rounded-t-[20px] border border-b-0 border-slate-150 flex items-center justify-center">
+                              <SafeImage 
                                 src={post.imageUrl} 
                                 alt="Clinics kits dispatch" 
                                 className="w-full h-full object-cover"
@@ -627,8 +641,8 @@ export default function Home({ onLearnMore }: HomeProps) {
 
                         {/* Normal cover image inside standard post cards */}
                         {!isVoicePost && !isPdfPost && (
-                          <div className="relative h-64 sm:h-80 bg-slate-100 overflow-hidden border-y border-slate-105">
-                            <img 
+                          <div className="relative h-64 sm:h-80 bg-slate-100 overflow-hidden border-y border-slate-105 flex items-center justify-center">
+                            <SafeImage 
                               src={post.imageUrl} 
                               alt="Sunset environment team" 
                               className="w-full h-full object-cover hover:scale-103 transition-transform duration-700"
@@ -825,6 +839,9 @@ export default function Home({ onLearnMore }: HomeProps) {
           </section>
         );
 
+      case 'member_spotlight':
+        return <MemberSpotlight key={b.id} />;
+
       case 'about_us':
         return (
           <section key={b.id} id="home-about" className={`py-16 px-4 sm:px-6 lg:px-8 border-y border-slate-105 relative overflow-hidden transition-colors duration-500 ${bgStyles}`}>
@@ -869,13 +886,12 @@ export default function Home({ onLearnMore }: HomeProps) {
               {/* Members Image Column (5 Spans) */}
               <div className="lg:col-span-5 relative group">
                 <div className="absolute inset-0 bg-rotary-gold/20 rounded-3xl transform rotate-2 group-hover:rotate-1 transition-transform duration-300"></div>
-                <div className="relative overflow-hidden rounded-3xl border border-slate-200/50 shadow-md">
-                  <img 
+                <div className="relative overflow-hidden rounded-3xl border border-slate-200/50 shadow-md flex items-center justify-center bg-slate-100">
+                  <SafeImage 
                     id="home-about-members-image"
-                    src="/src/assets/images/club_members_photo_1780923864987.png" 
+                    src={clubMembersPhoto} 
                     alt="Rotary Club of Freetown Sunset members posing together at sunset" 
                     className="w-full h-auto object-cover aspect-[4/3] group-hover:scale-102 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
                   />
                   <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 text-white">
                     <p className="text-xs font-bold font-display">Rotary Freetown Sunset Fellowship</p>
@@ -928,12 +944,11 @@ export default function Home({ onLearnMore }: HomeProps) {
                       className="bg-white rounded-3xl border border-slate-200 hover:border-rotary-azure/30 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full text-slate-850"
                     >
                       {/* Thumbnail Cover */}
-                      <div className="relative h-48 bg-slate-100 overflow-hidden shrink-0">
-                        <img 
-                          src={project.imageUrl || 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800'} 
+                      <div className="relative h-48 bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                        <SafeImage 
+                          src={project.imageUrl} 
                           alt={project.title}
                           className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
                         />
                         <div className="absolute top-4 left-4 bg-emerald-500 text-white font-extrabold px-3 py-1 rounded-full text-[10px] uppercase tracking-wider shadow-sm">
                           Completed • {project.year}

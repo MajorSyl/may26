@@ -17,6 +17,7 @@ import {
   PageBlock, DEFAULT_HOME_LAYOUT, DEFAULT_ABOUT_LAYOUT
 } from '../supabase-service';
 import { motion, AnimatePresence } from 'motion/react';
+import SafeImage from './SafeImage';
 
 interface AdminDashboardProps {
   onStateRefresh?: () => void;
@@ -348,7 +349,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
           year: Number(projYear),
           impact: projImpact,
           status: projStatus,
-          imageUrl: projImageUrl || 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800'
+          imageUrl: projImageUrl || ''
         };
         await saveSupabaseProject(payload);
         triggerToast(`Project "${projTitle}" successfully saved to live database.`, 'success');
@@ -895,32 +896,32 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                                   {[
                                     {
                                       name: 'Safe Water Well',
-                                      url: 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800',
+                                      url: '',
                                       tag: 'WASH'
                                     },
                                     {
                                       name: 'Youth Education',
-                                      url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=800',
+                                      url: '',
                                       tag: 'Literacy'
                                     },
                                     {
                                       name: 'Midwife Kits',
-                                      url: 'https://images.unsplash.com/photo-1584515901367-f70ca351a021?auto=format&fit=crop&q=80&w=800',
+                                      url: '',
                                       tag: 'Pediatrics'
                                     },
                                     {
                                       name: 'Peacebuilding Support',
-                                      url: 'https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800',
+                                      url: '',
                                       tag: 'Peace'
                                     },
                                     {
                                       name: 'Green Climate Support',
-                                      url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800',
+                                      url: '',
                                       tag: 'Environment'
                                     },
                                     {
                                       name: 'Professional Syndicate',
-                                      url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800',
+                                      url: '',
                                       tag: 'Fellowship'
                                     }
                                   ].map((p, idx) => (
@@ -996,7 +997,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                                     type="url"
                                     value={projImageUrl}
                                     onChange={(e) => setProjImageUrl(e.target.value)}
-                                    placeholder="https://images.unsplash.com/... or other secure HTTPS links"
+                                    placeholder="Enter custom image HTTPS URL"
                                     className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-rotary-azure text-[11px]"
                                   />
                                 </div>
@@ -1016,15 +1017,10 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                               
                               {projImageUrl ? (
                                 <div className="relative group flex-1 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 min-h-[100px] flex items-center justify-center">
-                                  <img
+                                  <SafeImage
                                     src={projImageUrl}
                                     alt="Live Gallery Project preview"
-                                    referrerPolicy="no-referrer"
                                     className="w-full h-full object-cover absolute inset-0"
-                                    onError={(e) => {
-                                      const img = e.currentTarget;
-                                      img.src = 'https://images.unsplash.com/photo-1594322436404-5a0526db4d13?auto=format&fit=crop&q=80&w=800';
-                                    }}
                                   />
                                   <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <button
@@ -1328,7 +1324,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                           type="text"
                           value={memAvatarUrl}
                           onChange={(e) => setMemAvatarUrl(e.target.value)}
-                          placeholder="e.g., https://images.unsplash.com/photo-..."
+                          placeholder="e.g., Enter custom image HTTPS URL"
                           className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 font-mono"
                         />
                       </div>
@@ -1458,12 +1454,13 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                       filteredProjects.map((p) => (
                         <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-3 px-4 w-28">
-                            <img
-                              src={p.imageUrl || 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800'}
-                              alt={p.title}
-                              referrerPolicy="no-referrer"
-                              className="w-20 h-12 object-cover rounded-lg border border-slate-200 shadow-3xs hover:scale-105 transition-transform"
-                            />
+                            <div className="w-20 h-12 flex items-center justify-center bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shadow-3xs ">
+                              <SafeImage
+                                src={p.imageUrl}
+                                alt={p.title}
+                                className="w-full h-full object-cover hover:scale-105 transition-transform"
+                              />
+                            </div>
                           </td>
                           <td className="py-3 px-4 max-w-sm">
                             <span className="font-extrabold text-slate-800 text-xs block truncate leading-snug" title={p.title}>{p.title}</span>

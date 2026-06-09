@@ -3,6 +3,7 @@ import { Project } from '../types';
 import { getDbProjects, getActiveDbDriver } from '../db-router';
 import { Info, Filter, Clock, MapPin, RefreshCw, ArrowRight } from 'lucide-react';
 import ProjectDetails from './ProjectDetails';
+import SafeImage from './SafeImage';
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -177,12 +178,11 @@ export default function Gallery() {
               >
                 <div>
                   {/* Aspect ratio bounding for cards */}
-                  <div className="relative h-48 bg-slate-150 overflow-hidden">
-                    <img 
-                      src={project.imageUrl || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800'} 
+                  <div className="relative h-48 bg-slate-150 overflow-hidden flex items-center justify-center">
+                    <SafeImage 
+                      src={project.imageUrl} 
                       alt={project.title}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                      referrerPolicy="no-referrer"
                     />
                     
                     {/* Status badge Overlay */}

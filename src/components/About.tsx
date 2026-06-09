@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, CheckCircle, Award, Compass, Heart, Award as Merit } from 'lucide-react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_ABOUT_LAYOUT } from '../supabase-service';
+import SafeImage from './SafeImage';
 
 export default function About() {
   const [activeTest, setActiveTest] = useState<number | null>(0);
@@ -44,19 +45,19 @@ export default function About() {
       name: 'Rtn. Abdul Manafi Kemokai',
       role: 'Club President',
       desc: 'Pioneering child rights advocate leading Municipal social and Sunset executive operations.',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'
+      avatarUrl: ''
     },
     {
       name: 'Rtn. Adonis Abboud',
       role: 'Service Projects Director',
       desc: 'Senior telecommunication pioneer spearheading RCFS community connectivity and service initiatives.',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
+      avatarUrl: ''
     },
     {
       name: 'Rtn. Afouni Kwaku Ampadu',
       role: 'Membership Chair',
       desc: 'Eminent marketing champion guiding membership growth and professional fellowship development.',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
+      avatarUrl: ''
     }
   ];
 
@@ -220,12 +221,11 @@ export default function About() {
                   {/* Gold band accent */}
                   <div className="absolute top-0 left-0 right-0 h-1.5 bg-rotary-gold"></div>
 
-                  <div className="w-20 h-20 rounded-full border-2 border-rotary-azure overflow-hidden mx-auto shadow-sm">
-                    <img 
+                  <div className="w-20 h-20 rounded-full border-2 border-rotary-azure overflow-hidden mx-auto shadow-sm flex items-center justify-center bg-slate-50">
+                    <SafeImage 
                       src={leader.avatarUrl} 
                       alt={leader.name} 
                       className="w-full h-full object-cover"
-                      referrerPolicy="referrer"
                     />
                   </div>
 

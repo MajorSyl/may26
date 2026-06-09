@@ -16,6 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import SafeImage from './SafeImage';
 
 interface ProjectDetailsProps {
   project: Project;
@@ -26,7 +27,7 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
   // Photos gallery state
   const photos = project.galleryUrls && project.galleryUrls.length > 0 
     ? project.galleryUrls 
-    : [project.imageUrl || 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800'];
+    : [project.imageUrl || ''];
   
   const [activePhoto, setActivePhoto] = useState<string>(photos[0]);
   const [copied, setCopied] = useState(false);
@@ -121,12 +122,11 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Large Main Highlighted Image Container */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="relative aspect-video sm:aspect-4/3 md:aspect-video rounded-3.5xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-md">
-            <img 
+          <div className="relative aspect-video sm:aspect-4/3 md:aspect-video rounded-3.5xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-md flex items-center justify-center">
+            <SafeImage 
               src={activePhoto} 
               alt={project.title} 
               className="w-full h-full object-cover select-none transition-all duration-300"
-              referrerPolicy="no-referrer"
             />
             {/* Ambient indicator */}
             <div className="absolute bottom-4 right-4 bg-slate-900/70 backdrop-blur-xs px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white select-none">
@@ -139,20 +139,19 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
             {photos.map((ph, idx) => {
               const isActive = activePhoto === ph;
               return (
-                <button
-                  key={idx}
-                  onClick={() => setActivePhoto(ph)}
-                  className={`relative aspect-video rounded-xl overflow-hidden border-2 bg-slate-50 transition-all ${
-                    isActive ? 'border-rotary-azure shadow-sm ring-1 ring-rotary-azure' : 'border-slate-200/60 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <img 
-                    src={ph} 
-                    alt={`Preview photo ${idx + 1}`}
-                    className="w-full h-full object-cover scale-100 hover:scale-105 transition-transform" 
-                    referrerPolicy="no-referrer"
-                  />
-                </button>
+                  <button
+                    key={idx}
+                    onClick={() => setActivePhoto(ph)}
+                    className={`relative aspect-video rounded-xl overflow-hidden border-2 bg-slate-50 transition-all flex items-center justify-center ${
+                      isActive ? 'border-rotary-azure shadow-sm ring-1 ring-rotary-azure' : 'border-slate-200/60 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <SafeImage 
+                      src={ph} 
+                      alt={`Preview photo ${idx + 1}`}
+                      className="w-full h-full object-cover scale-100 hover:scale-105 transition-transform" 
+                    />
+                  </button>
               );
             })}
           </div>

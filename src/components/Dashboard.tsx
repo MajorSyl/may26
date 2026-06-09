@@ -326,7 +326,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
       year: parseInt(projYear) || 2026,
       impact: projImpact,
       status: projStatus,
-      imageUrl: 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800'
+      imageUrl: ''
     };
 
     try {

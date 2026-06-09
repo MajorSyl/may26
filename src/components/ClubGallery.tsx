@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Image, Filter, Eye, Calendar, MapPin, X } from 'lucide-react';
 
+import clubMembersPhoto from '../assets/images/club_members_photo_1780923864987.png';
+import rotaryToiletHandover from '../assets/images/rotary_toilet_handover_1780856626145.png';
+import rotaryFundraisingGala from '../assets/images/rotary_fundraising_gala_1780856649745.png';
+import rotaryLobbyGoodwill from '../assets/images/rotary_lobby_goodwill_1780856638364.png';
+import rotaryMeetingDinner from '../assets/images/rotary_meeting_dinner_1780856599930.png';
+import rotaryBeachFellowship from '../assets/images/rotary_beach_fellowship_1780856612752.png';
+import SafeImage from './SafeImage';
+
 interface GalleryPhoto {
   id: string;
   title: string;
@@ -25,7 +33,7 @@ export default function ClubGallery() {
       description: 'Rotary Club of Freetown-Sunset members and international delegates posing together looking magnificent in customized matching traditional blue, yellow and pink African print patterns while showcasing official Goodwill jute bags.',
       date: 'June 08, 2026',
       location: 'Freetown Secretariat Convention Centre, Sierra Leone',
-      imageUrl: '/src/assets/images/club_members_photo_1780923864987.png'
+      imageUrl: clubMembersPhoto
     },
     {
       id: 'real_photo_toilet_handover',
@@ -35,7 +43,7 @@ export default function ClubGallery() {
       description: 'The landmark handover ceremony for the newly constructed and fully modernized public hygiene facility on Aberdeen Beach Road, providing essential sanitation services.',
       date: 'June 01, 2026',
       location: 'Aberdeen Beach Road, Freetown',
-      imageUrl: '/src/assets/images/rotary_toilet_handover_1780856626145.png'
+      imageUrl: rotaryToiletHandover
     },
     {
       id: 'real_photo_fundraising_gala',
@@ -45,7 +53,7 @@ export default function ClubGallery() {
       description: 'District leaders and club members dressed in elegant evening attire, celebrating and cutting the commemorative cake during our grand Annual Fundraising Dinner Gala.',
       date: 'May 16, 2026',
       location: 'Freetown, Sierra Leone',
-      imageUrl: '/src/assets/images/rotary_fundraising_gala_1780856649745.png'
+      imageUrl: rotaryFundraisingGala
     },
     {
       id: 'real_photo_lobby_goodwill',
@@ -55,7 +63,7 @@ export default function ClubGallery() {
       description: 'Delegates from the Rotary Club of Freetown-Sunset looking magnificent in customized matching traditional African print garments and holding official Goodwill jute bags.',
       date: 'May 08, 2026',
       location: 'Freetown, Sierra Leone',
-      imageUrl: '/src/assets/images/rotary_lobby_goodwill_1780856638364.png'
+      imageUrl: rotaryLobbyGoodwill
     },
     {
       id: 'real_photo_meeting_dinner',
@@ -65,7 +73,7 @@ export default function ClubGallery() {
       description: 'Capturing moments of high synergy and laughter as local leaders gather for our weekly evening meeting and round-table fellowship at the Lagoonda Hotel.',
       date: 'May 21, 2026',
       location: 'Lagoonda Hotel, Freetown',
-      imageUrl: '/src/assets/images/rotary_meeting_dinner_1780856599930.png'
+      imageUrl: rotaryMeetingDinner
     },
     {
       id: 'real_photo_beach_fellowship',
@@ -75,7 +83,7 @@ export default function ClubGallery() {
       description: 'An informal outdoor social gathering by the coast where members connect under shared ideals of service, sporting vibrant custom-branded yellow Rotary apparel.',
       date: 'April 30, 2026',
       location: 'Aberdeen Beach, Freetown',
-      imageUrl: '/src/assets/images/rotary_beach_fellowship_1780856612752.png'
+      imageUrl: rotaryBeachFellowship
     },
     {
       id: 'photo_outreach_1',
@@ -85,7 +93,7 @@ export default function ClubGallery() {
       description: 'The ceremonial turning of the clean water tap at the Tombo municipal borehole, completed in cooperation with local headmen.',
       date: 'March 14, 2024',
       location: 'Tombo Fishing Village, SL',
-      imageUrl: 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_meetings_1',
@@ -95,7 +103,7 @@ export default function ClubGallery() {
       description: 'Sunset session assembly discussing interactive student textbook configurations with education committee directors at Lagoonda Hotel.',
       date: 'June 04, 2026',
       location: 'Lagoonda Hotel, Freetown',
-      imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_rotaract_1',
@@ -105,7 +113,7 @@ export default function ClubGallery() {
       description: 'An early morning beach sanitation drive organized side-by-side with young civic leaders from the Rotaract Club of Freetown.',
       date: 'November 12, 2025',
       location: 'Lumley Estuary Beach',
-      imageUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_anniversary_1',
@@ -115,7 +123,7 @@ export default function ClubGallery() {
       description: 'RCFS charter members and officers raised direct project funding values during our sunset anniversary dinner meeting.',
       date: 'April 20, 2025',
       location: 'Bintumani Secretariat, Aberdeen',
-      imageUrl: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_outreach_2',
@@ -125,7 +133,7 @@ export default function ClubGallery() {
       description: 'Setting up custom mahogany reading tables and shelving units for the Waterloo secondary resource suite.',
       date: 'January 18, 2025',
       location: 'Waterloo Secondary, SL',
-      imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_rotaract_2',
@@ -135,7 +143,7 @@ export default function ClubGallery() {
       description: 'Coordinated specialized mentoring workshops to equip prospective youth officers with modern tech and classification tools.',
       date: 'February 24, 2026',
       location: 'Milton Margai Tech Complex',
-      imageUrl: 'https://images.unsplash.com/photo-1531545514256-b1400bc00f31?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_outreach_3',
@@ -145,7 +153,7 @@ export default function ClubGallery() {
       description: 'Environmental volunteers planting resilient mangrove root systems to defend Freetown water channels against maritime erosion.',
       date: 'June 13, 2025',
       location: 'Aberdeen Coastal Margin, SL',
-      imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     },
     {
       id: 'photo_meetings_2',
@@ -155,7 +163,7 @@ export default function ClubGallery() {
       description: 'Exchanging corporate governance insights during our weekly sunset assembly in Lagoonda Hotel.',
       date: 'May 14, 2026',
       location: 'Lagoonda Hotel, Freetown',
-      imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=1200'
+      imageUrl: ''
     }
   ];
 
@@ -220,12 +228,11 @@ export default function ClubGallery() {
               onClick={() => setSelectedPhoto(photo)}
             >
               {/* Image box */}
-              <div className="relative aspect-video bg-slate-100 overflow-hidden shrink-0">
-                <img 
+              <div className="relative aspect-video bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                <SafeImage 
                   src={photo.imageUrl} 
                   alt={photo.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
                 />
                 
                 {/* Visual lens hover state overlay */}
@@ -287,12 +294,13 @@ export default function ClubGallery() {
               <X className="w-5 h-5" />
             </button>
 
-            <img 
-              src={selectedPhoto.imageUrl} 
-              alt={selectedPhoto.title}
-              className="w-full max-h-[420px] object-cover bg-slate-100"
-              referrerPolicy="no-referrer"
-            />
+            <div className="relative w-full max-h-[420px] overflow-hidden bg-slate-100 flex items-center justify-center">
+              <SafeImage 
+                src={selectedPhoto.imageUrl} 
+                alt={selectedPhoto.title}
+                className="w-full max-h-[420px] object-cover"
+              />
+            </div>
 
             <div className="p-6 sm:p-8 space-y-3">
               <div className="flex items-center gap-2">

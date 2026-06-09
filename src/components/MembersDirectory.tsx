@@ -4,6 +4,7 @@ import { INITIAL_MEMBER_DIRECTORY } from '../data';
 import { Search, Shield, Award, Calendar, Phone, Mail, Filter, BookOpen, Crown, UserCheck, Lock, EyeOff, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { getDbUsers } from '../db-router';
+import VerbatimMembersGrid from './VerbatimMembersGrid';
 
 interface PastPresident {
   name: string;
@@ -38,7 +39,7 @@ const getGradientClass = (name: string) => {
 export default function MembersDirectory() {
   const { language, t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'all' | 'executives' | 'phfs'>('all');
+  const [activeSubTab, setActiveSubTab] = useState<'all' | 'executives' | 'phfs' | 'verbatim'>('all');
   const [allActiveMembers, setAllActiveMembers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -160,6 +161,18 @@ export default function MembersDirectory() {
             <Award className="w-3.5 h-3.5" />
             Paul Harris Fellows
           </button>
+
+          <button
+            onClick={() => setActiveSubTab('verbatim')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all duration-200 border flex items-center gap-1.5 ${
+              activeSubTab === 'verbatim'
+                ? 'bg-rotary-azure text-white border-rotary-azure shadow-xs'
+                : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Verbatim Roster (59 Cards)
+          </button>
         </div>
 
         {/* Global Directory Search */}
@@ -176,7 +189,9 @@ export default function MembersDirectory() {
       </section>
 
       {/* 3. ROSTER CONTAINER */}
-      {loading ? (
+      {activeSubTab === 'verbatim' ? (
+        <VerbatimMembersGrid />
+      ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 space-y-3">
           <RefreshCw className="h-8 w-8 text-rotary-azure animate-spin" />
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-none">Querying Chapter member profiles...</p>
