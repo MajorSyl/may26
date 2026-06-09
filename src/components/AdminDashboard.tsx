@@ -54,10 +54,10 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   useEffect(() => {
     if (siteSettings) {
       try {
-        const hb = (siteSettings.homeLayout ? JSON.parse(siteSettings.homeLayout) : DEFAULT_HOME_LAYOUT).filter((b: any) => b.id !== 'stats');
+        const hb = (siteSettings.homeLayout ? JSON.parse(siteSettings.homeLayout) : DEFAULT_HOME_LAYOUT).filter((b: any) => b.id !== 'stats' && b.id !== 'facebook');
         setHomeBlocks(hb);
       } catch (e) {
-        setHomeBlocks(DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats'));
+        setHomeBlocks(DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats' && block.id !== 'facebook'));
       }
       try {
         const ab = siteSettings.aboutLayout ? JSON.parse(siteSettings.aboutLayout) : DEFAULT_ABOUT_LAYOUT;

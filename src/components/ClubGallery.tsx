@@ -18,6 +18,16 @@ export default function ClubGallery() {
 
   const photos: GalleryPhoto[] = [
     {
+      id: 'real_photo_group_posing_lobby',
+      title: 'West Africa Goodwill General Assembly Fellowship',
+      category: 'meetings',
+      categoryLabel: 'Weekly Meetings & Fellowship',
+      description: 'Rotary Club of Freetown-Sunset members and international delegates posing together looking magnificent in customized matching traditional blue, yellow and pink African print patterns while showcasing official Goodwill jute bags.',
+      date: 'June 08, 2026',
+      location: 'Freetown Secretariat Convention Centre, Sierra Leone',
+      imageUrl: '/src/assets/images/club_members_photo_1780923864987.png'
+    },
+    {
       id: 'real_photo_toilet_handover',
       title: 'Aberdeen Beach Public Toilet Handover',
       category: 'outreach',

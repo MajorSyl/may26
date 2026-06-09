@@ -91,6 +91,23 @@ export default function Home({ onLearnMore }: HomeProps) {
       showComments: false
     },
     {
+      id: 'fb_post_group_posing',
+      author: 'Rotary Club of Freetown Sunset',
+      avatarInitials: 'RFS',
+      timeAgo: '3 days ago',
+      content: '🇸🇱 Radiant fellowship and unity under the banner of Service Above Self! Here we are posing together at our West African Goodwill convention, feeling proud and magnificent in our vibrant coordinated African print garments and official partner Goodwill jute bags. Together, we continue to impact lives, foster international peace, and strengthen our local ties! 🌌✨ #RotarySunset #RotaryInternational #ServiceAboveSelf #FreetownSuperstars #AfricanFashionUnity',
+      imageUrl: '/src/assets/images/club_members_photo_1780923864987.png',
+      likes: 352,
+      liked: true,
+      shares: 88,
+      commentsCount: 2,
+      comments: [
+        { id: 'c7', author: 'Yvonne Cole', text: 'Looking gorgeous and unified! This photo really captures our deep joy and bond.', time: '3d ago' },
+        { id: 'c8', author: 'Alpha Jalloh', text: 'Stellar representation, Freetown Sunset! Keep soaring higher.', time: '2d ago' }
+      ],
+      showComments: false
+    },
+    {
       id: 'fb_post_gala',
       author: 'Rotary Club of Freetown Sunset',
       avatarInitials: 'RFS',
@@ -205,10 +222,10 @@ export default function Home({ onLearnMore }: HomeProps) {
   };
 
   // Safe parsing block of dynamic sequences
-  let layout: PageBlock[] = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats');
+  let layout: PageBlock[] = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats' && block.id !== 'facebook');
   if (settings.homeLayout) {
     try {
-      const parsed = JSON.parse(settings.homeLayout).filter((block: any) => block.id !== 'stats');
+      const parsed = JSON.parse(settings.homeLayout).filter((block: any) => block.id !== 'stats' && block.id !== 'facebook');
       const hasAboutUs = parsed.some((b: any) => b.id === 'about_us');
       const hasRecentProjects = parsed.some((b: any) => b.id === 'recent_projects');
       
@@ -222,7 +239,7 @@ export default function Home({ onLearnMore }: HomeProps) {
         layout.splice(aboutIdx !== -1 ? aboutIdx + 1 : 2, 0, { id: 'recent_projects', title: 'Recent Completed Projects', bgColor: 'slate', visible: true });
       }
     } catch (e) {
-      layout = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats');
+      layout = DEFAULT_HOME_LAYOUT.filter(block => block.id !== 'stats' && block.id !== 'facebook');
     }
   }
 
@@ -244,7 +261,7 @@ export default function Home({ onLearnMore }: HomeProps) {
           <section 
             key={b.id} 
             className="relative overflow-hidden py-28 md:py-36 px-4 sm:px-6 lg:px-8 transition-colors duration-500 bg-cover bg-center"
-            style={{ backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95)), url('/src/assets/images/rotary_fundraising_gala_1780856649745.png')` }}
+            style={{ backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), url('/src/assets/images/club_members_photo_1780923864987.png')` }}
           >
             {glowNode}
             <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8 text-white">
