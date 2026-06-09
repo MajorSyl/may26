@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Project } from '../types';
 import { getDbProjects, getActiveDbDriver } from '../db-router';
-import { Info, Filter, Clock, MapPin, RefreshCw } from 'lucide-react';
+import { Info, Filter, Clock, MapPin, RefreshCw, ArrowRight } from 'lucide-react';
+import ProjectDetails from './ProjectDetails';
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorText, setErrorText] = useState('');
   const [currentDriver, setCurrentDriver] = useState(getActiveDbDriver());
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   
   // Filtering states
   const [selectedYear, setSelectedYear] = useState<string>('All');
@@ -53,6 +55,15 @@ export default function Gallery() {
     const matchesStatus = selectedStatus === 'All' || p.status === selectedStatus;
     return matchesYear && matchesCategory && matchesStatus;
   });
+
+  if (selectedProject) {
+    return (
+      <ProjectDetails 
+        project={selectedProject} 
+        onBack={() => setSelectedProject(null)} 
+      />
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10 pb-24">
@@ -161,7 +172,8 @@ export default function Gallery() {
             return (
               <div 
                 key={project.id} 
-                className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                onClick={() => setSelectedProject(project)}
+                className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group"
               >
                 <div>
                   {/* Aspect ratio bounding for cards */}
@@ -211,18 +223,25 @@ export default function Gallery() {
                   </div>
                 </div>
 
-                {/* Impact Statement footer */}
-                {project.impact && (
-                  <div className="p-4 mx-6 mb-6 rounded-2xl bg-[#F1F5F9] border border-slate-200 space-y-1">
-                    <div className="flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-rotary-azure"></span>
-                      <p className="text-[9px] font-bold uppercase text-slate-500 font-display tracking-widest">Sunset Impact Metric</p>
+                {/* Impact Statement & View Action footer */}
+                <div className="space-y-4">
+                  {project.impact && (
+                    <div className="p-3 mx-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                      <div className="flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-rotary-gold"></span>
+                        <p className="text-[9px] font-bold uppercase text-slate-400 font-display tracking-widest">Sunset Impact Metric</p>
+                      </div>
+                      <p className="text-[11px] text-slate-700 font-bold leading-normal">
+                        {project.impact}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-700 font-bold leading-normal">
-                      {project.impact}
-                    </p>
+                  )}
+                  
+                  <div className="mx-6 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-black text-rotary-azure font-display uppercase tracking-wider group-hover:text-rotary-azure-dark transition-colors">
+                    <span>Explore Details & Photos</span>
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" />
                   </div>
-                )}
+                </div>
               </div>
             );
           })}

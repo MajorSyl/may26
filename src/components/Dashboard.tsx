@@ -232,8 +232,8 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
     setLoading(true);
     setLoginError('');
     try {
-      const email = loginEmail || 'rtn.member@freetownsunset.org';
-      const name = loginName || 'Rotarian Member';
+      const email = loginEmail || 'ka••••••@gmail.com';
+      const name = loginName || 'Afouni Kwaku Ampadu';
       const profile = await logInUser(email, name);
       onLoginSuccess(profile);
     } catch (err) {
@@ -247,14 +247,14 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
     setLoading(true);
     setLoginError('');
     try {
-      let email = 'rtn.member@freetownsunset.org';
-      let name = 'Marie Conteh';
+      let email = 'ka••••••@gmail.com';
+      let name = 'Afouni Kwaku Ampadu';
       if (role === 'Club Officer') {
-        email = 'rtn.officer@freetownsunset.org';
-        name = 'Dr. Fatmata Sesay';
+        email = 'di••••••@yahoo.com';
+        name = 'Adonis Abboud';
       } else if (role === 'President') {
-        email = 'rtn.president@freetownsunset.org';
-        name = 'Sahr Kamanda';
+        email = 'am••••••@yahoo.co.uk';
+        name = 'Abdul Manafi Kemokai';
       }
       const profile = await logInUser(email, name);
       onLoginSuccess(profile);
@@ -408,7 +408,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 onClick={() => handleSimQuickLogin('President')}
                 className="w-full py-2.5 px-3 bg-white hover:bg-rotary-gold/5 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs hover:border-rotary-gold/40"
               >
-                <span>President (Sahr Kamanda)</span>
+                <span>President (Abdul Manafi Kemokai)</span>
                 <span className="text-[9px] bg-rotary-gold/10 text-rotary-gold px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Full Admin Access</span>
               </button>
 
@@ -417,7 +417,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 onClick={() => handleSimQuickLogin('Club Officer')}
                 className="w-full py-2.5 px-3 bg-white hover:bg-rotary-azure/5 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs hover:border-rotary-azure/40"
               >
-                <span>Officer (Dr. Fatmata Sesay)</span>
+                <span>Officer (Adonis Abboud)</span>
                 <span className="text-[9px] bg-rotary-azure/10 text-rotary-azure px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Officer Access</span>
               </button>
 
@@ -426,7 +426,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 onClick={() => handleSimQuickLogin('Rotarian')}
                 className="w-full py-2.5 px-3 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs"
               >
-                <span>Rotarian Member (Marie Conteh)</span>
+                <span>Rotarian Member (Afouni Kwaku Ampadu)</span>
                 <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Member Metrics Only</span>
               </button>
             </div>
@@ -446,7 +446,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 <input
                   id="custom-login-name"
                   type="text"
-                  placeholder="e.g. Alieu Kamara"
+                  placeholder="e.g. Aina Moore"
                   value={loginName}
                   onChange={(e) => setLoginName(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"

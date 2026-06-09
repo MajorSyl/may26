@@ -1,4 +1,5 @@
 import { Project, ClubEvent, UserProfile } from './types';
+import { FULL_MEMBER_LIST } from './member-data';
 
 export const INITIAL_PROJECTS: Project[] = [
   {
@@ -9,7 +10,18 @@ export const INITIAL_PROJECTS: Project[] = [
     year: 2024,
     impact: 'Provided drinkable water to over 5,000 residents and reduced health epidemics by 85%.',
     status: 'Completed',
-    imageUrl: 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800',
+    details: 'The Tombo community project was launched in response to a surge in preventable water-borne diseases among the local fishing families. Over the course of 6 months, Rotary Club of Freetown Sunset coordinated geological surveys, constructed three deep borehole solar-pumped water stations, and installed public hygiene washrooms. This sustainable infrastructure uses heavy-duty solar panels to continuously pump clean, purified water to elevated storage tanks, ensuring uninterrupted flow even on overcast days. Local volunteers were also trained as a Water Committee to perform standard maintenance, ensuring decades of clean, reliable water.',
+    galleryUrls: [
+      'https://images.unsplash.com/photo-1541816521319-ef3d45e5f6e8?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1594498653385-d5272500f1ee?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800'
+    ],
+    budget: '$18,500 USD',
+    fundingRaised: '$18,500 USD (100%)',
+    beneficiariesCount: '5,000+ residents',
+    locationName: 'Tombo Coastal Village, Western Rural District',
+    teamLeads: ['Rtn. Abdul Manafi Kemokai', 'Rtn. Dennis Bright']
   },
   {
     id: 'proj_literacy_first',
@@ -19,7 +31,18 @@ export const INITIAL_PROJECTS: Project[] = [
     year: 2025,
     impact: 'Rebuilt 2 libraries, benefitting 1,200 secondary students with a 40% rise in local reading scores.',
     status: 'Completed',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
+    details: 'In collaboration with the Ministry of Basic and Senior Secondary Education, the Rotary Club of Freetown Sunset launched the Literacy First Campaign. This program completely renovated two crumbling community reading rooms in Waterloo, furnishing them with modern reading desks, bookshelves, reliable solar task lighting, and over 4,500 books. Crucially, the club introduced high-durability digital learning tablets preloaded with certified educational courseware and offline research materials. Additionally, we conducted weekend professional development training for 15 local educators to enhance reading instruction methodologies.',
+    galleryUrls: [
+      'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80&w=800'
+    ],
+    budget: '$14,200 USD',
+    fundingRaised: '$14,200 USD (100%)',
+    beneficiariesCount: '1,200+ active students',
+    locationName: 'Waterloo Peri-Urban Community, Freetown',
+    teamLeads: ['Rtn. Afouni Kwaku Ampadu', 'Rtn. Josephine Sheriff']
   },
   {
     id: 'proj_maternal_health',
@@ -29,7 +52,18 @@ export const INITIAL_PROJECTS: Project[] = [
     year: 2026,
     impact: 'Distributed 1,500 clean birth kits and installed lighting systems in 5 labor clinics.',
     status: 'Active',
-    imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800',
+    details: 'To combat infant mortality and prevent postpartum infections, the Safe Motherhood initiative supplies standardized, sterile, single-use obstetric delivery kits to remote peripheral health units. Each kit includes crucial supplies such as surgical gloves, clean plastic sheeting, sterilized umbilical cord ties, antiseptic soaps, and baby blankets. The project has also installed solar-powered overhead clinical LED lamps in rural delivery wards, eliminating the hazardous use of flashlight or candlelight during nighttime labor procedures. Sunset club members periodically carry out site assessments and distribution audits directly at each recipient hospital clinic.',
+    galleryUrls: [
+      'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1579684389782-64d84b5e901d?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=800'
+    ],
+    budget: '$11,000 USD',
+    fundingRaised: '$9,200 USD (83%)',
+    beneficiariesCount: '1,500+ expectant mothers',
+    locationName: 'Connaught Precinct & East-End Settlement Clinics',
+    teamLeads: ['Rtn. Dr. Fatmata Sesay', 'Rtn. Adonis Abboud']
   },
   {
     id: 'proj_solar_power',
@@ -39,7 +73,18 @@ export const INITIAL_PROJECTS: Project[] = [
     year: 2026,
     impact: 'Establishes continuous vaccine safety and diagnostics coverage for over 10,000 children.',
     status: 'Planning',
-    imageUrl: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=800',
+    details: 'This ambitious upcoming health infrastructure development involves installing specialized hybrid battery-integrated solar power grids specifically dedicated to vaccine storage refrigerators ("cold chains"). Currently, clinical outposts in rural Freetown suffer from unpredictable power outages that frequently spoil critical medication lots. Our planned system utilizes high-quality medical preservation mini-reefers coupled with telemetry alerts. This setup ensures that life-saving infant vaccinations for polio, tetanus, and malaria are safely maintained within the critical 2°C to 8°C range at all times.',
+    galleryUrls: [
+      'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1620052581237-5d36667be337?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&q=80&w=800'
+    ],
+    budget: '$22,000 USD',
+    fundingRaised: '$12,500 USD (56%)',
+    beneficiariesCount: '10,000+ children',
+    locationName: 'Kissy Rural & Waterloo Community Outposts',
+    teamLeads: ['Rtn. Adonis Abboud', 'Rtn. Abdul Manafi Kemokai']
   },
   {
     id: 'proj_lumley_clean',
@@ -49,7 +94,18 @@ export const INITIAL_PROJECTS: Project[] = [
     year: 2025,
     impact: 'Planted 1,200 coastal mangrove seedlings and cleared 3.5 tons of plastic waste debris.',
     status: 'Completed',
-    imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800'
+    imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800',
+    details: 'Rotary Club of Freetown Sunset launched the Coastline Renewal campaign in response to severe coastal erosion and the steady loss of critical mangrove habitats due to municipal development and plastic choking. Club members designed and spearheaded a series of monthly community cleanup days along the Aberdeen and Lumley beach corridors. These efforts gathered over 3.5 tons of single-use plastics, which were successfully directed to local recycling channels. Additionally, we collaborated with environmental science researchers to plant 1,200 salt-tolerant mangrove seedlings, restoring micro-ecosystems and forming a natural shield against rising shoreline tides.',
+    galleryUrls: [
+      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1559827291-72ee739d0d9a?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1618477388954-7852f32655ec?auto=format&fit=crop&q=80&w=800'
+    ],
+    budget: '$6,800 USD',
+    fundingRaised: '$6,800 USD (100%)',
+    beneficiariesCount: 'Aberdeen-Lumley Coastline Communities',
+    locationName: 'Aberdeen & Lumley Creek Estuary, Freetown',
+    teamLeads: ['Rtn. Sorieba Daffae', 'Rtn. Alpha Cham']
   }
 ];
 
@@ -146,106 +202,5 @@ export const ROTARY_FOCUS_AREAS = [
 ];
 
 export const INITIAL_MEMBER_DIRECTORY: UserProfile[] = [
-  {
-    uid: 'mem_sahr_kamanda',
-    name: 'Sahr Kamanda',
-    email: 'rtn.president@freetownsunset.org',
-    role: 'President',
-    attendanceRate: 98,
-    contributionGoals: 2000,
-    contributedAmount: 2000,
-    committee: 'Executive Board',
-    tasks: ['Chair weekly board synergy roundtables', 'Oversee Waterloo solar borehole development program'],
-    isPaulHarrisFellow: true,
-    paulHarrisLevel: 'PHF+3',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-    classification: 'Engineering - Infrastructure Consultancy',
-    phone: '+232 77 459 321',
-    joinedDate: '2021-08-15'
-  },
-  {
-    uid: 'mem_fatmata_sesay',
-    name: 'Dr. Fatmata Sesay',
-    email: 'rtn.officer@freetownsunset.org',
-    role: 'Club Officer',
-    attendanceRate: 95,
-    contributionGoals: 1500,
-    contributedAmount: 1200,
-    committee: 'Service Projects Committee',
-    tasks: ['Supervise Safe Motherhood midwifery deliveries', 'Liaise with Connaught Hospital child health officers'],
-    isPaulHarrisFellow: true,
-    paulHarrisLevel: 'PHF+1',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200',
-    classification: 'Medicine - Pediatric Consultant',
-    phone: '+232 76 882 104',
-    joinedDate: '2022-03-10'
-  },
-  {
-    uid: 'mem_lansana_bangura',
-    name: 'Lansana Bangura',
-    email: 'rtn.membership@freetownsunset.org',
-    role: 'Club Officer',
-    attendanceRate: 91,
-    contributionGoals: 1000,
-    contributedAmount: 800,
-    committee: 'Membership Committee',
-    tasks: ['Organize weekly beachside fellowship hours', 'Run guest orientations for prospective leaders'],
-    isPaulHarrisFellow: true,
-    paulHarrisLevel: 'PHF',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-    classification: 'Education - Vocational Training Advisor',
-    phone: '+232 78 514 209',
-    joinedDate: '2022-11-20'
-  },
-  {
-    uid: 'mem_marie_conteh',
-    name: 'Marie Conteh',
-    email: 'rtn.member@freetownsunset.org',
-    role: 'Rotarian',
-    attendanceRate: 94,
-    contributionGoals: 500,
-    contributedAmount: 500,
-    committee: 'Water, Sanitation, & Environmental Care',
-    tasks: ['Count Aberdeen beachfront mangrove seedlings', 'Audit Waterloo borehole water filter distribution list'],
-    isPaulHarrisFellow: false,
-    paulHarrisLevel: 'None',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-    classification: 'Environmental Science - Coastal Flora Specialist',
-    phone: '+232 30 119 547',
-    joinedDate: '2023-05-14'
-  },
-  {
-    uid: 'mem_alieu_kamara',
-    name: 'Alieu Kamara',
-    email: 'rtn.alieu@freetownsunset.org',
-    role: 'Rotarian',
-    attendanceRate: 88,
-    contributionGoals: 500,
-    contributedAmount: 300,
-    committee: 'Public Relations & Communication',
-    tasks: ['Publish weekly Rotary facebook activity feeds', 'Design brochures for Safe Motherhood benefit gala'],
-    isPaulHarrisFellow: true,
-    paulHarrisLevel: 'PHF+2',
-    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
-    classification: 'Media - Corporate PR Director',
-    phone: '+232 33 241 855',
-    joinedDate: '2024-01-08'
-  },
-  {
-    uid: 'mem_evelyn_cole',
-    name: 'Dr. Evelyn Cole',
-    email: 'evelyn.cole@freetownsunset.org',
-    role: 'Rotarian',
-    attendanceRate: 93,
-    contributionGoals: 1000,
-    contributedAmount: 1000,
-    committee: 'Service Projects Committee',
-    tasks: ['Distribute Safe Motherhood birth kits', 'Support adolescent clinics near Wellington district'],
-    isPaulHarrisFellow: true,
-    paulHarrisLevel: 'Major Donor',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    classification: 'Medicine - Midwifery Director',
-    phone: '+232 77 623 915',
-    joinedDate: '2020-04-12'
-  }
+  ...FULL_MEMBER_LIST
 ];

@@ -7,6 +7,7 @@ import {
   ArrowUp, ArrowDown, EyeOff, Layout, Palette, Sliders, Settings
 } from 'lucide-react';
 import { Project, ClubEvent, UserProfile, ContactInquiry } from '../types';
+import { INITIAL_MEMBER_DIRECTORY } from '../data';
 import { 
   getSupabaseProjects, saveSupabaseProject, deleteSupabaseProject,
   getSupabaseEvents, saveSupabaseEvent, deleteSupabaseEvent,
@@ -174,6 +175,13 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   const [memContributed, setMemContributed] = useState<number>(150);
   const [memCommittee, setMemCommittee] = useState('Service Projects');
   const [memTasks, setMemTasks] = useState('');
+  const [memClassification, setMemClassification] = useState('');
+  const [memIsPaulHarrisFellow, setMemIsPaulHarrisFellow] = useState(false);
+  const [memPaulHarrisLevel, setMemPaulHarrisLevel] = useState<'PHF' | 'PHF+1' | 'PHF+2' | 'PHF+3' | 'PHF+4' | 'PHF+8' | 'Major Donor' | 'None'>('None');
+  const [memPhone, setMemPhone] = useState('');
+  const [memJoinedDate, setMemJoinedDate] = useState('');
+  const [memBirthday, setMemBirthday] = useState('');
+  const [memAvatarUrl, setMemAvatarUrl] = useState('');
 
   // Show Inquiry Info Modal state
   const [selectedInquiry, setSelectedInquiry] = useState<ContactInquiry | null>(null);
@@ -273,6 +281,13 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     setMemContributed(150);
     setMemCommittee('Service Projects');
     setMemTasks('');
+    setMemClassification('');
+    setMemIsPaulHarrisFellow(false);
+    setMemPaulHarrisLevel('None');
+    setMemPhone('');
+    setMemJoinedDate('');
+    setMemBirthday('');
+    setMemAvatarUrl('');
   };
 
   // Load selected record for editing
@@ -303,11 +318,18 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
       setMemName(m.name);
       setMemEmail(m.email);
       setMemRole(m.role);
-      setMemAttendance(m.attendanceRate || 95);
-      setMemContributionGoal(m.contributionGoals || 500);
-      setMemContributed(m.contributedAmount || 0);
+      setMemAttendance(m.attendanceRate ?? 95);
+      setMemContributionGoal(m.contributionGoals ?? 500);
+      setMemContributed(m.contributedAmount ?? 150);
       setMemCommittee(m.committee || 'General Fellowship');
       setMemTasks(m.tasks ? m.tasks.join(', ') : '');
+      setMemClassification(m.classification || '');
+      setMemIsPaulHarrisFellow(!!m.isPaulHarrisFellow);
+      setMemPaulHarrisLevel(m.paulHarrisLevel || 'None');
+      setMemPhone(m.phone || '');
+      setMemJoinedDate(m.joinedDate || '');
+      setMemBirthday(m.birthday || '');
+      setMemAvatarUrl(m.avatarUrl || '');
     }
   };
 
@@ -353,7 +375,14 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
           contributionGoals: Number(memContributionGoal),
           contributedAmount: Number(memContributed),
           committee: memCommittee,
-          tasks: memTasks ? memTasks.split(',').map(t => t.trim()).filter(Boolean) : []
+          tasks: memTasks ? memTasks.split(',').map(t => t.trim()).filter(Boolean) : [],
+          classification: memClassification,
+          isPaulHarrisFellow: memIsPaulHarrisFellow,
+          paulHarrisLevel: memPaulHarrisLevel,
+          phone: memPhone,
+          joinedDate: memJoinedDate,
+          birthday: memBirthday,
+          avatarUrl: memAvatarUrl
         };
         await upsertSupabaseUser(payload);
         triggerToast(`Rotary Profile for "${memName}" updated.`, 'success');
@@ -1244,6 +1273,101 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                         />
                       </div>
 
+                      <div className="space-y-1">
+                        <label className="text-slate-500">Roster Classification</label>
+                        <input
+                          id="mem-form-classification"
+                          type="text"
+                          value={memClassification}
+                          onChange={(e) => setMemClassification(e.target.value)}
+                          placeholder="e.g., Medicine - Pediatrics"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500">Phone Contact</label>
+                        <input
+                          id="mem-form-phone"
+                          type="text"
+                          value={memPhone}
+                          onChange={(e) => setMemPhone(e.target.value)}
+                          placeholder="e.g., +232 76 543 210"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500">Joined Date</label>
+                        <input
+                          id="mem-form-joined"
+                          type="text"
+                          value={memJoinedDate}
+                          onChange={(e) => setMemJoinedDate(e.target.value)}
+                          placeholder="e.g., 2026-04-12"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-slate-500">Birthday (e.g. October 12)</label>
+                        <input
+                          id="mem-form-birthday"
+                          type="text"
+                          value={memBirthday}
+                          onChange={(e) => setMemBirthday(e.target.value)}
+                          placeholder="e.g. October 12"
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800"
+                        />
+                      </div>
+
+                      <div className="space-y-1 md:col-span-2">
+                        <label className="text-slate-500">Profile Photo / Avatar URL</label>
+                        <input
+                          id="mem-form-avatar"
+                          type="text"
+                          value={memAvatarUrl}
+                          onChange={(e) => setMemAvatarUrl(e.target.value)}
+                          placeholder="e.g., https://images.unsplash.com/photo-..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 font-mono"
+                        />
+                      </div>
+
+                      <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <input
+                            id="mem-form-is-phf"
+                            type="checkbox"
+                            checked={memIsPaulHarrisFellow}
+                            onChange={(e) => setMemIsPaulHarrisFellow(e.target.checked)}
+                            className="h-4 w-4 rounded border-slate-300 text-rotary-azure focus:ring-rotary-azure cursor-pointer"
+                          />
+                          <label htmlFor="mem-form-is-phf" className="text-slate-700 font-bold select-none cursor-pointer">
+                            Is Paul Harris Fellow (PHF)?
+                          </label>
+                        </div>
+
+                        {memIsPaulHarrisFellow && (
+                          <div className="space-y-1">
+                            <label className="text-slate-500 block text-[10px] uppercase font-bold tracking-wider leading-none">Paul Harris Recognition level</label>
+                            <select
+                              id="mem-form-phf-level"
+                              value={memPaulHarrisLevel}
+                              onChange={(e) => setMemPaulHarrisLevel(e.target.value as any)}
+                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-slate-800 text-[11px]"
+                            >
+                              <option value="PHF">PHF (Honorary Fellow)</option>
+                              <option value="PHF+1">PHF + 1</option>
+                              <option value="PHF+2">PHF + 2</option>
+                              <option value="PHF+3">PHF + 3</option>
+                              <option value="PHF+4">PHF + 4</option>
+                              <option value="PHF+8">PHF + 8</option>
+                              <option value="Major Donor">Major Donor (Level 1)</option>
+                            </select>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="space-y-1 md:col-span-3">
                         <label className="text-slate-500">Assigned Tasks (Comma-separated)</label>
                         <input
@@ -1499,8 +1623,39 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                   <tbody className="divide-y divide-slate-100 text-[11px] font-semibold text-slate-600">
                     {filteredMembers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                          No Rotarian members or registered club logs found. Create one.
+                        <td colSpan={6} className="py-16 text-center text-slate-400">
+                          <div className="flex flex-col items-center justify-center gap-3">
+                            <Users className="h-10 w-10 text-slate-300 animate-bounce" />
+                            <p className="text-xs font-bold text-slate-550 max-w-sm leading-relaxed">
+                              No Rotarian members or registered club logs found in your active database.
+                            </p>
+                            <button
+                              id="seed-members-btn"
+                              type="button"
+                              onClick={async () => {
+                                setActionLoading(true);
+                                try {
+                                  let count = 0;
+                                  for (const member of INITIAL_MEMBER_DIRECTORY) {
+                                    await upsertSupabaseUser(member);
+                                    count++;
+                                  }
+                                  triggerToast(`Successfully seeded/imported ${count} default Rotarian member profiles into your database!`, 'success');
+                                  await fetchData();
+                                  if (onStateRefresh) onStateRefresh();
+                                } catch (err: any) {
+                                  console.error(err);
+                                  triggerToast('Failed to seed directory: ' + (err.message || String(err)), 'error');
+                                } finally {
+                                  setActionLoading(false);
+                                }
+                              }}
+                              className="px-5 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark rounded-xl text-white font-black font-display uppercase tracking-wider text-[10px] cursor-pointer shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 focus:outline-none"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              <span>Seed & Map Standard Chapter Roster ({INITIAL_MEMBER_DIRECTORY.length} Members)</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ) : (

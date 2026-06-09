@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { INITIAL_MEMBER_DIRECTORY } from '../data';
-import { Search, Shield, Award, Calendar, Phone, Mail, Filter, BookOpen, Crown, UserCheck } from 'lucide-react';
+import { Search, Shield, Award, Calendar, Phone, Mail, Filter, BookOpen, Crown, UserCheck, Lock, EyeOff, RefreshCw } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
+import { getDbUsers } from '../db-router';
 
 interface PastPresident {
   name: string;
@@ -10,121 +12,59 @@ interface PastPresident {
   avatarUrl: string;
 }
 
+const getInitials = (name: string) => {
+  const cleaned = name.replace(/Rtn\.\s+/g, '');
+  const parts = cleaned.split(' ').filter(p => p.length > 0);
+  return parts
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+};
+
+const getGradientClass = (name: string) => {
+  const cleaned = name.replace(/Rtn\.\s+/g, '');
+  const code = cleaned.charCodeAt(0) % 5;
+  const gradients = [
+    'from-blue-600 to-[#00246B]', // Slate Rotary Blue
+    'from-amber-500 to-orange-600', // Gold Sunset
+    'from-emerald-600 to-teal-500', // Eco green
+    'from-indigo-600 to-violet-700', // Royal purple
+    'from-rose-500 to-pink-600'  // Pink charm
+  ];
+  return gradients[code];
+};
+
 export default function MembersDirectory() {
+  const { language, t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'all' | 'executives' | 'phfs' | 'past-presidents'>('all');
+  const [activeSubTab, setActiveSubTab] = useState<'all' | 'executives' | 'phfs'>('all');
+  const [allActiveMembers, setAllActiveMembers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Hardcoded rich lists of Executives, Past Presidents, and extended members for a top-tier authentic experience
-  const executives: UserProfile[] = [
-    {
-      uid: 'exec_sahr_kamanda',
-      name: 'Rtn. Sahr Kamanda',
-      email: 'rtn.president@freetownsunset.org',
-      role: 'President',
-      attendanceRate: 98,
-      contributionGoals: 2000,
-      contributedAmount: 2000,
-      committee: 'Executive Board',
-      isPaulHarrisFellow: true,
-      paulHarrisLevel: 'PHF+3',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-      classification: 'Engineering - Infrastructure Consultancy',
-      phone: '+232 77 459 321',
-      joinedDate: '2021-08-15'
-    },
-    {
-      uid: 'exec_fatmata_sesay',
-      name: 'Rtn. Dr. Fatmata Sesay',
-      email: 'rtn.officer@freetownsunset.org',
-      role: 'Club Officer', // Served as President Elect
-      attendanceRate: 95,
-      committee: 'Service Projects Committee',
-      isPaulHarrisFellow: true,
-      paulHarrisLevel: 'PHF+1',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200',
-      classification: 'Medicine - Pediatric Consultant',
-      phone: '+232 76 882 104',
-      joinedDate: '2022-03-10'
-    },
-    {
-      uid: 'exec_dennis_bright',
-      name: 'Rtn. Dennis Bright',
-      email: 'rtn.secretary@freetownsunset.org',
-      role: 'Club Officer', // Club Secretary
-      committee: 'Executive & Admin Board',
-      isPaulHarrisFellow: true,
-      paulHarrisLevel: 'PHF',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-      classification: 'Public Administration - Urban Development',
-      phone: '+232 76 114 908',
-      joinedDate: '2021-11-05'
-    },
-    {
-      uid: 'exec_josephine_sheriff',
-      name: 'Rtn. Josephine Sheriff',
-      email: 'rtn.treasurer@freetownsunset.org',
-      role: 'Club Officer', // Club Treasurer
-      committee: 'Finance Committee',
-      isPaulHarrisFellow: false,
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-      classification: 'Finance - Commercial Banking Director',
-      phone: '+232 30 522 194',
-      joinedDate: '2022-02-18'
-    },
-    {
-      uid: 'exec_lansana_bangura',
-      name: 'Rtn. Lansana Bangura',
-      email: 'rtn.membership@freetownsunset.org',
-      role: 'Club Officer', // Membership Chair
-      committee: 'Membership Committee',
-      isPaulHarrisFellow: true,
-      paulHarrisLevel: 'PHF',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-      classification: 'Education - Vocational Training Advisor',
-      phone: '+232 78 514 209',
-      joinedDate: '2022-11-20'
+  useEffect(() => {
+    async function loadMembers() {
+      try {
+        const uList = await getDbUsers();
+        if (uList && uList.length > 0) {
+          setAllActiveMembers(uList);
+        } else {
+          setAllActiveMembers(INITIAL_MEMBER_DIRECTORY);
+        }
+      } catch (err) {
+        console.error('Failed to load database users:', err);
+        setAllActiveMembers(INITIAL_MEMBER_DIRECTORY);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
+    loadMembers();
+  }, []);
 
-  const pastPresidents: PastPresident[] = [
-    {
-      name: 'Rtn. Alpha Cham',
-      year: '2025 - 2026',
-      classification: 'Information Technology Services',
-      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'
-    },
-    {
-      name: 'Rtn. Josephine Sesay',
-      year: '2024 - 2025',
-      classification: 'Public Health Administration',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'
-    },
-    {
-      name: 'Rtn. Sorieba Daffae',
-      year: '2023 - 2024',
-      classification: 'Legal Practice - Maritime Law',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'
-    },
-    {
-      name: 'Rtn. Finda Kuyembeh',
-      year: '2022 - 2023',
-      classification: 'Non-Governmental Operations',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
-    },
-    {
-      name: 'Rtn. Christian George',
-      year: '2021 - 2022 (Charter Year)',
-      classification: 'Logistics & Supply Chain Management',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
-    }
-  ];
-
-  // Combine & extend general roster of active members, deduplicating with Executives
-  const allActiveMembers: UserProfile[] = [
-    ...executives,
-    // Add additional ones from INITIAL_MEMBER_DIRECTORY not already in executives
-    ...INITIAL_MEMBER_DIRECTORY.filter(m => !executives.some(e => e.uid === m.uid && e.name === m.name))
-  ];
+  // Dynamically filter executives from the membership database
+  const executives: UserProfile[] = allActiveMembers.filter(
+    m => m.role === 'President' || m.role === 'Club Officer'
+  );
 
   // Filtering computational logic
   const filteredActive = allActiveMembers.filter(m => {
@@ -135,17 +75,12 @@ export default function MembersDirectory() {
       (m.committee && m.committee.toLowerCase().includes(term));
       
     if (activeSubTab === 'executives') {
-      return matchesSearch && executives.some(e => e.name === m.name);
+      return matchesSearch && executives.some(e => e.name === m.name || e.uid === m.uid);
     }
     if (activeSubTab === 'phfs') {
       return matchesSearch && m.isPaulHarrisFellow;
     }
     return matchesSearch;
-  });
-
-  const filteredPastPresidents = pastPresidents.filter(p => {
-    const term = searchTerm.toLowerCase();
-    return p.name.toLowerCase().includes(term) || p.classification.toLowerCase().includes(term) || p.year.includes(term);
   });
 
   return (
@@ -162,6 +97,29 @@ export default function MembersDirectory() {
           Meet the dedicated business leaders, executives, and professionals who constitute the Rotary Club of Freetown Sunset. Together we advocate for the ultimate civic standards under "Service Above Self".
         </p>
       </section>
+
+      {/* Privacy Guard Reassuring Banner */}
+      <div className="bg-slate-50 border border-slate-150/80 rounded-2xl p-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-3xs">
+        <div className="flex items-start gap-4">
+          <div className="p-2 rounded-xl bg-orange-50 text-amber-600 border border-orange-100 shrink-0">
+            <Lock className="w-4 h-4 animate-bounce" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide leading-none font-display">
+              {language === 'krio' ? '🔐 Prativet En Kɔnfidɛnshal Safti' : '🔐 Private & Confidential Protection'}
+            </h4>
+            <p className="text-[11.5px] text-slate-500 font-medium leading-snug">
+              {language === 'krio' 
+                ? 'Fɔ mɛmba dɛn yon tin dɛn dey shur, wi dɔn mask/kiba mɛmba dɛn fon nɔmba and imel to di public so nobody go steal am. Ɔl pratik mɛmba dɛn kin luk am na di secure Portal.'
+                : 'To prevent unsolicited automated spam or privacy exposure, active members\' emails and phone numbers are securely obfuscated from public directories. Complete profiles remain accessible via the secure Portal.'}
+            </p>
+          </div>
+        </div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-100/60 font-display text-[9px] font-black uppercase tracking-wider rounded-lg shrink-0 select-none">
+          <Shield className="w-3.5 h-3.5 fill-emerald-100" />
+          {language === 'krio' ? 'Sɛf fɔ Luk' : 'Secure / Protected'}
+        </div>
+      </div>
 
       {/* 2. TAB TOGGLES & SEARCH FILTER PANEL */}
       <section className="bg-white rounded-3xl border border-slate-100 shadow-xs p-5 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -202,18 +160,6 @@ export default function MembersDirectory() {
             <Award className="w-3.5 h-3.5" />
             Paul Harris Fellows
           </button>
-
-          <button
-            onClick={() => setActiveSubTab('past-presidents')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold font-display uppercase tracking-wider transition-all duration-200 border flex items-center gap-1.5 ${
-              activeSubTab === 'past-presidents'
-                ? 'bg-rotary-azure text-white border-rotary-azure shadow-xs'
-                : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Past Presidents
-          </button>
         </div>
 
         {/* Global Directory Search */}
@@ -230,70 +176,17 @@ export default function MembersDirectory() {
       </section>
 
       {/* 3. ROSTER CONTAINER */}
-      {activeSubTab === 'past-presidents' ? (
-        // Rendering Past Presidents
-        filteredPastPresidents.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-200 text-slate-500">
-            No past presidents matching "{searchTerm}" were found.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPastPresidents.map((p, idx) => (
-              <div 
-                key={idx}
-                className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden hover:shadow-lg transition-all duration-300 relative flex flex-col justify-between group"
-              >
-                {/* Visual marker of previous leadership */}
-                <div className="h-14 w-full bg-gradient-to-r from-rotary-azure/80 to-rotary-gold/50 relative overflow-hidden shrink-0">
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-xs p-1.5 rounded-full shadow-xs">
-                    <Crown className="w-3.5 h-3.5 text-rotary-gold" />
-                  </div>
-                </div>
-
-                <div className="px-6 pb-6 pt-2 space-y-4 relative flex-1 flex flex-col justify-between">
-                  {/* Floating Overlapping Avatar */}
-                  <div className="flex items-start gap-4">
-                    <img 
-                      src={p.avatarUrl} 
-                      alt={p.name}
-                      className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-md -mt-10 bg-slate-100 shrink-0 transform group-hover:scale-105 transition-transform"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="pt-2">
-                      <h3 className="font-extrabold text-slate-850 text-sm font-display leading-tight">{p.name}</h3>
-                      <p className="text-[9px] text-rotary-azure font-display font-bold leading-none tracking-wider uppercase mt-1">Past President</p>
-                    </div>
-                  </div>
-
-                  {/* Classification Details */}
-                  <div className="space-y-2 border-t border-slate-100 pt-3 text-xs text-slate-500 flex-1">
-                    <div className="flex items-start gap-2">
-                      <Shield className="w-3.5 h-3.5 text-rotary-azure/60 shrink-0 mt-0.5" />
-                      <div>
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider leading-none">Rotary Classification</span>
-                        <span className="font-semibold text-[11px] text-slate-700">{p.classification}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Past President Service Year Badge (Footer element inside content card) */}
-                  <div className="bg-rotary-gold/10 border border-rotary-gold/25 rounded-2xl p-2.5 text-center flex items-center justify-center gap-1.5 shrink-0">
-                    <Award className="w-3.5 h-3.5 text-rotary-gold-dark" />
-                    <span className="text-[10px] font-bold text-rotary-gold-dark font-display uppercase tracking-wider">Distinguished Year: {p.year}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 px-4 space-y-3">
+          <RefreshCw className="h-8 w-8 text-rotary-azure animate-spin" />
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest leading-none">Querying Chapter member profiles...</p>
+        </div>
+      ) : filteredActive.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-200 text-slate-500">
+          No members matching "{searchTerm}" found in this section.
+        </div>
       ) : (
-        // Rendering Active & Extended Members
-        filteredActive.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-200 text-slate-500">
-            No members matching "{searchTerm}" found in this section.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredActive.map((m) => {
               const isExec = executives.some(e => e.uid === m.uid || e.name === m.name);
               
@@ -323,15 +216,23 @@ export default function MembersDirectory() {
                   <div className="px-6 pb-6 pt-2 space-y-4 relative flex-1 flex flex-col justify-between">
                     {/* Floating Circular Avatar overlapping banner */}
                     <div className="flex items-start gap-4">
-                      <img 
-                        src={m.avatarUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'} 
-                        alt={m.name}
-                        className="w-18 h-18 rounded-full object-cover border-4 border-white shadow-md -mt-11 bg-white shrink-0 transform group-hover:scale-105 transition-transform duration-300"
-                        referrerPolicy="no-referrer"
-                      />
+                      {m.avatarUrl ? (
+                        <img 
+                          src={m.avatarUrl} 
+                          alt={m.name}
+                          className="w-18 h-18 rounded-full object-cover border-4 border-white shadow-md -mt-11 bg-white shrink-0 transform group-hover:scale-105 transition-transform duration-300"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className={`w-18 h-18 rounded-full border-4 border-white shadow-md -mt-11 bg-gradient-to-br ${getGradientClass(m.name)} text-white flex items-center justify-center font-bold text-lg shrink-0 transform group-hover:scale-105 transition-transform duration-300 font-display font-sans uppercase`}>
+                          {getInitials(m.name)}
+                        </div>
+                      )}
                       <div className="pt-1.5 flex-1 min-w-0">
                         <h3 className="font-extrabold text-slate-850 group-hover:text-rotary-azure transition-colors text-sm font-display leading-tight truncate">{m.name}</h3>
-                        <p className="text-[9px] text-slate-400 font-mono font-medium truncate mt-0.5">{m.email}</p>
+                        <p className="text-[9px] text-slate-400 font-mono font-semibold truncate mt-0.5 flex items-center gap-1">
+                          <EyeOff className="w-2.5 h-2.5 inline text-amber-500/70" /> {m.email}
+                        </p>
                       </div>
                     </div>
 
@@ -363,6 +264,15 @@ export default function MembersDirectory() {
                           <span className="text-[10px] text-slate-400">Joined Sunset: {new Date(m.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
                         </div>
                       )}
+
+                      {m.birthday && (
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-3.5 h-3.5 text-xs text-center leading-none">🎂</span>
+                          <span className="text-[10px] text-slate-400 font-bold">
+                            {language === 'krio' ? 'Spɛshal bɔt-de:' : 'Sunset Birthday:'} <span className="text-pink-600 font-extrabold">{m.birthday}</span>
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -384,28 +294,27 @@ export default function MembersDirectory() {
                     {/* Quick Dial & Contact Row */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {m.phone && (
-                        <a 
-                          href={`tel:${m.phone}`}
+                        <button 
+                          onClick={() => alert(language === 'krio' ? 'Dis mɛmba in nɔmba dɔn kiba/mask fɔ prɔtɛkt in yon safti.' : 'This member\'s contact phone is securely masked to guarantee privacy protection.')}
                           title={`Call ${m.name}`}
-                          className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-rotary-azure hover:border-rotary-azure hover:shadow-2xs transition-all active:scale-95"
+                          className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-400 hover:shadow-2xs transition-all active:scale-95 cursor-pointer"
                         >
                           <Phone className="w-3.5 h-3.5" />
-                        </a>
+                        </button>
                       )}
-                      <a 
-                        href={`mailto:${m.email}`}
+                      <button 
+                        onClick={() => alert(language === 'krio' ? 'Dis mɛmba in imel dɔn kiba/mask fɔ prɔtɛkt in yon safti.' : 'This member\'s contact email is securely masked to guarantee privacy protection.')}
                         title={`Email ${m.name}`}
-                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-rotary-azure hover:border-rotary-azure hover:shadow-2xs transition-all active:scale-95"
+                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-400 hover:shadow-2xs transition-all active:scale-95 cursor-pointer"
                       >
                         <Mail className="w-3.5 h-3.5" />
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-        )
       )}
     </div>
   );

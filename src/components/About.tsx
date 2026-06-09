@@ -41,22 +41,22 @@ export default function About() {
 
   const leadership = [
     {
-      name: 'Rtn. Sahr Kamanda',
+      name: 'Rtn. Abdul Manafi Kemokai',
       role: 'Club President',
-      desc: 'Local infrastructure expert pioneering municipal public development and Sunset operations management.',
+      desc: 'Pioneering child rights advocate leading Municipal social and Sunset executive operations.',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200'
     },
     {
-      name: 'Rtn. Dr. Fatmata Sesay',
+      name: 'Rtn. Adonis Abboud',
       role: 'Service Projects Director',
-      desc: 'Pediatric healthcare consultant spearheading RCFS Safe Motherhood and solar cooling distribution efforts.',
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
+      desc: 'Senior telecommunication pioneer spearheading RCFS community connectivity and service initiatives.',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
     },
     {
-      name: 'Rtn. Lansana Bangura',
+      name: 'Rtn. Afouni Kwaku Ampadu',
       role: 'Membership Chair',
-      desc: 'Senior vocational training advisor organizing outreach circles and corporate sunset fellowships.',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200'
+      desc: 'Eminent marketing champion guiding membership growth and professional fellowship development.',
+      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
     }
   ];
 

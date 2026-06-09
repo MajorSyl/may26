@@ -249,18 +249,21 @@ export const logInUser = async (emailText?: string, nameText?: string): Promise<
     setLocalData('rcfs_auth_session', activeSession);
 
     const profiles = getLocalData<UserProfile[]>('rcfs_user_profiles', INITIAL_MEMBER_DIRECTORY);
-    let profile = profiles.find(p => p.email === email);
+    let profile = profiles.find(p => 
+      p.email.toLowerCase() === email.toLowerCase() || 
+      p.name.toLowerCase() === name.toLowerCase()
+    );
     if (!profile) {
       profile = {
         uid: fakeUid,
         name,
         email,
-        role: email.includes('president') ? 'President' : email.includes('officer') ? 'Club Officer' : 'Rotarian',
-        attendanceRate: 94,
+        role: 'Rotarian',
+        attendanceRate: 90,
         contributionGoals: 1000,
-        contributedAmount: 850,
-        committee: 'Community Service Committee',
-        tasks: ['Coordinate Water for Tombo filter distribution', 'Check Lumley coastal cleanup inventory']
+        contributedAmount: 0,
+        committee: 'Membership Committee',
+        tasks: ['Support weekly fellowship meetings']
       };
       profiles.push(profile);
       setLocalData('rcfs_user_profiles', profiles);

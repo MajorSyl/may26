@@ -14,6 +14,7 @@ export interface UserProfile {
   classification?: string;
   phone?: string;
   joinedDate?: string;
+  birthday?: string;
 }
 
 export interface Project {
@@ -25,6 +26,13 @@ export interface Project {
   impact?: string;
   status: 'Completed' | 'Active' | 'Planning';
   imageUrl?: string;
+  details?: string;
+  galleryUrls?: string[];
+  budget?: string;
+  fundingRaised?: string;
+  beneficiariesCount?: string;
+  locationName?: string;
+  teamLeads?: string[];
 }
 
 export interface ClubEvent {

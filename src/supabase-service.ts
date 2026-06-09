@@ -342,25 +342,56 @@ export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> 
 
 export const upsertSupabaseUser = async (profile: UserProfile): Promise<UserProfile> => {
   if (isSupabaseConfigured && supabase) {
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        uid: profile.uid,
-        name: profile.name,
-        email: profile.email,
-        role: profile.role,
-        attendancerate: profile.attendanceRate || 92,
-        contributiongoals: profile.contributionGoals || 500,
-        contributedamount: profile.contributedAmount || 150,
-        committee: profile.committee || 'General Fellowship',
-        tasks: profile.tasks || []
-      });
+    try {
+      // Attempt upsert with all available profile fields (mapping camelCase to lowercase/snake_case)
+      const { error } = await supabase
+        .from('users')
+        .upsert({
+          uid: profile.uid,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          attendancerate: profile.attendanceRate !== undefined ? profile.attendanceRate : 92,
+          contributiongoals: profile.contributionGoals !== undefined ? profile.contributionGoals : 500,
+          contributedamount: profile.contributedAmount !== undefined ? profile.contributedAmount : 150,
+          committee: profile.committee || 'General Fellowship',
+          tasks: profile.tasks || [],
+          classification: profile.classification || '',
+          ispaulharrisfellow: !!profile.isPaulHarrisFellow,
+          paulharrislevel: profile.paulHarrisLevel || 'None',
+          phone: profile.phone || '',
+          joineddate: profile.joinedDate || '',
+          birthday: profile.birthday || '',
+          avatarurl: profile.avatarUrl || ''
+        });
 
-    if (error) {
-      console.error('Failed to upsert User to real Supabase database:', error);
-      throw error;
+      if (error) {
+        // Fallback if some new columns are not present in the live Supabase database
+        if (error.message && (error.message.includes('column') || error.message.includes('not found') || error.message.includes('does not exist'))) {
+          console.warn('Extra profile columns missing in live database table. Falling back to core columns...', error.message);
+          const { error: fallbackError } = await supabase
+            .from('users')
+            .upsert({
+              uid: profile.uid,
+              name: profile.name,
+              email: profile.email,
+              role: profile.role,
+              attendancerate: profile.attendanceRate !== undefined ? profile.attendanceRate : 92,
+              contributiongoals: profile.contributionGoals !== undefined ? profile.contributionGoals : 500,
+              contributedamount: profile.contributedAmount !== undefined ? profile.contributedAmount : 150,
+              committee: profile.committee || 'General Fellowship',
+              tasks: profile.tasks || []
+            });
+          if (fallbackError) throw fallbackError;
+        } else {
+          throw error;
+        }
+      }
+      return profile;
+    } catch (err: any) {
+      console.error('Failed to upsert User to real Supabase database:', err);
+      throw err;
     }
-    return profile;
   } else {
     // Simulated Sandbox Mode
     const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
@@ -464,7 +495,14 @@ export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
           contributionGoals: d.contributionGoals !== undefined ? d.contributionGoals : d.contributiongoals,
           contributedAmount: d.contributedAmount !== undefined ? d.contributedAmount : d.contributedamount,
           committee: d.committee,
-          tasks: d.tasks || []
+          tasks: d.tasks || [],
+          classification: d.classification || '',
+          isPaulHarrisFellow: d.isPaulHarrisFellow !== undefined ? d.isPaulHarrisFellow : d.ispaulharrisfellow,
+          paulHarrisLevel: d.paulHarrisLevel !== undefined ? d.paulHarrisLevel : d.paulharrislevel,
+          phone: d.phone || '',
+          joinedDate: d.joinedDate !== undefined ? d.joinedDate : d.joineddate,
+          birthday: d.birthday || '',
+          avatarUrl: d.avatarUrl !== undefined ? d.avatarUrl : d.avatarurl
         })) as UserProfile[];
       }
       return [];
