@@ -943,8 +943,10 @@ ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_applications ENABLE ROW LEVEL SECURITY;
 
 -- 1. Policies for 'admins' Table
-CREATE POLICY "Allow anyone to check admins" ON admins 
-  FOR SELECT TO public USING (true);
+-- No public SELECT policy exists on 'admins', making it completely private.
+-- Only the SECURITY DEFINER is_admin() function can query it, and admins can manage it.
+CREATE POLICY "Allow admin read and write on admins" ON admins
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- 2. Policies for 'projects' Table
 DROP POLICY IF EXISTS "Allow anyone to read projects" ON projects;
@@ -977,8 +979,8 @@ CREATE POLICY "Allow admin full access to users" ON users
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- Reset users permissions (removing custom CLS revokes, since users table has no sensitive columns)
+REVOKE ALL PRIVILEGES ON users FROM public, anon, authenticated;
 GRANT SELECT ON users TO public, anon, authenticated;
-GRANT ALL PRIVILEGES ON users TO authenticated;
 
 -- 5. Policies for 'member_contact_info' Table (Strictly Admin-only)
 CREATE POLICY "Allow admin select on member_contact_info" ON member_contact_info
