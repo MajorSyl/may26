@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ClubEvent, ContactInquiry } from '../types';
-import { getDbEvents, submitDbInquiry, getActiveDbDriver } from '../db-router';
+import { ClubEvent, ContactInquiry, EventRSVP } from '../types';
+import { getDbEvents, submitDbInquiry, getActiveDbDriver, submitDbRSVP } from '../db-router';
 import { Calendar, Clock, MapPin, User, Mail, Send, Check, RefreshCw } from 'lucide-react';
 
 export default function Events() {
@@ -8,6 +8,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
+  const [rsvpErrorText, setRsvpErrorText] = useState('');
   const [currentDriver, setCurrentDriver] = useState(getActiveDbDriver());
   
   // Form states
@@ -49,28 +50,28 @@ export default function Events() {
     if (!guestName || !guestEmail || !selectedEventId) return;
 
     setRsvpLoading(true);
-    const selectedEvent = events.find(ev => ev.id === selectedEventId);
+    setRsvpErrorText('');
+    setRsvpSuccess(false);
     
-    const rsvpInquiry: ContactInquiry = {
-      id: 'rsvp_' + Math.random().toString(36).substr(2, 9),
+    const rsvpData: EventRSVP = {
+      id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 'rsvp_' + Math.random().toString(36).substring(2, 11),
+      event_id: selectedEventId,
       name: guestName,
       email: guestEmail,
-      subject: `RSVP Submission: for "${selectedEvent?.title}"`,
-      message: `Preferred Event: ${selectedEvent?.title}\nMeeting Date: ${selectedEvent?.date}\nGuest Note: ${guestNote || 'none'}`,
-      type: 'General Contact',
-      createdAt: new Date().toISOString()
+      submitted_at: new Date().toISOString()
     };
 
     try {
-      await submitDbInquiry(rsvpInquiry);
+      await submitDbRSVP(rsvpData);
       setRsvpSuccess(true);
       setGuestName('');
       setGuestEmail('');
       setGuestNote('');
       // Show success briefly
       setTimeout(() => setRsvpSuccess(false), 5000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed submitting RSVP", err);
+      setRsvpErrorText(err?.message || 'Could not register RSVP. Please try again later.');
     } finally {
       setRsvpLoading(false);
     }
@@ -289,6 +290,12 @@ export default function Events() {
             {rsvpSuccess && (
               <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-center text-[11px] text-emerald-800 font-semibold uppercase font-display select-none">
                 Thank you! Your information is catalogued.
+              </div>
+            )}
+
+            {rsvpErrorText && (
+              <div className="p-3 bg-rose-50 border border-rose-150 rounded-xl text-center text-[11px] text-rose-700 font-semibold uppercase font-display select-none">
+                {rsvpErrorText}
               </div>
             )}
           </div>

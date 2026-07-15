@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { submitInquiry } from '../firebase-service';
+import { submitDbInquiry } from '../db-router';
 import { ContactInquiry } from '../types';
 import { Users, User, Mail, Check, Send, Sparkles } from 'lucide-react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../supabase-service';
@@ -19,6 +19,7 @@ export default function GetInvolved() {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorText, setErrorText] = useState('');
 
   // Form states - Membership
   const [memName, setMemName] = useState('');
@@ -31,6 +32,9 @@ export default function GetInvolved() {
     if (!memName || !memEmail || !memMsg) return;
 
     setLoading(true);
+    setErrorText('');
+    setSuccess(false);
+
     const inquiry: ContactInquiry = {
       id: 'inq_' + Math.random().toString(36).substr(2, 9),
       name: memName,
@@ -42,14 +46,15 @@ export default function GetInvolved() {
     };
 
     try {
-      await submitInquiry(inquiry);
+      await submitDbInquiry(inquiry);
       setSuccess(true);
       setMemName('');
       setMemEmail('');
       setMemMsg('');
       setTimeout(() => setSuccess(false), 5000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setErrorText(err?.message || 'Could not write inquiry. Please verify database connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -138,7 +143,7 @@ export default function GetInvolved() {
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5 font-semibold">Tell us why you wish to join Rotary Sunset</label>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5 font-semibold">Tell us why you wish to join the Rotary Club of Freetown-Sunset</label>
               <textarea
                 id="mem-message-input"
                 placeholder="Brief summary of your background, experience, or interest in service..."
@@ -179,6 +184,12 @@ export default function GetInvolved() {
         {success && (
           <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-center text-xs text-emerald-800 font-bold uppercase font-display select-none animate-pulse">
             Your inquiry record has been written to the club's administration logs. Thank you!
+          </div>
+        )}
+
+        {errorText && (
+          <div className="mt-4 p-4 bg-rose-50 border border-rose-200 rounded-2xl text-center text-xs text-rose-700 font-bold uppercase font-display select-none">
+            {errorText}
           </div>
         )}
       </div>

@@ -8,7 +8,7 @@ export const INITIAL_PROJECTS: Project[] = [
     category: 'Water, Sanitation, and Hygiene',
     description: 'Constructed three solar-powered borehole water wells and community wash facilities in the coastal fishing village of Tombo, providing direct clean water access and ending water-borne illness spikes.',
     year: 2024,
-    impact: 'Provided drinkable water to over 5,000 residents and reduced health epidemics by 85%.',
+    impact: 'Provided drinkable water to over 5,000 residents and substantially reduced local water-borne health risks.',
     status: 'Completed',
     imageUrl: '',
     details: 'The Tombo community project was launched in response to a surge in preventable water-borne diseases among the local fishing families. Over the course of 6 months, Rotary Club of Freetown Sunset coordinated geological surveys, constructed three deep borehole solar-pumped water stations, and installed public hygiene washrooms. This sustainable infrastructure uses heavy-duty solar panels to continuously pump clean, purified water to elevated storage tanks, ensuring uninterrupted flow even on overcast days. Local volunteers were also trained as a Water Committee to perform standard maintenance, ensuring decades of clean, reliable water.',
@@ -17,7 +17,7 @@ export const INITIAL_PROJECTS: Project[] = [
     fundingRaised: '$18,500 USD (100%)',
     beneficiariesCount: '5,000+ residents',
     locationName: 'Tombo Coastal Village, Western Rural District',
-    teamLeads: ['Rtn. Abdul Manafi Kemokai', 'Rtn. Dennis Bright']
+    teamLeads: ['Rtn. Abdul Manaff Kemokai', 'Rtn. Dennis Bright']
   },
   {
     id: 'proj_literacy_first',
@@ -25,7 +25,7 @@ export const INITIAL_PROJECTS: Project[] = [
     category: 'Basic Education and Literacy',
     description: 'Refurbished local community libraries and delivered 4,500 curriculum-aligned textbooks, educational tablets, and teacher training programs in Waterloo and surrounding peri-urban communities.',
     year: 2025,
-    impact: 'Rebuilt 2 libraries, benefitting 1,200 secondary students with a 40% rise in local reading scores.',
+    impact: 'Rebuilt 2 libraries, benefitting 1,200 secondary students and encouraging stronger reading performance.',
     status: 'Completed',
     imageUrl: '',
     details: 'In collaboration with the Ministry of Basic and Senior Secondary Education, the Rotary Club of Freetown Sunset launched the Literacy First Campaign. This program completely renovated two crumbling community reading rooms in Waterloo, furnishing them with modern reading desks, bookshelves, reliable solar task lighting, and over 4,500 books. Crucially, the club introduced high-durability digital learning tablets preloaded with certified educational courseware and offline research materials. Additionally, we conducted weekend professional development training for 15 local educators to enhance reading instruction methodologies.',
@@ -68,7 +68,7 @@ export const INITIAL_PROJECTS: Project[] = [
     fundingRaised: '$12,500 USD (56%)',
     beneficiariesCount: '10,000+ children',
     locationName: 'Kissy Rural & Waterloo Community Outposts',
-    teamLeads: ['Rtn. Adonis Abboud', 'Rtn. Abdul Manafi Kemokai']
+    teamLeads: ['Rtn. Adonis Abboud', 'Rtn. Abdul Manaff Kemokai']
   },
   {
     id: 'proj_lumley_clean',
@@ -76,10 +76,10 @@ export const INITIAL_PROJECTS: Project[] = [
     category: 'Supporting the Environment',
     description: 'Coastal waste mitigation and reforestation of critical mangrove zones along Aberdeen and Lumley beach pathways, collaborating with local youth groups to tackle plastic waste.',
     year: 2025,
-    impact: 'Planted 1,200 coastal mangrove seedlings and cleared 3.5 tons of plastic waste debris.',
+    impact: 'Planted over 1,000 coastal mangrove seedlings and supported local plastic waste collection.',
     status: 'Completed',
     imageUrl: '',
-    details: 'Rotary Club of Freetown Sunset launched the Coastline Renewal campaign in response to severe coastal erosion and the steady loss of critical mangrove habitats due to municipal development and plastic choking. Club members designed and spearheaded a series of monthly community cleanup days along the Aberdeen and Lumley beach corridors. These efforts gathered over 3.5 tons of single-use plastics, which were successfully directed to local recycling channels. Additionally, we collaborated with environmental science researchers to plant 1,200 salt-tolerant mangrove seedlings, restoring micro-ecosystems and forming a natural shield against rising shoreline tides.',
+    details: 'Rotary Club of Freetown Sunset launched the Coastline Renewal campaign in response to severe coastal erosion and the steady loss of critical mangrove habitats due to municipal development and plastic choking. Club members designed and spearheaded a series of monthly community cleanup days along the Aberdeen and Lumley beach corridors. These efforts gathered extensive quantities of single-use plastics, which were successfully directed to local recycling channels. Additionally, we collaborated with environmental science researchers to plant over a thousand salt-tolerant mangrove seedlings, restoring micro-ecosystems and forming a natural shield against rising shoreline tides.',
     galleryUrls: [],
     budget: '$6,800 USD',
     fundingRaised: '$6,800 USD (100%)',

@@ -20,7 +20,7 @@ export const translations = {
     rotary: 'Rotary',
     clubName: 'Club of Freetown-Sunset',
     serviceAboveSelf: 'Service Above Self',
-    rightsReserved: 'Rotary Sunset. All Rights Reserved.',
+    rightsReserved: 'Rotary Club of Freetown-Sunset. All Rights Reserved.',
     
     // Home/General UI
     attendNextMeeting: 'Attend Next Meeting',
@@ -75,7 +75,7 @@ export const translations = {
     rotary: 'Rotari',
     clubName: 'Klɔb fɔ Fritɔŋ-Sunset',
     serviceAboveSelf: 'Savis Pas Sɛf',
-    rightsReserved: 'Rotari Sunset. Ɔl di rayts fɔ dɛn tin dɛn dey shur.',
+    rightsReserved: 'Rotari Klɔb fɔ Fritɔŋ-Sunset. Ɔl di rayts fɔ dɛn tin dɛn dey shur.',
     
     // Home/General UI
     attendNextMeeting: 'Kam wi nɛks miting',

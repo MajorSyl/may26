@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Award, Shuffle, MapPin, Calendar, Heart, BadgeCheck, CheckCircle } from 'lucide-react';
 import { FULL_MEMBER_LIST } from '../member-data';
-import SafeImage from './SafeImage';
 
 // Curated biographies & photos for key members to display rich and authentic spotlights
 const MEMBER_SPOTLIGHTS = [
@@ -121,29 +120,21 @@ export default function MemberSpotlight() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.4 }}
-              className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center"
+              className="space-y-6 text-slate-800"
             >
-              {/* Photo component (col-span-5) */}
-              <div className="md:col-span-5 flex justify-center">
-                <div className="relative group max-w-[240px] md:max-w-full w-full">
-                  <div className="absolute inset-0 bg-rotary-azure/10 rounded-2xl transform rotate-3 group-hover:rotate-1 transition-transform duration-300"></div>
-                  <div className="relative aspect-square overflow-hidden rounded-2xl border-4 border-white shadow-md flex items-center justify-center bg-slate-50">
-                    <SafeImage
-                      src={selectedSpotlight.photoUrl}
-                      alt={selectedSpotlight.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  {selectedSpotlight.isPaulHarrisFellow && (
-                    <div className="absolute -bottom-2 -right-2 bg-rotary-gold text-white p-1.5 rounded-full shadow-md" title={`Paul Harris Fellow (${selectedSpotlight.paulHarrisLevel})`}>
-                      <Award className="h-5 w-5 animate-pulse" />
-                    </div>
-                  )}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {/* Large Text Avatar Badge with Initials */}
+                <div className="w-16 h-16 rounded-full bg-rotary-azure/10 text-rotary-azure font-extrabold text-xl flex items-center justify-center border border-rotary-azure/20 shrink-0 select-none font-display">
+                  {(() => {
+                    const cleanName = selectedSpotlight.name.replace('Rtn. ', '');
+                    const parts = cleanName.split(' ');
+                    if (parts.length >= 2) {
+                      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+                    }
+                    return parts[0][0].toUpperCase();
+                  })()}
                 </div>
-              </div>
 
-              {/* Bio & detail details (col-span-7) */}
-              <div className="md:col-span-7 space-y-5 text-slate-800">
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-xl sm:text-2xl font-extrabold text-slate-850 font-display">
@@ -152,6 +143,12 @@ export default function MemberSpotlight() {
                     <span className="bg-rotary-azure/10 text-rotary-azure border border-rotary-azure/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
                       {selectedSpotlight.role}
                     </span>
+                    {selectedSpotlight.isPaulHarrisFellow && (
+                      <span className="bg-rotary-gold/10 text-rotary-gold-dark border border-rotary-gold/20 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Award className="h-3 w-3 shrink-0" />
+                        <span>Paul Harris Fellow ({selectedSpotlight.paulHarrisLevel})</span>
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 font-light items-center">
@@ -166,25 +163,27 @@ export default function MemberSpotlight() {
                     </p>
                   </div>
                 </div>
+              </div>
 
-                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl relative">
+              <p className="text-sm sm:text-base leading-relaxed text-slate-600 font-light italic pl-1">
+                "{selectedSpotlight.bio}"
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] font-bold tracking-wider text-rotary-azure uppercase block mb-1">
                     Outstanding Contribution Achievement
                   </span>
-                  <p className="text-sm font-semibold text-slate-750 flex items-center gap-1.5 leading-snug">
+                  <p className="text-xs font-semibold text-slate-750 flex items-center gap-1.5 leading-snug">
                     <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
                     {selectedSpotlight.contribution}
                   </p>
                 </div>
 
-                <p className="text-xs sm:text-sm leading-relaxed text-slate-600 font-light italic">
-                  "{selectedSpotlight.bio}"
-                </p>
-
                 {selectedSpotlight.committee && (
-                  <div className="pt-2 flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Commitment Area:</span>
-                    <span className="bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-md text-xs font-medium border border-slate-200">
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col justify-center">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block mb-1">Commitment Area:</span>
+                    <span className="text-xs font-semibold text-slate-750">
                       {selectedSpotlight.committee}
                     </span>
                   </div>

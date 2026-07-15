@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Project, ClubEvent, UserProfile, ContactInquiry } from './types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from './types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 
 // Read configuration from Vite environment
@@ -303,32 +303,47 @@ export const saveSupabaseEvent = async (event: ClubEvent): Promise<ClubEvent> =>
 export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> => {
   if (isSupabaseConfigured && supabase) {
     try {
+      // Direct query on users (now safe and public with no sensitive columns)
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('uid', uid)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        if (error.code === 'PGRST116') return null; // No rows returned
-        throw error;
+      if (error) throw error;
+      if (!data) return null;
+
+      // Try to query member_contact_info for sensitive fields (only returns data if authorized / admin)
+      let contactInfo: any = null;
+      try {
+        const { data: contactData } = await supabase
+          .from('member_contact_info')
+          .select('*')
+          .eq('uid', uid)
+          .maybeSingle();
+        contactInfo = contactData;
+      } catch (cErr) {
+        console.warn('Could not read member contact info (non-admin access or table missing):', cErr);
       }
       
-      // Map PostgreSQL lowercased fields back to camelCase React fields
-      if (data) {
-        return {
-          uid: data.uid,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          attendanceRate: data.attendanceRate !== undefined ? data.attendanceRate : data.attendancerate,
-          contributionGoals: data.contributionGoals !== undefined ? data.contributionGoals : data.contributiongoals,
-          contributedAmount: data.contributedAmount !== undefined ? data.contributedAmount : data.contributedamount,
-          committee: data.committee,
-          tasks: data.tasks || []
-        } as UserProfile;
-      }
-      return null;
+      return {
+        uid: data.uid,
+        name: data.name,
+        email: contactInfo?.email || '',
+        role: data.role,
+        attendanceRate: data.attendanceRate !== undefined ? data.attendanceRate : data.attendancerate,
+        contributionGoals: data.contributionGoals !== undefined ? data.contributionGoals : data.contributiongoals,
+        contributedAmount: data.contributedAmount !== undefined ? data.contributedAmount : data.contributedamount,
+        committee: data.committee,
+        tasks: data.tasks || [],
+        classification: data.classification || '',
+        isPaulHarrisFellow: data.ispaulharrisfellow !== undefined ? data.ispaulharrisfellow : false,
+        paulHarrisLevel: data.paulharrislevel || 'None',
+        phone: contactInfo?.phone || '',
+        joinedDate: data.joineddate || '',
+        birthday: contactInfo?.birthday || '',
+        avatarUrl: data.avatarurl || ''
+      } as UserProfile;
     } catch (err) {
       console.error('Supabase query error (UserProfile):', err);
       return null;
@@ -343,13 +358,12 @@ export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> 
 export const upsertSupabaseUser = async (profile: UserProfile): Promise<UserProfile> => {
   if (isSupabaseConfigured && supabase) {
     try {
-      // Attempt upsert with all available profile fields (mapping camelCase to lowercase/snake_case)
-      const { error } = await supabase
+      // 1. Upsert public fields to users table (without email, phone, birthday)
+      const { error: userError } = await supabase
         .from('users')
         .upsert({
           uid: profile.uid,
           name: profile.name,
-          email: profile.email,
           role: profile.role,
           attendancerate: profile.attendanceRate !== undefined ? profile.attendanceRate : 92,
           contributiongoals: profile.contributionGoals !== undefined ? profile.contributionGoals : 500,
@@ -359,32 +373,24 @@ export const upsertSupabaseUser = async (profile: UserProfile): Promise<UserProf
           classification: profile.classification || '',
           ispaulharrisfellow: !!profile.isPaulHarrisFellow,
           paulharrislevel: profile.paulHarrisLevel || 'None',
-          phone: profile.phone || '',
           joineddate: profile.joinedDate || '',
-          birthday: profile.birthday || '',
           avatarurl: profile.avatarUrl || ''
         });
 
-      if (error) {
-        // Fallback if some new columns are not present in the live Supabase database
-        if (error.message && (error.message.includes('column') || error.message.includes('not found') || error.message.includes('does not exist'))) {
-          console.warn('Extra profile columns missing in live database table. Falling back to core columns...', error.message);
-          const { error: fallbackError } = await supabase
-            .from('users')
-            .upsert({
-              uid: profile.uid,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              attendancerate: profile.attendanceRate !== undefined ? profile.attendanceRate : 92,
-              contributiongoals: profile.contributionGoals !== undefined ? profile.contributionGoals : 500,
-              contributedamount: profile.contributedAmount !== undefined ? profile.contributedAmount : 150,
-              committee: profile.committee || 'General Fellowship',
-              tasks: profile.tasks || []
-            });
-          if (fallbackError) throw fallbackError;
-        } else {
-          throw error;
+      if (userError) throw userError;
+
+      // 2. Upsert sensitive fields to member_contact_info table (if values are present)
+      if (profile.email || profile.phone || profile.birthday) {
+        const { error: contactError } = await supabase
+          .from('member_contact_info')
+          .upsert({
+            uid: profile.uid,
+            email: profile.email || '',
+            phone: profile.phone || '',
+            birthday: profile.birthday || ''
+          });
+        if (contactError) {
+          console.warn('Could not save member contact info (this is normal if non-admin or no contact permission):', contactError.message);
         }
       }
       return profile;
@@ -477,42 +483,92 @@ export const deleteSupabaseEvent = async (id: string): Promise<boolean> => {
 
 // 4.3 Get All Users / Members
 export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
+  let list: UserProfile[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
+      // Query users table (now public with no sensitive columns)
+      const { data: usersData, error: userError } = await supabase
         .from('users')
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) throw error;
-      if (data) {
-        return data.map((d: any) => ({
-          uid: d.uid,
-          name: d.name,
-          email: d.email,
-          role: d.role,
-          attendanceRate: d.attendanceRate !== undefined ? d.attendanceRate : d.attendancerate,
-          contributionGoals: d.contributionGoals !== undefined ? d.contributionGoals : d.contributiongoals,
-          contributedAmount: d.contributedAmount !== undefined ? d.contributedAmount : d.contributedamount,
-          committee: d.committee,
-          tasks: d.tasks || [],
-          classification: d.classification || '',
-          isPaulHarrisFellow: d.isPaulHarrisFellow !== undefined ? d.isPaulHarrisFellow : d.ispaulharrisfellow,
-          paulHarrisLevel: d.paulHarrisLevel !== undefined ? d.paulHarrisLevel : d.paulharrislevel,
-          phone: d.phone || '',
-          joinedDate: d.joinedDate !== undefined ? d.joinedDate : d.joineddate,
-          birthday: d.birthday || '',
-          avatarUrl: d.avatarUrl !== undefined ? d.avatarUrl : d.avatarurl
-        })) as UserProfile[];
+      if (userError) throw userError;
+
+      if (usersData) {
+        // Try to query member_contact_info (only returns rows if role is authorized / admin)
+        let contactsMap = new Map<string, any>();
+        try {
+          const { data: contactsData } = await supabase
+            .from('member_contact_info')
+            .select('*');
+          if (contactsData) {
+            contactsData.forEach((c: any) => {
+              contactsMap.set(c.uid, c);
+            });
+          }
+        } catch (cErr) {
+          console.warn('Could not read member_contact_info (this is expected for non-admins):', cErr);
+        }
+
+        list = usersData.map((d: any) => {
+          const contact = contactsMap.get(d.uid);
+          return {
+            uid: d.uid,
+            name: d.name,
+            email: contact?.email || '',
+            role: d.role,
+            attendanceRate: d.attendanceRate !== undefined ? d.attendanceRate : (d.attendancerate !== undefined ? d.attendancerate : 92),
+            contributionGoals: d.contributionGoals !== undefined ? d.contributionGoals : (d.contributiongoals !== undefined ? d.contributiongoals : 500),
+            contributedAmount: d.contributedAmount !== undefined ? d.contributedAmount : (d.contributedamount !== undefined ? d.contributedamount : 150),
+            committee: d.committee,
+            tasks: d.tasks || [],
+            classification: d.classification || '',
+            isPaulHarrisFellow: d.isPaulHarrisFellow !== undefined ? d.isPaulHarrisFellow : (d.ispaulharrisfellow !== undefined ? d.ispaulharrisfellow : false),
+            paulHarrisLevel: d.paulHarrisLevel !== undefined ? d.paulHarrisLevel : (d.paulharrislevel || 'None'),
+            phone: contact?.phone || '',
+            joinedDate: d.joinedDate !== undefined ? d.joinedDate : (d.joineddate || ''),
+            birthday: contact?.birthday || '',
+            avatarUrl: d.avatarUrl !== undefined ? d.avatarUrl : (d.avatarurl || '')
+          };
+        }) as UserProfile[];
       }
-      return [];
     } catch (err) {
       console.error('Supabase query error (all Users):', err);
-      return [];
+      list = [];
     }
   } else {
-    return getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
+    list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
   }
+
+  // Merge the latest hardcoded core roster information into the returned list.
+  // This guarantees that any updates made to names, roles, titles, or avatar URLs in FULL_MEMBER_LIST
+  // are immediately active and correct in the user's interface, bypassing any stale database or localStorage data.
+  const syncedList = list.map(item => {
+    const coreMatch = INITIAL_MEMBER_DIRECTORY.find(core => core.uid === item.uid);
+    if (coreMatch) {
+      return {
+        ...item,
+        name: coreMatch.name,
+        role: coreMatch.role,
+        title: coreMatch.title || item.title || '',
+        committee: coreMatch.committee,
+        avatarUrl: coreMatch.avatarUrl || item.avatarUrl || '',
+        classification: coreMatch.classification || item.classification || '',
+        birthday: coreMatch.birthday || item.birthday || '',
+        isPaulHarrisFellow: coreMatch.isPaulHarrisFellow !== undefined ? coreMatch.isPaulHarrisFellow : item.isPaulHarrisFellow,
+        paulHarrisLevel: coreMatch.paulHarrisLevel || item.paulHarrisLevel || 'None',
+        tasks: coreMatch.tasks && coreMatch.tasks.length > 0 ? coreMatch.tasks : item.tasks
+      } as UserProfile;
+    }
+    return item;
+  });
+
+  // Save the synchronized list back to local storage if not using live Supabase
+  if (!isSupabaseConfigured || !supabase) {
+    setLocalData('sb_supabase_users', syncedList);
+  }
+
+  return syncedList;
 };
 
 // 4.4 Delete User / Member
@@ -586,6 +642,127 @@ export const deleteSupabaseInquiry = async (id: string): Promise<boolean> => {
   }
 };
 
+// 4.7 RSVPs Operations
+export const getSupabaseRSVPs = async (): Promise<EventRSVP[]> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('event_rsvps')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        event_id: d.event_id,
+        name: d.name,
+        email: d.email,
+        submitted_at: d.submitted_at || new Date().toISOString()
+      }));
+    } catch (err) {
+      console.error('Supabase query error (all RSVPs):', err);
+      return [];
+    }
+  } else {
+    return getLocalData<EventRSVP[]>('sb_supabase_event_rsvps', []);
+  }
+};
+
+export const submitSupabaseRSVP = async (rsvp: EventRSVP): Promise<EventRSVP> => {
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('event_rsvps')
+      .insert({
+        id: rsvp.id,
+        event_id: rsvp.event_id,
+        name: rsvp.name,
+        email: rsvp.email,
+        submitted_at: rsvp.submitted_at || new Date().toISOString()
+      });
+    if (error) {
+      console.error('Failed to insert RSVP to real Supabase database:', error);
+      throw error;
+    }
+    return rsvp;
+  } else {
+    const list = getLocalData<EventRSVP[]>('sb_supabase_event_rsvps', []);
+    list.push(rsvp);
+    setLocalData('sb_supabase_event_rsvps', list);
+    return rsvp;
+  }
+};
+
+// 4.8 Project Applications Operations
+export const getSupabaseApplications = async (): Promise<ProjectApplication[]> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('project_applications')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        project_id: d.project_id,
+        name: d.name,
+        email: d.email,
+        statement: d.statement,
+        submitted_at: d.submitted_at || new Date().toISOString()
+      }));
+    } catch (err) {
+      console.error('Supabase query error (all Applications):', err);
+      return [];
+    }
+  } else {
+    return getLocalData<ProjectApplication[]>('sb_supabase_project_applications', []);
+  }
+};
+
+export const submitSupabaseApplication = async (app: ProjectApplication): Promise<ProjectApplication> => {
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('project_applications')
+      .insert({
+        id: app.id,
+        project_id: app.project_id,
+        name: app.name,
+        email: app.email,
+        statement: app.statement,
+        submitted_at: app.submitted_at || new Date().toISOString()
+      });
+    if (error) {
+      console.error('Failed to insert Project Application to real Supabase database:', error);
+      throw error;
+    }
+    return app;
+  } else {
+    const list = getLocalData<ProjectApplication[]>('sb_supabase_project_applications', []);
+    list.push(app);
+    setLocalData('sb_supabase_project_applications', list);
+    return app;
+  }
+};
+
+export const checkIsAdmin = async (userId: string): Promise<boolean> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) {
+        console.error('Error querying admins table:', error);
+        return false;
+      }
+      return !!data;
+    } catch (err) {
+      console.error('Error checking admin status:', err);
+      return false;
+    }
+  }
+  return false;
+};
+
 // 5. Seed Database Script
 export const seedSupabaseTables = async (): Promise<{ success: boolean; message: string; seededCount: number }> => {
   if (!isSupabaseConfigured || !supabase) {
@@ -649,7 +826,26 @@ export const seedSupabaseTables = async (): Promise<{ success: boolean; message:
 export const GET_SUPABASE_SQL_SCHEMA = () => `
 -- Copy and run this script in your Supabase SQL Editor:
 
--- 1. Create Projects Table
+-- 1. Create Admins Table
+CREATE TABLE IF NOT EXISTS admins (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- 2. Create is_admin() helper function
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.admins WHERE user_id = auth.uid()
+  );
+END;
+$$;
+
+-- 3. Create Projects Table
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -662,7 +858,7 @@ CREATE TABLE IF NOT EXISTS projects (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
--- 2. Create Events Table
+-- 4. Create Events Table
 CREATE TABLE IF NOT EXISTS events (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -675,21 +871,34 @@ CREATE TABLE IF NOT EXISTS events (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
--- 3. Create Users Table
+-- 5. Create Users Table (Now completely safe and public - email, phone, birthday relocated)
 CREATE TABLE IF NOT EXISTS users (
   uid TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  email TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('Rotarian', 'Club Officer', 'Guest', 'President')),
-  attendanceRate INTEGER,
-  contributionGoals INTEGER,
-  contributedAmount INTEGER,
+  attendancerate INTEGER,
+  contributiongoals INTEGER,
+  contributedamount INTEGER,
   committee TEXT,
   tasks TEXT[],
+  classification TEXT,
+  ispaulharrisfellow BOOLEAN DEFAULT false,
+  paulharrislevel TEXT,
+  joineddate TEXT,
+  avatarurl TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
--- 4. Create Inquiries Table
+-- 6. Create Member Contact Info Table (Relocated sensitive data)
+CREATE TABLE IF NOT EXISTS member_contact_info (
+  uid TEXT PRIMARY KEY REFERENCES users(uid) ON DELETE CASCADE,
+  email TEXT,
+  phone TEXT,
+  birthday TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 7. Create Inquiries Table
 CREATE TABLE IF NOT EXISTS inquiries (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -700,7 +909,120 @@ CREATE TABLE IF NOT EXISTS inquiries (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
--- Enable Realtime for automatic updates (Optional but recommended)
+-- 8. Create Event RSVPs Table (Relocated guest mutations)
+CREATE TABLE IF NOT EXISTS event_rsvps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id TEXT REFERENCES events(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 9. Create Project Applications Table (Relocated volunteer mutations)
+CREATE TABLE IF NOT EXISTS project_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  statement TEXT NOT NULL,
+  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- ==========================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- ==========================================
+
+-- Enable Row Level Security (RLS) on all tables
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE member_contact_info ENABLE ROW LEVEL SECURITY;
+ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_applications ENABLE ROW LEVEL SECURITY;
+
+-- 1. Policies for 'admins' Table
+CREATE POLICY "Allow anyone to check admins" ON admins 
+  FOR SELECT TO public USING (true);
+
+-- 2. Policies for 'projects' Table
+DROP POLICY IF EXISTS "Allow anyone to read projects" ON projects;
+DROP POLICY IF EXISTS "Allow admin full access to projects" ON projects;
+
+CREATE POLICY "Allow anyone to read projects" ON projects 
+  FOR SELECT TO public USING (true);
+
+CREATE POLICY "Allow admin full access to projects" ON projects 
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 3. Policies for 'events' Table
+DROP POLICY IF EXISTS "Allow anyone to read events" ON events;
+DROP POLICY IF EXISTS "Allow admin full access to events" ON events;
+
+CREATE POLICY "Allow anyone to read events" ON events 
+  FOR SELECT TO public USING (true);
+
+CREATE POLICY "Allow admin full access to events" ON events 
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 4. Policies for 'users' Table
+DROP POLICY IF EXISTS "Allow anyone to select on users" ON users;
+DROP POLICY IF EXISTS "Allow admin full access to users" ON users;
+
+CREATE POLICY "Allow anyone to select on users" ON users 
+  FOR SELECT TO public USING (true);
+
+CREATE POLICY "Allow admin full access to users" ON users 
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- Reset users permissions (removing custom CLS revokes, since users table has no sensitive columns)
+GRANT SELECT ON users TO public, anon, authenticated;
+GRANT ALL PRIVILEGES ON users TO authenticated;
+
+-- 5. Policies for 'member_contact_info' Table (Strictly Admin-only)
+CREATE POLICY "Allow admin select on member_contact_info" ON member_contact_info
+  FOR SELECT TO authenticated USING (is_admin());
+
+CREATE POLICY "Allow admin write on member_contact_info" ON member_contact_info
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 6. Policies for 'inquiries' Table
+DROP POLICY IF EXISTS "Allow anyone to insert inquiries" ON inquiries;
+DROP POLICY IF EXISTS "Allow admin full access to inquiries" ON inquiries;
+
+CREATE POLICY "Allow anyone to insert inquiries" ON inquiries 
+  FOR INSERT TO public WITH CHECK (true);
+
+CREATE POLICY "Allow admin full access to inquiries" ON inquiries 
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 7. Policies for 'event_rsvps' Table
+CREATE POLICY "Allow public insert to event_rsvps" ON event_rsvps
+  FOR INSERT TO public WITH CHECK (true);
+
+CREATE POLICY "Allow admin full access to event_rsvps" ON event_rsvps
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 8. Policies for 'project_applications' Table
+CREATE POLICY "Allow public insert to project_applications" ON project_applications
+  FOR INSERT TO public WITH CHECK (true);
+
+CREATE POLICY "Allow admin full access to project_applications" ON project_applications
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- ==========================================
+-- SEED INITIAL ADMIN USER
+-- ==========================================
+-- Insert the admin account 'bigsyl19@gmail.com' dynamically into the admins table
+-- (Will work automatically once the user signs up/in via Supabase Auth)
+INSERT INTO admins (user_id)
+SELECT id FROM auth.users WHERE email = 'bigsyl19@gmail.com'
+ON CONFLICT DO NOTHING;
+
+-- Enable Realtime for automatic updates
 alter publication supabase_realtime add table projects;
 alter publication supabase_realtime add table events;
+alter publication supabase_realtime add table event_rsvps;
+alter publication supabase_realtime add table project_applications;
 `;

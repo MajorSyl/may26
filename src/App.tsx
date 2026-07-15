@@ -13,7 +13,7 @@ import ClubGallery from './components/ClubGallery';
 import Contact from './components/Contact';
 
 import { UserProfile, ContactInquiry } from './types';
-import { subscribeToAuth, logOutUser } from './firebase-service';
+import { subscribeToAuth, logOutUser } from './db-router';
 import { submitDbInquiry } from './db-router';
 import { GENERAL_FAQS } from './data';
 import { Mail, Phone, MapPin, Send, Check, Heart, Shield, RefreshCw } from 'lucide-react';
@@ -272,55 +272,27 @@ function MainApp() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Form Card */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
-                  <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display">{t('messageBoard')}</span>
+                {/* Get in Touch CTA Card */}
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display">{t('messageBoard')}</span>
+                    <h3 className="text-sm font-bold text-slate-800 leading-snug">
+                      {language === 'krio' ? 'Send Wi Wan Mɛsij Tɔde' : 'Send Us a Message Today'}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-light leading-relaxed">
+                      {language === 'krio' 
+                        ? 'If yu gɛt ɛni kwɛstyɔŋ, de want fɔ join mɛmba, ɔ fɔ giv dɔneshɔŋ, tɔk to wi mɛmba dɛn bway wi main kɔntakt fɔm.'
+                        : 'If you have any questions, want to inquire about membership, or wish to support our projects, reach out to our club officers through our main contact form.'}
+                    </p>
+                  </div>
                   
-                  <form onSubmit={handleContactSubmit} className="space-y-3 text-xs font-medium text-slate-700">
-                    <input
-                      id="foot-name-input"
-                      type="text"
-                      placeholder={t('fullName')}
-                      value={contName}
-                      onChange={(e) => setContName(e.target.value)}
-                      className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
-                      required
-                    />
-
-                    <input
-                      id="foot-email-input"
-                      type="email"
-                      placeholder={t('emailAddress')}
-                      value={contEmail}
-                      onChange={(e) => setContEmail(e.target.value)}
-                      className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
-                      required
-                    />
-
-                    <textarea
-                      id="foot-msg-input"
-                      placeholder={t('writeMessage')}
-                      value={contMsg}
-                      onChange={(e) => setContMsg(e.target.value)}
-                      className="w-full bg-white border border-slate-150 rounded-lg px-3 py-2 h-16 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure resize-none"
-                      required
-                    />
-
-                    <button
-                      id="foot-submit-btn"
-                      type="submit"
-                      disabled={contLoading}
-                      className="w-full py-2 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold font-display uppercase text-[10px] rounded-lg tracking-wider shadow-xs"
-                    >
-                      {contLoading ? t('sending') : t('transmitInquiry')}
-                    </button>
-                  </form>
-
-                  {contSuccess && (
-                    <div className="p-2 border border-emerald-200 bg-emerald-50 text-emerald-800 text-[10px] font-bold text-center rounded-lg uppercase tracking-wider font-display select-none">
-                      {t('successLog')}
-                    </div>
-                  )}
+                  <button
+                    onClick={() => setActiveTab('contact')}
+                    className="w-full py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold font-display uppercase text-[10px] rounded-lg tracking-wider shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    <span>{language === 'krio' ? 'Kɔntakt Wi Fɔm' : 'Open Contact Form'}</span>
+                  </button>
                 </div>
 
                 {/* Freetown Map visual representation card */}

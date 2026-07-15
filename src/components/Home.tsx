@@ -28,10 +28,7 @@ import { Project } from '../types';
 import MemberSpotlight from './MemberSpotlight';
 import SafeImage from './SafeImage';
 
-import clubMembersPhoto from '../assets/images/club_members_photo_1780923864987.png';
-import rotaryToiletHandover from '../assets/images/rotary_toilet_handover_1780856626145.png';
-import rotaryFundraisingGala from '../assets/images/rotary_fundraising_gala_1780856649745.png';
-import rotaryMeetingDinner from '../assets/images/rotary_meeting_dinner_1780856599930.png';
+// No image imports as requested by the user
 
 interface HomeProps {
   onLearnMore: (tabId: string) => void;
@@ -85,7 +82,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '2 days ago',
       content: '🚽 Landmark Sanitation Handover! Today, the Rotary Club of Freetown-Sunset officially completed and handed over the fully refurbished, clean, modern public bathroom block on Aberdeen Beach Road. This facility provides running water, solid hygiene fixtures, and reliable waste management for beach visitors and local traders. Together, we are keeping our coastline clean and healthy! 🇸🇱🤝 #WaterAndSanitation #AberdeenBeach #ServiceAboveSelf #RotaryInSierraLeone',
-      imageUrl: rotaryToiletHandover,
+      imageUrl: '',
       likes: 189,
       liked: false,
       shares: 42,
@@ -103,7 +100,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '3 days ago',
       content: '🇸🇱 Radiant fellowship and unity under the banner of Service Above Self! Here we are posing together at our West African Goodwill convention, feeling proud and magnificent in our vibrant coordinated African print garments and official partner Goodwill jute bags. Together, we continue to impact lives, foster international peace, and strengthen our local ties! 🌌✨ #RotarySunset #RotaryInternational #ServiceAboveSelf #FreetownSuperstars #AfricanFashionUnity',
-      imageUrl: clubMembersPhoto,
+      imageUrl: '',
       likes: 352,
       liked: true,
       shares: 88,
@@ -120,7 +117,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '1 week ago',
       content: '🎉 Celebrating continuous service and solidarity! Highlights from our beautiful Annual Fundraising Dinner & Gala Banquet. From cutting our celebratory cake to securing funding commitments for upcoming borehole systems in marginalized sectors, it was an evening of friendship and generous hearts. Thank you to everyone who made this possible! 🍾🍰 #AnnualFundraiser #FreetownRotary #ServiceAboveSelf #RotarySunset',
-      imageUrl: rotaryFundraisingGala,
+      imageUrl: '',
       likes: 247,
       liked: false,
       shares: 58,
@@ -137,7 +134,7 @@ export default function Home({ onLearnMore }: HomeProps) {
       avatarInitials: 'RFS',
       timeAgo: '2 weeks ago',
       content: '🤝 A majestic sunset of fellowship and leadership synergy! Delightful joint evening meeting at our default weekly venue, the Lagoonda Hotel. We finalized funding blueprints for our upcoming solar borehole pipeline setups. Service meets action! Join us as a guest next Thursday or get in touch. 🌅 #WeeklySunsetFellowship #FreetownLeaders #RotaryGlobal',
-      imageUrl: rotaryMeetingDinner,
+      imageUrl: '',
       likes: 98,
       liked: false,
       shares: 14,
@@ -269,69 +266,8 @@ export default function Home({ onLearnMore }: HomeProps) {
 
     switch (b.id) {
       case 'hero':
-        return (
-          <section 
-            key={b.id} 
-            className="relative overflow-hidden py-28 md:py-36 px-4 sm:px-6 lg:px-8 transition-colors duration-500 bg-cover bg-center"
-            style={{ backgroundImage: `linear-gradient(to bottom, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.90)), url('${clubMembersPhoto}')` }}
-          >
-            {glowNode}
-            <div className="max-w-5xl mx-auto text-center relative z-10 space-y-8 text-white">
-              {settings.homeHeroBadge && !settings.homeHeroBadge.toLowerCase().includes('9101') && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 15 }} 
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6 }}
-                  className="inline-flex items-center gap-2 bg-rotary-gold/25 border border-rotary-gold/40 px-4 py-1.5 rounded-full text-rotary-gold text-xs font-semibold tracking-wider uppercase font-display"
-                >
-                  <ShieldCheck className="h-4 w-4 text-rotary-gold" />
-                  {settings.homeHeroBadge}
-                </motion.div>
-              )}
-
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-4xl sm:text-5xl md:text-6xl font-extrabold font-display tracking-tight leading-snug text-white"
-              >
-                {settings.homeHeroTitle}
-              </motion.h1>
-
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-base sm:text-xl font-light leading-relaxed max-w-3xl mx-auto text-slate-100"
-              >
-                {settings.homeHeroSubtitle}
-              </motion.p>
-
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4"
-              >
-                <button
-                  id="cta-meeting-rsvp-btn"
-                  onClick={() => onLearnMore('events')}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-rotary-gold hover:bg-rotary-gold-dark text-rotary-dark font-black tracking-wider uppercase text-xs font-display rounded-xl transition-all shadow-md hover:shadow-lg hover:scale-101 active:scale-99 cursor-pointer flex items-center justify-center gap-2 border border-rotary-gold"
-                >
-                  <span>Attend Next Meeting</span>
-                  <ArrowRight className="h-4 w-4 stroke-[3px]" />
-                </button>
-                <button
-                  id="cta-get-involved-btn"
-                  onClick={() => onLearnMore('get-involved')}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-transparent hover:bg-white/10 font-semibold font-display rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border-2 border-white/30 text-white animate-pulse"
-                >
-                  Partner or Sponsor
-                </button>
-              </motion.div>
-            </div>
-          </section>
-        );
+        // Hero is removed as requested by the user
+        return null;
 
       case 'stats':
         return (
@@ -573,12 +509,8 @@ export default function Home({ onLearnMore }: HomeProps) {
                               <div className="flex flex-col items-end shrink-0 text-right">
                                 {/* Profile Avatar badge inside the audio wave message overlay */}
                                 <div className="flex items-center gap-1">
-                                  <div className="w-5 h-5 rounded-full border border-white shrink-0 overflow-hidden flex items-center justify-center bg-slate-100">
-                                    <SafeImage 
-                                      src="" 
-                                      alt="Marie"
-                                      className="w-full h-full object-cover"
-                                    />
+                                  <div className="w-5 h-5 rounded-full border border-white shrink-0 overflow-hidden flex items-center justify-center bg-rotary-azure text-white font-extrabold text-[8px] font-display">
+                                    MA
                                   </div>
                                   {/* Double Check Delivered Icon Indicator */}
                                   <div className="flex text-[#0056e3]">
@@ -598,17 +530,8 @@ export default function Home({ onLearnMore }: HomeProps) {
                         {/* Interactive Delivered PDF Card Block adapted (Safe Motherhood guidelines) */}
                         {isPdfPost && (
                           <div className="px-5 pb-5 space-y-3">
-                            {/* Graphic Cover Portion */}
-                            <div className="relative h-44 sm:h-52 bg-slate-100 overflow-hidden rounded-t-[20px] border border-b-0 border-slate-150 flex items-center justify-center">
-                              <SafeImage 
-                                src={post.imageUrl} 
-                                alt="Clinics kits dispatch" 
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-
-                            {/* Crisp PDF Description Segment as in screenshot */}
-                            <div className="bg-[#f3f4f6] rounded-b-[20px] p-4 flex items-center justify-between gap-4 border border-t-0 border-slate-150">
+                            {/* Crisp PDF Description Segment styled as a self-contained card */}
+                            <div className="bg-[#f3f4f6] rounded-[20px] p-4 flex items-center justify-between gap-4 border border-slate-150">
                               <div className="flex items-center gap-3.5 min-w-0">
                                 {/* Red Crimson PDF Icon Symbol */}
                                 <div className="w-10 h-10 bg-rose-500 rounded-xl text-white font-extrabold text-[11px] flex flex-col items-center justify-center shrink-0 shadow-sm font-display tracking-wider">
@@ -639,16 +562,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                           </div>
                         )}
 
-                        {/* Normal cover image inside standard post cards */}
-                        {!isVoicePost && !isPdfPost && (
-                          <div className="relative h-64 sm:h-80 bg-slate-100 overflow-hidden border-y border-slate-105 flex items-center justify-center">
-                            <SafeImage 
-                              src={post.imageUrl} 
-                              alt="Sunset environment team" 
-                              className="w-full h-full object-cover hover:scale-103 transition-transform duration-700"
-                            />
-                          </div>
-                        )}
+                        {/* Normal cover image removed as requested */}
 
                         {/* Interaction Counter stats */}
                         <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold select-none">
@@ -826,7 +740,7 @@ export default function Home({ onLearnMore }: HomeProps) {
 
                 <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4 relative overflow-hidden text-slate-800">
                   <span className="inline-block bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded">Environmental Care</span>
-                  <h3 className="text-lg font-bold text-slate-800 leading-snug">Planted 1,200 mangrove seedlings</h3>
+                  <h3 className="text-lg font-bold text-slate-800 leading-snug">Planted over 1,000 mangrove seedlings</h3>
                   <p className="text-xs text-slate-500 leading-relaxed font-light">
                     Sunset Coastal volunteers successfully clean beach zones and seed mangrove paths near Aberdeen. The system provides immediate protection from tidal erosion and increases wildlife return files.
                   </p>
@@ -845,59 +759,39 @@ export default function Home({ onLearnMore }: HomeProps) {
       case 'about_us':
         return (
           <section key={b.id} id="home-about" className={`py-16 px-4 sm:px-6 lg:px-8 border-y border-slate-105 relative overflow-hidden transition-colors duration-500 ${bgStyles}`}>
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Writeup Column (7 Spans) */}
-              <div className="lg:col-span-7 space-y-6">
-                <div className="space-y-2">
-                  <span className="inline-flex bg-rotary-azure/10 text-rotary-azure border border-rotary-azure/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest font-display">
-                    About Our Club
-                  </span>
-                  <h2 className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}>
-                    Fellowship, Integrity, and Direct Local Service
-                  </h2>
-                </div>
-                
-                <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
-                  Founded on Freetown's beautiful shores, the <strong>Rotary Club of Freetown Sunset (RCFS)</strong> gathers a diverse cohort of passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
-                </p>
-                <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
-                  Using the core guidelines of Rotary International and our District 9101, our actions focus on pioneering clean solar water access, distributing vital maternal clinical resources, maintaining educational libraries, and running beach reforestation efforts. We turn values into durable, local infrastructure for Freetown.
-                </p>
-
-                <div className="pt-2 flex flex-wrap gap-4">
-                  <button
-                    id="home-about-learn-more"
-                    onClick={() => onLearnMore('about')}
-                    className="px-5 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 font-display"
-                  >
-                    <span>Read Our Core Values</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                  <button
-                    id="home-about-contact"
-                    onClick={() => onLearnMore('contact')}
-                    className="px-5 py-2.5 bg-transparent hover:bg-slate-100/10 text-slate-700 hover:text-slate-900 border border-slate-350 rounded-xl transition-all cursor-pointer font-display font-semibold text-xs uppercase tracking-wider"
-                  >
-                    Contact Our Officers
-                  </button>
-                </div>
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="space-y-2">
+                <span className="inline-flex bg-rotary-azure/10 text-rotary-azure border border-rotary-azure/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest font-display">
+                  About Our Club
+                </span>
+                <h2 className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}>
+                  Fellowship, Integrity, and Direct Local Service
+                </h2>
               </div>
+              
+              <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
+                Founded on Freetown's beautiful shores, the <strong>Rotary Club of Freetown Sunset (RCFS)</strong> gathers a diverse cohort of passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
+              </p>
+              <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
+                Using the core guidelines of Rotary International and our District 9101, our actions focus on pioneering clean solar water access, distributing vital maternal clinical resources, maintaining educational libraries, and running beach reforestation efforts. We turn values into durable, local infrastructure for Freetown.
+              </p>
 
-              {/* Members Image Column (5 Spans) */}
-              <div className="lg:col-span-5 relative group">
-                <div className="absolute inset-0 bg-rotary-gold/20 rounded-3xl transform rotate-2 group-hover:rotate-1 transition-transform duration-300"></div>
-                <div className="relative overflow-hidden rounded-3xl border border-slate-200/50 shadow-md flex items-center justify-center bg-slate-100">
-                  <SafeImage 
-                    id="home-about-members-image"
-                    src={clubMembersPhoto} 
-                    alt="Rotary Club of Freetown Sunset members posing together at sunset" 
-                    className="w-full h-auto object-cover aspect-[4/3] group-hover:scale-102 transition-transform duration-500"
-                  />
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-4 text-white">
-                    <p className="text-xs font-bold font-display">Rotary Freetown Sunset Fellowship</p>
-                    <p className="text-[10px] text-slate-200 font-light font-sans">Active leaders and members planning next action programs.</p>
-                  </div>
-                </div>
+              <div className="pt-2 flex flex-wrap gap-4">
+                <button
+                  id="home-about-learn-more"
+                  onClick={() => onLearnMore('about')}
+                  className="px-5 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 font-display"
+                >
+                  <span>Read Our Core Values</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  id="home-about-contact"
+                  onClick={() => onLearnMore('contact')}
+                  className="px-5 py-2.5 bg-transparent hover:bg-slate-100/10 text-slate-700 hover:text-slate-900 border border-slate-350 rounded-xl transition-all cursor-pointer font-display font-semibold text-xs uppercase tracking-wider"
+                >
+                  Contact Our Officers
+                </button>
               </div>
             </div>
           </section>
@@ -943,28 +837,21 @@ export default function Home({ onLearnMore }: HomeProps) {
                       id={`project-card-${project.id}`}
                       className="bg-white rounded-3xl border border-slate-200 hover:border-rotary-azure/30 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full text-slate-850"
                     >
-                      {/* Thumbnail Cover */}
-                      <div className="relative h-48 bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
-                        <SafeImage 
-                          src={project.imageUrl} 
-                          alt={project.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-4 left-4 bg-emerald-500 text-white font-extrabold px-3 py-1 rounded-full text-[10px] uppercase tracking-wider shadow-sm">
-                          Completed • {project.year}
-                        </div>
-                      </div>
-
-                      {/* Content Area */}
-                      <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                      {/* Content Area with date badge inside */}
+                      <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
                         <div className="space-y-2">
-                          <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest block">
-                            {project.category}
-                          </span>
-                          <h3 className="text-base font-extrabold text-slate-850 leading-snug line-clamp-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-rotary-azure font-bold font-display uppercase tracking-widest block">
+                              {project.category}
+                            </span>
+                            <span className="bg-emerald-500 text-white font-extrabold px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider shadow-2xs">
+                              Completed • {project.year}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-extrabold text-slate-850 leading-snug line-clamp-2 pt-1">
                             {project.title}
                           </h3>
-                          <p className="text-xs text-slate-500 font-normal leading-relaxed line-clamp-3">
+                          <p className="text-xs text-slate-500 font-normal leading-relaxed line-clamp-4">
                             {project.description}
                           </p>
                         </div>
@@ -972,7 +859,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                         {/* Impact Stat Banner */}
                         {project.impact && (
                           <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-800 space-y-1 mt-auto">
-                            <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-600 block">Verified Community Impact</span>
+                            <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-600 block">Project Community Impact</span>
                             <p className="text-[11px] leading-relaxed font-light">{project.impact}</p>
                           </div>
                         )}
@@ -998,7 +885,7 @@ export default function Home({ onLearnMore }: HomeProps) {
   return (
     <div className="space-y-4 pb-24 select-none">
       {layout
-        .filter(b => b.visible !== false)
+        .filter(b => b.visible !== false && b.id !== 'hero')
         .map(b => renderBlock(b))}
     </div>
   );

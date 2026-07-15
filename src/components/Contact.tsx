@@ -40,9 +40,9 @@ export default function Contact() {
       setSubject('');
       setMessage('');
       setTimeout(() => setSuccess(false), 6000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setErrorText('Could not write message. Please try again later.');
+      setErrorText(err?.message || 'Could not write message. Please try again later.');
     } finally {
       setLoading(false);
     }

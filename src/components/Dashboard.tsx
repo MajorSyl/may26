@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, Project, ClubEvent } from '../types';
-import { logInUser } from '../firebase-service';
 import { 
   getDbProjects,
   getDbEvents,
@@ -10,7 +9,8 @@ import {
   updateDbProfile, 
   getActiveDbDriver, 
   setActiveDbDriver, 
-  isDriverSimulated 
+  isDriverSimulated,
+  logInUser
 } from '../db-router';
 import { seedSupabaseTables, GET_SUPABASE_SQL_SCHEMA, isSupabaseConfigured } from '../supabase-service';
 import { 
@@ -83,7 +83,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const [addContAmount, setAddContAmount] = useState('50');
 
   // Supabase & Database Sync states
-  const [activeDriver, setActiveDriverState] = useState<'firebase' | 'supabase'>(getActiveDbDriver());
+  const [activeDriver, setActiveDriverState] = useState<'supabase'>(getActiveDbDriver() as 'supabase');
   const [seedLoading, setSeedLoading] = useState(false);
   const [seedMessage, setSeedMessage] = useState('');
   const [showSqlSchema, setShowSqlSchema] = useState(false);
@@ -125,10 +125,10 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
 
   // Sync active local states on render
   useEffect(() => {
-    setActiveDriverState(getActiveDbDriver());
+    setActiveDriverState(getActiveDbDriver() as 'supabase');
   }, []);
 
-  const handleSwitchDriver = (driver: 'firebase' | 'supabase') => {
+  const handleSwitchDriver = (driver: 'supabase') => {
     setActiveDbDriver(driver);
     setActiveDriverState(driver);
     onStateRefresh();
@@ -254,7 +254,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
         name = 'Adonis Abboud';
       } else if (role === 'President') {
         email = 'am••••••@yahoo.co.uk';
-        name = 'Abdul Manafi Kemokai';
+        name = 'Abdul Manaff Kemokai';
       }
       const profile = await logInUser(email, name);
       onLoginSuccess(profile);
@@ -265,14 +265,14 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
     }
   };
 
-  const handleFirebaseGoogleLogin = async () => {
+  const handleSupabaseGoogleLogin = async () => {
     setLoading(true);
     setLoginError('');
     try {
       const profile = await logInUser();
       onLoginSuccess(profile);
     } catch (err: any) {
-      setLoginError('Google Sign-In failed. Verify Firebase auth domain allows connection.');
+      setLoginError('Google Sign-In failed. Verify Supabase redirect URL allows connection.');
     } finally {
       setLoading(false);
     }
@@ -408,7 +408,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 onClick={() => handleSimQuickLogin('President')}
                 className="w-full py-2.5 px-3 bg-white hover:bg-rotary-gold/5 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs hover:border-rotary-gold/40"
               >
-                <span>President (Abdul Manafi Kemokai)</span>
+                <span>President (Abdul Manaff Kemokai)</span>
                 <span className="text-[9px] bg-rotary-gold/10 text-rotary-gold px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Full Admin Access</span>
               </button>
 
@@ -485,17 +485,17 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
             </button>
           </form>
 
-          {/* Real Firebase Google Login Trigger */}
+          {/* Real Supabase Google Login Trigger */}
           <div className="pt-2 border-t border-slate-50">
             <button
-              id="firebase-google-login-btn"
+              id="supabase-google-login-btn"
               type="button"
-              onClick={handleFirebaseGoogleLogin}
+              onClick={handleSupabaseGoogleLogin}
               disabled={loading}
               className="w-full py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold font-display text-xs uppercase tracking-wider rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
             >
-              {isDriverSimulated('firebase') ? (
-                <span>⚠️ Firebase Auth Offline (Simulation Active)</span>
+              {isDriverSimulated('supabase') ? (
+                <span>⚠️ Supabase Auth Offline (Simulation Active)</span>
               ) : (
                 <>
                   <Smile className="h-4.5 w-4.5 text-rotary-azure font-bold" />
@@ -1009,51 +1009,26 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
         )}
       </section>
 
-      {/* 4.5 SUPABASE & DUAL-DATABASE SYNC CONTROL PANEL */}
+      {/* 4.5 SUPABASE CONNECTION & SYNC CONTROL PANEL */}
       <section className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-display border border-emerald-100">
               <Database className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Database Orchestration Engine</span>
+              <span>Database Connection Monitor</span>
             </div>
             <h3 className="font-extrabold font-display text-slate-800 text-lg">
-              Supabase Hybrid Data Hub
+              Supabase Postgres Manager
             </h3>
             <p className="text-xs text-slate-500 font-light max-w-2xl">
-              Dynamically switch your active persistence driver between <strong>Google Firebase</strong> and <strong>Supabase</strong>. Build PostgreSQL tables, seed files, and trigger connection health audits instantly.
+              Monitor active connections to your Supabase cloud database, execute SQL seeding scripts, and view health status logs. Runs in local Sandbox mode if keys are unconfigured.
             </p>
           </div>
 
-          {/* DRIVER TOGGLE BAR */}
-          <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-150 shrink-0 w-full md:w-auto">
-            <button
-              id="switch-driver-firebase-btn"
-              type="button"
-              onClick={() => handleSwitchDriver('firebase')}
-              className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activeDriver === 'firebase'
-                  ? 'bg-white text-slate-850 shadow-sm border border-slate-200'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <div className={`w-2.5 h-2.5 rounded-full ${isDriverSimulated('firebase') ? 'bg-amber-400' : 'bg-rotary-azure'}`} />
-              <span>Firebase</span>
-            </button>
-
-            <button
-              id="switch-driver-supabase-btn"
-              type="button"
-              onClick={() => handleSwitchDriver('supabase')}
-              className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                activeDriver === 'supabase'
-                  ? 'bg-neutral-900 text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <div className={`w-2.5 h-2.5 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-              <span>Supabase</span>
-            </button>
+          {/* ACTIVE PROTOCOL BADGE */}
+          <div className="flex gap-2 p-2 px-4 bg-slate-100 rounded-2xl border border-slate-150 shrink-0 select-none items-center text-xs font-black uppercase tracking-wider text-slate-700">
+            <div className={`w-2.5 h-2.5 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400 animate-pulse'}`} />
+            <span>Supabase Active Client</span>
           </div>
         </div>
 
@@ -1065,17 +1040,17 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
             <div>
               <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-widest font-display">ACTIVE PROTOCOL</span>
               <h4 className="font-extrabold text-xs text-slate-700 mt-1 uppercase">
-                {activeDriver} Persistence Client
+                Supabase Postgres Client
               </h4>
             </div>
             <div className="mt-3 flex items-center justify-between">
               <span className="text-[10px] font-bold text-slate-400">Environment:</span>
               <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wide ${
-                isDriverSimulated(activeDriver)
+                isDriverSimulated('supabase')
                   ? 'bg-amber-50 text-amber-700 border border-amber-200'
                   : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
               }`}>
-                {isDriverSimulated(activeDriver) ? 'Sandbox Simulated' : 'Cloud Live'}
+                {isDriverSimulated('supabase') ? 'Sandbox Simulated' : 'Cloud Live'}
               </span>
             </div>
           </div>

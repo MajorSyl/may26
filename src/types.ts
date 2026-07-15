@@ -15,6 +15,7 @@ export interface UserProfile {
   phone?: string;
   joinedDate?: string;
   birthday?: string;
+  title?: string;
 }
 
 export interface Project {
@@ -54,4 +55,23 @@ export interface ContactInquiry {
   message: string;
   type: 'Membership Inquiry' | 'Donation Inquiry' | 'General Contact';
   createdAt?: string;
+}
+
+export interface EventRSVP {
+  id: string;
+  event_id: string;
+  name: string;
+  email: string;
+  submitted_at: string;
+  event_title?: string;
+}
+
+export interface ProjectApplication {
+  id: string;
+  project_id: string;
+  name: string;
+  email: string;
+  statement: string;
+  submitted_at: string;
+  project_title?: string;
 }

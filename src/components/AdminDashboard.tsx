@@ -6,7 +6,7 @@ import {
   UploadCloud, Image, Link,
   ArrowUp, ArrowDown, EyeOff, Layout, Palette, Sliders, Settings
 } from 'lucide-react';
-import { Project, ClubEvent, UserProfile, ContactInquiry } from '../types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from '../types';
 import { INITIAL_MEMBER_DIRECTORY } from '../data';
 import { 
   getSupabaseProjects, saveSupabaseProject, deleteSupabaseProject,
@@ -14,7 +14,9 @@ import {
   getSupabaseUsers, upsertSupabaseUser, deleteSupabaseUser,
   getSupabaseInquiries, deleteSupabaseInquiry, isSupabaseConfigured,
   getSiteSettings, updateSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS,
-  PageBlock, DEFAULT_HOME_LAYOUT, DEFAULT_ABOUT_LAYOUT
+  PageBlock, DEFAULT_HOME_LAYOUT, DEFAULT_ABOUT_LAYOUT,
+  supabase, checkIsAdmin,
+  getSupabaseRSVPs, getSupabaseApplications
 } from '../supabase-service';
 import { motion, AnimatePresence } from 'motion/react';
 import SafeImage from './SafeImage';
@@ -24,7 +26,10 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) {
-  // Passcode verification states
+  // Passcode/Auth verification states
+  const [authMode, setAuthMode] = useState<'passcode' | 'supabase'>('passcode');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
   const [passcode, setPasscode] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -34,9 +39,12 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [members, setMembers] = useState<UserProfile[]>([]);
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
+  const [rsvps, setRsvps] = useState<EventRSVP[]>([]);
+  const [applications, setApplications] = useState<ProjectApplication[]>([]);
   
   // UI and Loading states
   const [activeTab, setActiveTab] = useState<'projects' | 'events' | 'members' | 'inquiries' | 'pages' | 'design'>('projects');
+  const [inquirySubTab, setInquirySubTab] = useState<'messages' | 'rsvps' | 'applications'>('messages');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -187,13 +195,28 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   // Show Inquiry Info Modal state
   const [selectedInquiry, setSelectedInquiry] = useState<ContactInquiry | null>(null);
 
-  // Check auth storage on load
+    // Check auth storage on load
   useEffect(() => {
-    const isAuthed = localStorage.getItem('sunset_admin_authorized') === 'true';
-    if (isAuthed) {
-      setIsAuthorized(true);
-      fetchData();
-    }
+    const checkSession = async () => {
+      const isAuthed = localStorage.getItem('sunset_admin_authorized') === 'true';
+      if (isAuthed) {
+        if (isSupabaseConfigured && supabase) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user) {
+            const isAdmin = await checkIsAdmin(sessionData.session.user.id);
+            if (!isAdmin) {
+              localStorage.removeItem('sunset_admin_authorized');
+              await supabase.auth.signOut().catch(() => {});
+              setIsAuthorized(false);
+              return;
+            }
+          }
+        }
+        setIsAuthorized(true);
+        fetchData();
+      }
+    };
+    checkSession();
   }, []);
 
   const triggerToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -205,18 +228,22 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [projs, evs, mems, inqs, pSettings] = await Promise.all([
+      const [projs, evs, mems, inqs, pSettings, fetchedRsvps, fetchedApps] = await Promise.all([
         getSupabaseProjects(),
         getSupabaseEvents(),
         getSupabaseUsers(),
         getSupabaseInquiries(),
-        getSiteSettings()
+        getSiteSettings(),
+        getSupabaseRSVPs(),
+        getSupabaseApplications()
       ]);
       setProjects(projs);
       setEvents(evs);
       setMembers(mems);
       setInquiries(inqs);
       setSiteSettings(pSettings);
+      setRsvps(fetchedRsvps);
+      setApplications(fetchedApps);
     } catch (err: any) {
       console.error(err);
       triggerToast('Error loading records: ' + (err.message || err), 'error');
@@ -240,9 +267,47 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     }
   };
 
-  const handleDeauthorize = () => {
+  const handleSupabaseLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(true);
+    setAuthError('');
+    try {
+      if (!supabase) {
+        throw new Error('Supabase Client is not configured. Please supply valid VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY variables in Settings first.');
+      }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: adminEmail.trim(),
+        password: adminPassword,
+      });
+      if (error) throw error;
+      if (data?.user) {
+        const isAdmin = await checkIsAdmin(data.user.id);
+        if (!isAdmin) {
+          await supabase.auth.signOut().catch(() => {});
+          throw new Error('Access Denied: This account is not registered in the database admins table.');
+        }
+        setIsAuthorized(true);
+        setAuthError('');
+        localStorage.setItem('sunset_admin_authorized', 'true');
+        triggerToast(`Access granted. Authenticated as: ${data.user.email}`, 'success');
+        fetchData();
+      } else {
+        throw new Error('No user data returned from authentication service.');
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Supabase authentication failed. Please confirm email & password.');
+      triggerToast('Authentication Failed', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeauthorize = async () => {
     setIsAuthorized(false);
     localStorage.removeItem('sunset_admin_authorized');
+    if (supabase) {
+      await supabase.auth.signOut().catch(() => {});
+    }
     triggerToast('Authorized session terminated.');
   };
 
@@ -465,6 +530,21 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     return matchSearch && matchStatus;
   });
 
+  const filteredRsvps = rsvps.filter(r => {
+    const eventName = events.find(e => e.id === r.event_id)?.title || '';
+    return r.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+           r.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           eventName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const filteredApplications = applications.filter(a => {
+    const projName = projects.find(p => p.id === a.project_id)?.title || '';
+    return a.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+           a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           a.statement.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           projName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   // Calculate statistics summary cards
   const stats = {
     projects: projects.length,
@@ -491,42 +571,123 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
             <p className="text-xs text-slate-400 capitalize">Authorized Officers of Freetown Sunset Sunset Chapter</p>
           </div>
 
-          <form onSubmit={handleAuthorize} className="space-y-4">
-            <div className="space-y-2 text-xs font-semibold text-slate-600">
-              <label htmlFor="admin-passcode-field" className="block text-slate-500 font-display">Administrator Password</label>
-              <div className="relative">
-                <input
-                  id="admin-passcode-field"
-                  type="password"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter access code..."
-                  autoFocus
-                  required
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rotary-azure/50 focus:border-rotary-azure text-sm text-slate-800"
-                />
-                <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-              </div>
-              <p className="text-[10px] text-slate-400 font-normal leading-relaxed text-center bg-slate-50 p-2 rounded-lg mt-2 border border-dashed border-slate-200">
-                ⚠️ Hint for local test review: <code className="font-bold bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-[11px] select-all">freetown-sunset</code> or <code className="font-bold bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-[11px] select-all">rotary2026</code>
-              </p>
+          {/* Auth Mode Tabs */}
+          {isSupabaseConfigured && (
+            <div className="flex border-b border-slate-100 pb-2">
+              <button
+                type="button"
+                onClick={() => { setAuthMode('passcode'); setAuthError(''); }}
+                className={`flex-1 pb-2 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
+                  authMode === 'passcode'
+                    ? 'border-rotary-azure text-rotary-azure'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Passcode Gate
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMode('supabase'); setAuthError(''); }}
+                className={`flex-1 pb-2 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
+                  authMode === 'supabase'
+                    ? 'border-rotary-azure text-rotary-azure'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Supabase Auth
+              </button>
             </div>
+          )}
 
-            {authError && (
-              <div className="p-3 border border-rose-200 bg-rose-50 text-rose-700 font-semibold text-[11px] rounded-lg flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
-                <span>{authError}</span>
+          {authMode === 'passcode' ? (
+            <form onSubmit={handleAuthorize} className="space-y-4">
+              <div className="space-y-2 text-xs font-semibold text-slate-600">
+                <label htmlFor="admin-passcode-field" className="block text-slate-500 font-display">Administrator Password</label>
+                <div className="relative">
+                  <input
+                    id="admin-passcode-field"
+                    type="password"
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    placeholder="Enter access code..."
+                    autoFocus
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rotary-azure/50 focus:border-rotary-azure text-sm text-slate-800"
+                  />
+                  <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                </div>
+                <p className="text-[10px] text-slate-400 font-normal leading-relaxed text-center bg-slate-50 p-2 rounded-lg mt-2 border border-dashed border-slate-200">
+                  ⚠️ Hint for local test review: <code className="font-bold bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-[11px] select-all">freetown-sunset</code> or <code className="font-bold bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-[11px] select-all">rotary2026</code>
+                </p>
               </div>
-            )}
 
-            <button
-              id="admin-auth-submit-btn"
-              type="submit"
-              className="w-full py-3 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-extrabold uppercase text-xs tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rotary-azure"
-            >
-              Unlock Dashboard
-            </button>
-          </form>
+              {authError && (
+                <div className="p-3 border border-rose-200 bg-rose-50 text-rose-700 font-semibold text-[11px] rounded-lg flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <button
+                id="admin-auth-submit-btn"
+                type="submit"
+                className="w-full py-3 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-extrabold uppercase text-xs tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rotary-azure"
+              >
+                Unlock Dashboard
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSupabaseLogin} className="space-y-4">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label htmlFor="admin-email-field" className="block text-xs font-semibold text-slate-500 font-display">Admin Email</label>
+                  <input
+                    id="admin-email-field"
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    required
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rotary-azure/50 focus:border-rotary-azure text-sm text-slate-800"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="admin-password-field" className="block text-xs font-semibold text-slate-500 font-display">Password</label>
+                  <input
+                    id="admin-password-field"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rotary-azure/50 focus:border-rotary-azure text-sm text-slate-800"
+                  />
+                </div>
+
+                <p className="text-[9px] text-slate-400 font-normal leading-relaxed bg-slate-50 p-2 rounded-lg border border-dashed border-slate-200">
+                  🔒 Authenticates via secure database JWT. To lock sign-up down, ensure public signup is disabled under your **Supabase Dashboard &gt; Auth &gt; Providers &gt; Email**.
+                </p>
+              </div>
+
+              {authError && (
+                <div className="p-3 border border-rose-200 bg-rose-50 text-rose-700 font-semibold text-[11px] rounded-lg flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <button
+                id="supabase-auth-submit-btn"
+                type="submit"
+                disabled={actionLoading}
+                className="w-full py-3 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-extrabold uppercase text-xs tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rotary-azure disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading && <RefreshCw className="h-3 w-3 animate-spin" />}
+                <span>Sign In with Supabase</span>
+              </button>
+            </form>
+          )}
 
           <p className="text-[10px] text-slate-400 text-center select-none">
             Rotary Dist. 9101 Security Protocol Compliance Grid
@@ -1728,78 +1889,205 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
 
             {/* TAB: INQUIRIES VIEW (INBOX READER MODE) */}
             {activeTab === 'inquiries' && (
-              <div className="min-w-[850px]">
-                <table className="w-full text-left text-xs border-collapse font-semibold text-slate-600">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-450 uppercase font-black tracking-widest text-[10px] border-b border-slate-150 select-none">
-                      <th className="py-3 px-4">Contact Information</th>
-                      <th className="py-3 px-4">Inquiry Category</th>
-                      <th className="py-3 px-4">Subject Flag</th>
-                      <th className="py-3 px-4">Message Snippet</th>
-                      <th className="py-3 px-4 text-center">Inquiry Date</th>
-                      <th className="py-3 px-4 text-right">Inquiry Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-[11px]">
-                    {filteredInquiries.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
-                          No visitor contact inquiries received in your inbox database.
-                        </td>
+              <div className="min-w-[850px] space-y-4">
+                {/* Sub-Tabs Selector */}
+                <div className="flex gap-2 border-b border-slate-150 pb-2 mb-4">
+                  <button
+                    onClick={() => setInquirySubTab('messages')}
+                    className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer transition-colors ${
+                      inquirySubTab === 'messages'
+                        ? 'bg-rotary-gold text-slate-900 shadow-3xs'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    Contact Messages ({filteredInquiries.length})
+                  </button>
+                  <button
+                    onClick={() => setInquirySubTab('rsvps')}
+                    className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer transition-colors ${
+                      inquirySubTab === 'rsvps'
+                        ? 'bg-rotary-gold text-slate-900 shadow-3xs'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    Event RSVPs ({filteredRsvps.length})
+                  </button>
+                  <button
+                    onClick={() => setInquirySubTab('applications')}
+                    className={`px-4 py-2 text-xs font-bold rounded-lg cursor-pointer transition-colors ${
+                      inquirySubTab === 'applications'
+                        ? 'bg-rotary-gold text-slate-900 shadow-3xs'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    Project Applications ({filteredApplications.length})
+                  </button>
+                </div>
+
+                {/* Sub-Tab 1: Messages */}
+                {inquirySubTab === 'messages' && (
+                  <table className="w-full text-left text-xs border-collapse font-semibold text-slate-600">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-450 uppercase font-black tracking-widest text-[10px] border-b border-slate-150 select-none">
+                        <th className="py-3 px-4">Contact Information</th>
+                        <th className="py-3 px-4">Inquiry Category</th>
+                        <th className="py-3 px-4">Subject Flag</th>
+                        <th className="py-3 px-4">Message Snippet</th>
+                        <th className="py-3 px-4 text-center">Inquiry Date</th>
+                        <th className="py-3 px-4 text-right">Inquiry Actions</th>
                       </tr>
-                    ) : (
-                      filteredInquiries.map((i) => (
-                        <tr key={i.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3 px-4">
-                            <span className="font-extrabold text-slate-800 text-xs block leading-tight">{i.name}</span>
-                            <span className="text-[10px] text-slate-450 block font-semibold leading-none mt-0.5 font-mono">{i.email}</span>
-                          </td>
-                          <td className="py-3 px-4 select-none">
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider block w-max ${
-                              i.type === 'Membership Inquiry' 
-                                ? 'bg-sky-50 text-sky-700 border border-sky-200' 
-                                : i.type === 'Donation Inquiry' 
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                                : 'bg-slate-100 text-slate-600 border border-slate-200'
-                            }`}>
-                              {i.type}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 font-bold text-slate-850 max-w-[150px] truncate">
-                            {i.subject || 'No Subject'}
-                          </td>
-                          <td className="py-3 px-4 max-w-sm">
-                            <p className="text-[10px] text-slate-450 font-medium leading-relaxed line-clamp-1 italic">
-                              "{i.message}"
-                            </p>
-                          </td>
-                          <td className="py-3 px-4 text-center font-mono text-[10px] text-slate-400 w-32 select-none">
-                            {i.createdAt ? new Date(i.createdAt).toLocaleDateString() : 'N/A'}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              <button
-                                id={`read-inq-${i.id}`}
-                                onClick={() => setSelectedInquiry(i)}
-                                className="p-1 px-2.5 bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors text-[10px] uppercase font-bold flex items-center gap-1"
-                              >
-                                <Eye className="h-3 w-3" />
-                                <span>Read</span>
-                              </button>
-                              <button
-                                id={`delete-inq-${i.id}`}
-                                onClick={() => handleRecordDelete(i.id, i.name)}
-                                className="p-1 px-2.5 border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors text-[10px] uppercase font-bold"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-[11px]">
+                      {filteredInquiries.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
+                            No visitor contact inquiries received in your inbox database.
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                      ) : (
+                        filteredInquiries.map((i) => (
+                          <tr key={i.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-3 px-4">
+                              <span className="font-extrabold text-slate-800 text-xs block leading-tight">{i.name}</span>
+                              <span className="text-[10px] text-slate-450 block font-semibold leading-none mt-0.5 font-mono">{i.email}</span>
+                            </td>
+                            <td className="py-3 px-4 select-none">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider block w-max ${
+                                i.type === 'Membership Inquiry' 
+                                  ? 'bg-sky-50 text-sky-700 border border-sky-200' 
+                                  : i.type === 'Donation Inquiry' 
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              }`}>
+                                {i.type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 font-bold text-slate-850 max-w-[150px] truncate">
+                              {i.subject || 'No Subject'}
+                            </td>
+                            <td className="py-3 px-4 max-w-sm">
+                              <p className="text-[10px] text-slate-450 font-medium leading-relaxed line-clamp-1 italic">
+                                "{i.message}"
+                              </p>
+                            </td>
+                            <td className="py-3 px-4 text-center font-mono text-[10px] text-slate-400 w-32 select-none">
+                              {i.createdAt ? new Date(i.createdAt).toLocaleDateString() : 'N/A'}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  id={`read-inq-${i.id}`}
+                                  onClick={() => setSelectedInquiry(i)}
+                                  className="p-1 px-2.5 bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors text-[10px] uppercase font-bold flex items-center gap-1"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  <span>Read</span>
+                                </button>
+                                <button
+                                  id={`delete-inq-${i.id}`}
+                                  onClick={() => handleRecordDelete(i.id, i.name)}
+                                  className="p-1 px-2.5 border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors text-[10px] uppercase font-bold"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                )}
+
+                {/* Sub-Tab 2: RSVPs */}
+                {inquirySubTab === 'rsvps' && (
+                  <table className="w-full text-left text-xs border-collapse font-semibold text-slate-600">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-450 uppercase font-black tracking-widest text-[10px] border-b border-slate-150 select-none">
+                        <th className="py-3 px-4">Attendee Name</th>
+                        <th className="py-3 px-4">Email Address</th>
+                        <th className="py-3 px-4">Event Title</th>
+                        <th className="py-3 px-4 text-center">RSVP Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-[11px]">
+                      {filteredRsvps.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-12 text-center text-slate-400 text-xs">
+                            No event RSVPs received in your database.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredRsvps.map((r) => {
+                          const matchedEvent = events.find(e => e.id === r.event_id)?.title || r.event_id;
+                          return (
+                            <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-3 px-4 font-extrabold text-slate-800 text-xs">
+                                {r.name}
+                              </td>
+                              <td className="py-3 px-4 text-slate-500 font-mono text-[10px]">
+                                {r.email}
+                              </td>
+                              <td className="py-3 px-4 font-bold text-slate-700">
+                                {matchedEvent}
+                              </td>
+                              <td className="py-3 px-4 text-center font-mono text-[10px] text-slate-400 select-none">
+                                {new Date(r.submitted_at).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                )}
+
+                {/* Sub-Tab 3: Applications */}
+                {inquirySubTab === 'applications' && (
+                  <table className="w-full text-left text-xs border-collapse font-semibold text-slate-600">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-450 uppercase font-black tracking-widest text-[10px] border-b border-slate-150 select-none">
+                        <th className="py-3 px-4">Applicant</th>
+                        <th className="py-3 px-4">Email Address</th>
+                        <th className="py-3 px-4">Target Project</th>
+                        <th className="py-3 px-4">Motivation & Experience Statement</th>
+                        <th className="py-3 px-4 text-center">Submitted At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-[11px]">
+                      {filteredApplications.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-12 text-center text-slate-400 text-xs">
+                            No project applications received in your database.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredApplications.map((a) => {
+                          const matchedProject = projects.find(p => p.id === a.project_id)?.title || a.project_id;
+                          return (
+                            <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-3 px-4 font-extrabold text-slate-800 text-xs">
+                                {a.name}
+                              </td>
+                              <td className="py-3 px-4 text-slate-500 font-mono text-[10px]">
+                                {a.email}
+                              </td>
+                              <td className="py-3 px-4 font-bold text-slate-700">
+                                {matchedProject}
+                              </td>
+                              <td className="py-3 px-4 text-slate-500 max-w-sm font-medium italic line-clamp-2">
+                                "{a.statement}"
+                              </td>
+                              <td className="py-3 px-4 text-center font-mono text-[10px] text-slate-400 select-none">
+                                {new Date(a.submitted_at).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             )}
 

@@ -3,7 +3,6 @@ import { Project } from '../types';
 import { getDbProjects, getActiveDbDriver } from '../db-router';
 import { Info, Filter, Clock, MapPin, RefreshCw, ArrowRight } from 'lucide-react';
 import ProjectDetails from './ProjectDetails';
-import SafeImage from './SafeImage';
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -174,40 +173,27 @@ export default function Gallery() {
               <div 
                 key={project.id} 
                 onClick={() => setSelectedProject(project)}
-                className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group"
+                className="bg-white border border-slate-205 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group p-6 space-y-4"
               >
-                <div>
-                  {/* Aspect ratio bounding for cards */}
-                  <div className="relative h-48 bg-slate-150 overflow-hidden flex items-center justify-center">
-                    <SafeImage 
-                      src={project.imageUrl} 
-                      alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                    
-                    {/* Status badge Overlay */}
-                    <div className="absolute top-4 right-4">
-                      <span className={`px-2 py-0.5 text-[9px] font-bold uppercase rounded-lg tracking-wider border text-white ${
-                        isCompleted 
-                          ? 'bg-emerald-600 border-emerald-500/50' 
-                          : isActive 
-                          ? 'bg-indigo-600 border-indigo-500/50' 
-                          : 'bg-amber-655 bg-amber-600 border-amber-500/50'
-                      }`}>
-                        {project.status}
-                      </span>
-                    </div>
-
-                    {/* Sector Category Indicator Overlay Bottom */}
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <span className="bg-slate-900/80 backdrop-blur-xs text-white px-2.5 py-1 rounded-md text-[9px] font-semibold uppercase tracking-wide truncate max-w-full block">
-                        {project.category}
-                      </span>
-                    </div>
+                <div className="space-y-4">
+                  {/* Category & Status Bar */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="bg-slate-100 text-slate-800 border border-slate-200 px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wide truncate max-w-[70%]">
+                      {project.category}
+                    </span>
+                    <span className={`px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-lg tracking-wider border text-white ${
+                      isCompleted 
+                        ? 'bg-emerald-600 border-emerald-500/50' 
+                        : isActive 
+                        ? 'bg-indigo-600 border-indigo-500/50' 
+                        : 'bg-amber-600 border-amber-500/50'
+                    }`}>
+                      {project.status}
+                    </span>
                   </div>
 
                   {/* Body Content */}
-                  <div className="p-6 space-y-2">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       <Clock className="w-3.5 h-3.5 text-rotary-gold" />
                       <span>{project.year} Program</span>
@@ -217,7 +203,7 @@ export default function Gallery() {
                       {project.title}
                     </h3>
 
-                    <p className="text-xs text-slate-500 leading-relaxed font-light line-clamp-4">
+                    <p className="text-xs text-slate-500 leading-relaxed font-light line-clamp-5">
                       {project.description}
                     </p>
                   </div>
@@ -226,7 +212,7 @@ export default function Gallery() {
                 {/* Impact Statement & View Action footer */}
                 <div className="space-y-4">
                   {project.impact && (
-                    <div className="p-3 mx-6 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
                       <div className="flex items-center gap-1">
                         <span className="w-1 h-1 rounded-full bg-rotary-gold"></span>
                         <p className="text-[9px] font-bold uppercase text-slate-400 font-display tracking-widest">Sunset Impact Metric</p>
@@ -237,8 +223,8 @@ export default function Gallery() {
                     </div>
                   )}
                   
-                  <div className="mx-6 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-black text-rotary-azure font-display uppercase tracking-wider group-hover:text-rotary-azure-dark transition-colors">
-                    <span>Explore Details & Photos</span>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-black text-rotary-azure font-display uppercase tracking-wider group-hover:text-rotary-azure-dark transition-colors">
+                    <span>Explore Project Details</span>
                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" />
                   </div>
                 </div>

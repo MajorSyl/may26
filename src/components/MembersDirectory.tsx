@@ -222,7 +222,7 @@ export default function MembersDirectory() {
                     {isExec && (
                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-amber-200 shadow-xs">
                         <span className="text-[8px] font-extrabold text-amber-800 font-display uppercase tracking-wider">
-                          {m.role === 'President' ? 'President' : m.committee === 'Finance Committee' ? 'Treasurer' : m.name.includes('Dennis') ? 'Secretary' : 'Director'}
+                          {m.title || (m.role === 'President' ? 'President' : m.committee === 'Finance Committee' ? 'Treasurer' : m.name.includes('Dennis') ? 'Secretary' : 'Director')}
                         </span>
                       </div>
                     )}
@@ -245,9 +245,6 @@ export default function MembersDirectory() {
                       )}
                       <div className="pt-1.5 flex-1 min-w-0">
                         <h3 className="font-extrabold text-slate-850 group-hover:text-rotary-azure transition-colors text-sm font-display leading-tight truncate">{m.name}</h3>
-                        <p className="text-[9px] text-slate-400 font-mono font-semibold truncate mt-0.5 flex items-center gap-1">
-                          <EyeOff className="w-2.5 h-2.5 inline text-amber-500/70" /> {m.email}
-                        </p>
                       </div>
                     </div>
 
@@ -277,15 +274,6 @@ export default function MembersDirectory() {
                         <div className="flex items-center gap-2.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="text-[10px] text-slate-400">Joined Sunset: {new Date(m.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
-                        </div>
-                      )}
-
-                      {m.birthday && (
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-3.5 h-3.5 text-xs text-center leading-none">🎂</span>
-                          <span className="text-[10px] text-slate-400 font-bold">
-                            {language === 'krio' ? 'Spɛshal bɔt-de:' : 'Sunset Birthday:'} <span className="text-pink-600 font-extrabold">{m.birthday}</span>
-                          </span>
                         </div>
                       )}
                     </div>

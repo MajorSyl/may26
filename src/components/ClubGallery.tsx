@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Filter, Eye, Calendar, MapPin, X } from 'lucide-react';
-
-import clubMembersPhoto from '../assets/images/club_members_photo_1780923864987.png';
-import rotaryToiletHandover from '../assets/images/rotary_toilet_handover_1780856626145.png';
-import rotaryFundraisingGala from '../assets/images/rotary_fundraising_gala_1780856649745.png';
-import rotaryLobbyGoodwill from '../assets/images/rotary_lobby_goodwill_1780856638364.png';
-import rotaryMeetingDinner from '../assets/images/rotary_meeting_dinner_1780856599930.png';
-import rotaryBeachFellowship from '../assets/images/rotary_beach_fellowship_1780856612752.png';
-import SafeImage from './SafeImage';
+import { FileText, Filter, Eye, Calendar, MapPin, X, BookOpen } from 'lucide-react';
 
 interface GalleryPhoto {
   id: string;
@@ -33,7 +25,7 @@ export default function ClubGallery() {
       description: 'Rotary Club of Freetown-Sunset members and international delegates posing together looking magnificent in customized matching traditional blue, yellow and pink African print patterns while showcasing official Goodwill jute bags.',
       date: 'June 08, 2026',
       location: 'Freetown Secretariat Convention Centre, Sierra Leone',
-      imageUrl: clubMembersPhoto
+      imageUrl: ''
     },
     {
       id: 'real_photo_toilet_handover',
@@ -43,7 +35,7 @@ export default function ClubGallery() {
       description: 'The landmark handover ceremony for the newly constructed and fully modernized public hygiene facility on Aberdeen Beach Road, providing essential sanitation services.',
       date: 'June 01, 2026',
       location: 'Aberdeen Beach Road, Freetown',
-      imageUrl: rotaryToiletHandover
+      imageUrl: ''
     },
     {
       id: 'real_photo_fundraising_gala',
@@ -53,7 +45,7 @@ export default function ClubGallery() {
       description: 'District leaders and club members dressed in elegant evening attire, celebrating and cutting the commemorative cake during our grand Annual Fundraising Dinner Gala.',
       date: 'May 16, 2026',
       location: 'Freetown, Sierra Leone',
-      imageUrl: rotaryFundraisingGala
+      imageUrl: ''
     },
     {
       id: 'real_photo_lobby_goodwill',
@@ -63,7 +55,7 @@ export default function ClubGallery() {
       description: 'Delegates from the Rotary Club of Freetown-Sunset looking magnificent in customized matching traditional African print garments and holding official Goodwill jute bags.',
       date: 'May 08, 2026',
       location: 'Freetown, Sierra Leone',
-      imageUrl: rotaryLobbyGoodwill
+      imageUrl: ''
     },
     {
       id: 'real_photo_meeting_dinner',
@@ -73,7 +65,7 @@ export default function ClubGallery() {
       description: 'Capturing moments of high synergy and laughter as local leaders gather for our weekly evening meeting and round-table fellowship at the Lagoonda Hotel.',
       date: 'May 21, 2026',
       location: 'Lagoonda Hotel, Freetown',
-      imageUrl: rotaryMeetingDinner
+      imageUrl: ''
     },
     {
       id: 'real_photo_beach_fellowship',
@@ -83,7 +75,7 @@ export default function ClubGallery() {
       description: 'An informal outdoor social gathering by the coast where members connect under shared ideals of service, sporting vibrant custom-branded yellow Rotary apparel.',
       date: 'April 30, 2026',
       location: 'Aberdeen Beach, Freetown',
-      imageUrl: rotaryBeachFellowship
+      imageUrl: ''
     },
     {
       id: 'photo_outreach_1',
@@ -176,13 +168,13 @@ export default function ClubGallery() {
       {/* 1. VIEW INTRO */}
       <section className="space-y-2">
         <div className="inline-flex bg-rotary-gold/10 text-rotary-gold px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider font-display border border-rotary-gold/20">
-          Visual Memories
+          Historical Archives
         </div>
         <h1 className="text-4xl font-extrabold font-display text-rotary-dark tracking-tight">
-          Club Gallery
+          Club Archives & Memoirs
         </h1>
         <p className="text-slate-500 max-w-2xl font-light text-sm">
-          A visual chronicle of our action-packed assemblies, impactful humanitarian outreach campaigns, annual charter milestones, and collaborative projects alongside Freetown Rotaractors.
+          A written chronicle and archive of our action-packed assemblies, impactful humanitarian outreach campaigns, annual charter milestones, and collaborative projects alongside Freetown Rotaractors.
         </p>
       </section>
 
@@ -224,53 +216,37 @@ export default function ClubGallery() {
           {filteredPhotos.map((photo) => (
             <div 
               key={photo.id}
-              className="bg-white border border-slate-150 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group cursor-pointer flex flex-col h-full"
+              className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs hover:shadow-md hover:border-rotary-azure/30 transition-all group cursor-pointer flex flex-col justify-between h-full space-y-4"
               onClick={() => setSelectedPhoto(photo)}
             >
-              {/* Image box */}
-              <div className="relative aspect-video bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
-                <SafeImage 
-                  src={photo.imageUrl} 
-                  alt={photo.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                
-                {/* Visual lens hover state overlay */}
-                <div className="absolute inset-0 bg-rotary-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="p-2 rounded-full bg-white text-rotary-dark shadow-md transform translate-y-3 group-hover:translate-y-0 transition-transform">
-                    <Eye className="w-5 h-5" />
-                  </span>
-                </div>
-
-                {/* Left Category Badge Overlay */}
-                <div className="absolute top-3 left-3">
-                  <span className="bg-slate-900/80 backdrop-blur-xs text-white px-2 py-0.5 rounded-lg text-[8px] font-bold uppercase tracking-wider block">
+              <div className="space-y-3">
+                {/* Header Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="bg-rotary-azure/5 text-rotary-azure border border-rotary-azure/10 px-2 py-0.5 rounded-md text-[8px] font-bold uppercase tracking-wider block">
                     {photo.categoryLabel}
                   </span>
+                  <BookOpen className="w-3.5 h-3.5 text-slate-350" />
                 </div>
-              </div>
 
-              {/* Text Card content */}
-              <div className="p-4 flex flex-col justify-between flex-grow">
                 <div className="space-y-1.5">
                   <h3 className="font-extrabold text-slate-800 text-xs font-display leading-tight group-hover:text-rotary-azure transition-colors">
                     {photo.title}
                   </h3>
-                  <p className="text-[11px] text-slate-450 leading-normal font-light line-clamp-2">
+                  <p className="text-[11px] text-slate-450 leading-normal font-light line-clamp-4">
                     {photo.description}
                   </p>
                 </div>
+              </div>
 
-                {/* Footer specs */}
-                <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold font-display uppercase tracking-wider border-t border-slate-50 pt-3 mt-3">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-rotary-gold" />
-                    <span>{photo.date}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-rotary-azure" />
-                    <span className="truncate max-w-[80px]">{photo.location}</span>
-                  </div>
+              {/* Footer specs */}
+              <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold font-display uppercase tracking-wider border-t border-slate-100 pt-3">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-rotary-gold" />
+                  <span>{photo.date}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-rotary-azure" />
+                  <span className="truncate max-w-[90px]">{photo.location}</span>
                 </div>
               </div>
             </div>
@@ -294,31 +270,27 @@ export default function ClubGallery() {
               <X className="w-5 h-5" />
             </button>
 
-            <div className="relative w-full max-h-[420px] overflow-hidden bg-slate-100 flex items-center justify-center">
-              <SafeImage 
-                src={selectedPhoto.imageUrl} 
-                alt={selectedPhoto.title}
-                className="w-full max-h-[420px] object-cover"
-              />
-            </div>
-
-            <div className="p-6 sm:p-8 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="bg-rotary-azure/10 text-rotary-azure text-[9px] font-bold uppercase px-2.5 py-0.5 rounded border border-rotary-azure/20 font-display">
-                  {selectedPhoto.categoryLabel}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold font-display">• {selectedPhoto.date}</span>
+            <div className="p-6 sm:p-10 space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="bg-rotary-azure/10 text-rotary-azure text-[9px] font-bold uppercase px-2.5 py-1 rounded border border-rotary-azure/20 font-display">
+                    {selectedPhoto.categoryLabel}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold font-display">• {selectedPhoto.date}</span>
+                </div>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-extrabold font-display text-slate-900 leading-tight">
-                {selectedPhoto.title}
-              </h2>
+              <div className="space-y-4">
+                <h2 className="text-xl sm:text-2xl font-black font-display text-slate-900 leading-tight">
+                  {selectedPhoto.title}
+                </h2>
 
-              <p className="text-slate-500 font-light text-xs sm:text-sm leading-relaxed">
-                {selectedPhoto.description}
-              </p>
+                <p className="text-slate-650 font-light text-xs sm:text-sm leading-relaxed">
+                  {selectedPhoto.description}
+                </p>
+              </div>
 
-              <div className="flex items-center gap-2 text-slate-400 font-bold text-[10px] font-display uppercase tracking-wider pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-2 text-slate-450 font-bold text-[10px] font-display uppercase tracking-wider pt-4 border-t border-slate-100">
                 <MapPin className="w-3.5 h-3.5 text-rotary-gold" />
                 <span>Captured Location: {selectedPhoto.location}</span>
               </div>

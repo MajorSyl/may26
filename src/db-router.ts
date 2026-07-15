@@ -1,13 +1,4 @@
-import { Project, ClubEvent, UserProfile, ContactInquiry } from './types';
-import { 
-  getProjects as getFirebaseProjects, 
-  saveProject as saveFirebaseProject,
-  getEvents as getFirebaseEvents,
-  saveEvent as saveFirebaseEvent,
-  submitInquiry as submitFirebaseInquiry,
-  updateUserProfile as updateFirebaseProfile,
-  getFirebaseUsers
-} from './firebase-service';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from './types';
 import { 
   getSupabaseProjects, 
   saveSupabaseProject, 
@@ -16,110 +7,242 @@ import {
   submitSupabaseInquiry, 
   upsertSupabaseUser,
   isSupabaseConfigured,
-  getSupabaseUsers
+  getSupabaseUsers,
+  supabase,
+  getSupabaseUser,
+  getSupabaseRSVPs,
+  submitSupabaseRSVP,
+  getSupabaseApplications,
+  submitSupabaseApplication
 } from './supabase-service';
-import { isFirebaseSimulated } from './firebase-service';
+import { INITIAL_MEMBER_DIRECTORY } from './data';
 
-export type DbDriver = 'firebase' | 'supabase';
+export type DbDriver = 'supabase';
 
-// Get and set active client configurations
-export const getActiveDbDriver = (): DbDriver => {
-  const stored = localStorage.getItem('rcfs_active_db_driver');
-  if (stored === 'supabase' || stored === 'firebase') {
-    return stored;
+// LocalStorage Persistence helper for Simulator auth
+const getLocalData = <T>(key: string, defaultVal: T): T => {
+  const val = localStorage.getItem(key);
+  if (!val) {
+    localStorage.setItem(key, JSON.stringify(defaultVal));
+    return defaultVal;
   }
-  // Default to Supabase if config exists, otherwise Firebase
-  return isSupabaseConfigured ? 'supabase' : 'firebase';
+  return JSON.parse(val);
+};
+
+const setLocalData = <T>(key: string, data: T) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
+export const getActiveDbDriver = (): DbDriver => {
+  return 'supabase';
 };
 
 export const setActiveDbDriver = (driver: DbDriver) => {
-  localStorage.setItem('rcfs_active_db_driver', driver);
-  // Fire dispatch event to propagate state
-  window.dispatchEvent(new Event('db-driver-changed'));
+  // No-op (retained for backward compatibility)
 };
 
 // -------------------------------------------------------------
-// UNIFIED ARCHITECTURAL WRAPPERS
+// UNIFIED ARCHITECTURAL WRAPPERS (Always Supabase / Sandbox)
 // -------------------------------------------------------------
 
 export const getDbProjects = async (): Promise<Project[]> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    console.log('Routing Projects query via Supabase');
-    return getSupabaseProjects();
-  } else {
-    console.log('Routing Projects query via Firebase');
-    return getFirebaseProjects();
-  }
+  return getSupabaseProjects();
 };
 
 export const saveDbProject = async (project: Project): Promise<Project> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    console.log('Routing project insert via Supabase');
-    return saveSupabaseProject(project);
-  } else {
-    console.log('Routing project insert via Firebase');
-    return saveFirebaseProject(project);
-  }
+  return saveSupabaseProject(project);
 };
 
 export const getDbEvents = async (): Promise<ClubEvent[]> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    console.log('Routing Events query via Supabase');
-    return getSupabaseEvents();
-  } else {
-    console.log('Routing Events query via Firebase');
-    return getFirebaseEvents();
-  }
+  return getSupabaseEvents();
 };
 
 export const saveDbEvent = async (event: ClubEvent): Promise<ClubEvent> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    console.log('Routing event schedule via Supabase');
-    return saveSupabaseEvent(event);
-  } else {
-    console.log('Routing event schedule via Firebase');
-    return saveFirebaseEvent(event);
-  }
+  return saveSupabaseEvent(event);
 };
 
 export const submitDbInquiry = async (inquiry: ContactInquiry): Promise<ContactInquiry> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    return submitSupabaseInquiry(inquiry);
-  } else {
-    return submitFirebaseInquiry(inquiry);
-  }
+  return submitSupabaseInquiry(inquiry);
 };
 
 export const updateDbProfile = async (profile: UserProfile): Promise<UserProfile> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    console.log('Synchronizing user profile to Supabase');
-    return upsertSupabaseUser(profile);
-  } else {
-    console.log('Synchronizing user profile to Firebase');
-    return updateFirebaseProfile(profile);
-  }
+  return upsertSupabaseUser(profile);
 };
 
 export const getDbUsers = async (): Promise<UserProfile[]> => {
-  const driver = getActiveDbDriver();
-  if (driver === 'supabase') {
-    console.log('Routing all Users query via Supabase');
-    return getSupabaseUsers();
-  } else {
-    console.log('Routing all Users query via Firebase');
-    return getFirebaseUsers();
-  }
+  return getSupabaseUsers();
 };
 
 export const isDriverSimulated = (driver: DbDriver): boolean => {
-  if (driver === 'supabase') {
-    return !isSupabaseConfigured;
+  return !isSupabaseConfigured;
+};
+
+// RSVPs
+export const getDbRSVPs = async (): Promise<EventRSVP[]> => {
+  return getSupabaseRSVPs();
+};
+
+export const submitDbRSVP = async (rsvp: EventRSVP): Promise<EventRSVP> => {
+  return submitSupabaseRSVP(rsvp);
+};
+
+// Applications
+export const getDbApplications = async (): Promise<ProjectApplication[]> => {
+  return getSupabaseApplications();
+};
+
+export const submitDbApplication = async (app: ProjectApplication): Promise<ProjectApplication> => {
+  return submitSupabaseApplication(app);
+};
+
+// -------------------------------------------------------------
+// AUTH INTEGRATION (Supabase vs Sandbox LocalStorage)
+// -------------------------------------------------------------
+
+export const subscribeToAuth = (
+  onStateChange: (user: UserProfile | null) => void,
+  setLoading: (loading: boolean) => void
+) => {
+  if (isSupabaseConfigured && supabase) {
+    setLoading(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        getSupabaseUser(session.user.id).then(async (profile) => {
+          if (profile) {
+            onStateChange(profile);
+          } else {
+            // Create user profile
+            const newProfile: UserProfile = {
+              uid: session.user.id,
+              name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Rotary Member',
+              email: session.user.email || '',
+              role: session.user.email === 'bigsyl19@gmail.com' ? 'President' : 'Rotarian',
+              attendanceRate: 92,
+              contributionGoals: 500,
+              contributedAmount: 150,
+              committee: 'Service Projects Committee',
+              tasks: ['Identify Tombo maintenance issues', 'Promote clean water awareness']
+            };
+            await upsertSupabaseUser(newProfile);
+            onStateChange(newProfile);
+          }
+          setLoading(false);
+        });
+      } else {
+        onStateChange(null);
+        setLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);
+      if (session) {
+        const profile = await getSupabaseUser(session.user.id);
+        if (profile) {
+          onStateChange(profile);
+        } else {
+          const newProfile: UserProfile = {
+            uid: session.user.id,
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Rotary Member',
+            email: session.user.email || '',
+            role: session.user.email === 'bigsyl19@gmail.com' ? 'President' : 'Rotarian',
+            attendanceRate: 92,
+            contributionGoals: 500,
+            contributedAmount: 150,
+            committee: 'Service Projects Committee',
+            tasks: ['Identify Tombo maintenance issues', 'Promote clean water awareness']
+          };
+          await upsertSupabaseUser(newProfile);
+          onStateChange(newProfile);
+        }
+      } else {
+        onStateChange(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  } else {
+    setLoading(true);
+    const activeSession = getLocalData<{ uid: string; displayName: string; email: string } | null>('rcfs_auth_session', null);
+    if (activeSession) {
+      const profiles = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
+      let profile = profiles.find(p => p.uid === activeSession.uid);
+      if (!profile) {
+        profile = {
+          uid: activeSession.uid,
+          name: activeSession.displayName,
+          email: activeSession.email,
+          role: activeSession.email.includes('president') || activeSession.email === 'bigsyl19@gmail.com' ? 'President' : activeSession.email.includes('officer') ? 'Club Officer' : 'Rotarian',
+          attendanceRate: 94,
+          contributionGoals: 1000,
+          contributedAmount: 850,
+          committee: 'Vocational Service Committee',
+          tasks: ['Prepare Literacy First Waterloo presentation', 'Organize next coffee hour']
+        };
+        profiles.push(profile);
+        setLocalData('sb_supabase_users', profiles);
+      }
+      onStateChange(profile);
+    } else {
+      onStateChange(null);
+    }
+    setLoading(false);
+    return () => {};
   }
-  return isFirebaseSimulated;
+};
+
+export const logOutUser = async () => {
+  if (isSupabaseConfigured && supabase) {
+    await supabase.auth.signOut();
+  } else {
+    localStorage.removeItem('rcfs_auth_session');
+  }
+};
+
+export const logInUser = async (emailText?: string, nameText?: string): Promise<UserProfile> => {
+  if (isSupabaseConfigured && supabase) {
+    // Standard Google Sign In
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) throw error;
+    return { uid: 'oauth_redirecting' } as any;
+  } else {
+    const email = emailText || 'member@freetownsunset.org';
+    const name = nameText || 'Freetown Rotarian';
+    const fakeUid = 'sim_' + Math.random().toString(36).substr(2, 9);
+    
+    const activeSession = {
+      uid: fakeUid,
+      displayName: name,
+      email,
+      emailVerified: true
+    };
+    setLocalData('rcfs_auth_session', activeSession);
+
+    const profiles = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
+    let profile = profiles.find(p => p.email === email);
+    if (!profile) {
+      profile = {
+        uid: fakeUid,
+        name,
+        email,
+        role: email.includes('president') || email === 'bigsyl19@gmail.com' ? 'President' : email.includes('officer') ? 'Club Officer' : 'Rotarian',
+        attendanceRate: 94,
+        contributionGoals: 1000,
+        contributedAmount: 850,
+        committee: 'Vocational Service Committee',
+        tasks: ['Prepare Literacy First Waterloo presentation', 'Organize next coffee hour']
+      };
+      profiles.push(profile);
+      setLocalData('sb_supabase_users', profiles);
+    }
+    return profile;
+  }
 };

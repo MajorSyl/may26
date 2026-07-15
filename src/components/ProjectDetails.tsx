@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Project } from '../types';
+import { Project, ProjectApplication } from '../types';
+import { submitDbApplication } from '../db-router';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -16,7 +17,6 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import SafeImage from './SafeImage';
 
 interface ProjectDetailsProps {
   project: Project;
@@ -24,12 +24,6 @@ interface ProjectDetailsProps {
 }
 
 export default function ProjectDetails({ project, onBack }: ProjectDetailsProps) {
-  // Photos gallery state
-  const photos = project.galleryUrls && project.galleryUrls.length > 0 
-    ? project.galleryUrls 
-    : [project.imageUrl || ''];
-  
-  const [activePhoto, setActivePhoto] = useState<string>(photos[0]);
   const [copied, setCopied] = useState(false);
   
   // Quick Inquiry Form State inside details page
@@ -51,9 +45,17 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
     if (!senderName || !senderEmail || !message) return;
     setLoadingInquiry(true);
     
-    // Simulate a successful API submit to Firestore/Supabase
+    const appData: ProjectApplication = {
+      id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 'app_' + Math.random().toString(36).substring(2, 11),
+      project_id: project.id,
+      name: senderName,
+      email: senderEmail,
+      statement: message,
+      submitted_at: new Date().toISOString()
+    };
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await submitDbApplication(appData);
       setSuccessInquiry(true);
       setSenderName('');
       setSenderEmail('');
@@ -118,105 +120,71 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
         </div>
       </section>
 
-      {/* 3. MULTI-PHOTO INTERACTIVE SLIDER GALLERY */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Large Main Highlighted Image Container */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="relative aspect-video sm:aspect-4/3 md:aspect-video rounded-3.5xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-md flex items-center justify-center">
-            <SafeImage 
-              src={activePhoto} 
-              alt={project.title} 
-              className="w-full h-full object-cover select-none transition-all duration-300"
-            />
-            {/* Ambient indicator */}
-            <div className="absolute bottom-4 right-4 bg-slate-900/70 backdrop-blur-xs px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white select-none">
-              Project Snapshot Gallery
+      {/* 3. METRICS BOARD (IMAGE-FREE) */}
+      <section className="bg-white border border-slate-205 rounded-3.5xl p-6 sm:p-8 space-y-6 shadow-sm">
+        <h2 className="text-sm font-bold font-display uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">
+          Project Impact & Funding Metrics
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+          {/* Budget Metric */}
+          <div className="space-y-3">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display font-semibold">Target Funding & Budget</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-3xl font-black text-slate-800 font-display">{project.budget || '$10,000 USD'}</span>
+            </div>
+            <div className="w-full bg-slate-150 h-2 rounded-full mt-3 overflow-hidden">
+              <div 
+                className={`h-full bg-gradient-to-r from-rotary-azure to-rotary-azure-dark rounded-full`} 
+                style={{ width: project.status === 'Completed' ? '100%' : project.fundingRaised?.includes('83%') ? '83%' : project.fundingRaised?.includes('56%') ? '56%' : '35%' }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 font-display">
+              <span>Raised: {project.fundingRaised || '100%'}</span>
+              <span>Goal met</span>
             </div>
           </div>
 
-          {/* Interactive Thumbnails Selector Grid */}
-          <div className="grid grid-cols-3 gap-4">
-            {photos.map((ph, idx) => {
-              const isActive = activePhoto === ph;
-              return (
-                  <button
-                    key={idx}
-                    onClick={() => setActivePhoto(ph)}
-                    className={`relative aspect-video rounded-xl overflow-hidden border-2 bg-slate-50 transition-all flex items-center justify-center ${
-                      isActive ? 'border-rotary-azure shadow-sm ring-1 ring-rotary-azure' : 'border-slate-200/60 opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <SafeImage 
-                      src={ph} 
-                      alt={`Preview photo ${idx + 1}`}
-                      className="w-full h-full object-cover scale-100 hover:scale-105 transition-transform" 
-                    />
-                  </button>
-              );
-            })}
+          {/* Beneficiaries Track */}
+          <div className="space-y-3 md:border-l md:border-slate-100 md:pl-8">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display font-semibold">Community Ingress</span>
+            <div className="flex items-center gap-2.5 mt-2">
+              <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100">
+                <Heart className="w-5 h-5 text-emerald-600 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-slate-800 font-black text-md block leading-tight font-display">{project.beneficiariesCount || 'Communities'}</span>
+                <p className="text-[10px] text-slate-500 leading-none">Beneficiaries served directly</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* METRICS SIDE PANEL CARD */}
-        <div className="lg:col-span-4 bg-white border border-slate-200 rounded-3.5xl p-6 sm:p-8 space-y-6 shadow-sm flex flex-col justify-between">
-          <div className="space-y-6">
-            <div className="border-b border-rose-100 pb-3">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display">Target Funding & Budget</span>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-3xl font-black text-slate-800 font-display">{project.budget || '$10,000 USD'}</span>
-              </div>
-              <div className="w-full bg-slate-150 h-2 rounded-full mt-3 overflow-hidden">
-                <div 
-                  className={`h-full bg-gradient-to-r from-rotary-azure to-rotary-azure-dark rounded-full`} 
-                  style={{ width: project.status === 'Completed' ? '100%' : project.fundingRaised?.includes('83%') ? '83%' : project.fundingRaised?.includes('56%') ? '56%' : '35%' }}
-                />
-              </div>
-              <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 font-display">
-                <span>Raised: {project.fundingRaised || '100%'}</span>
-                <span>Goal met</span>
-              </div>
-            </div>
-
-            {/* Beneficiaries Track */}
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display">Community Ingress</span>
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-100">
-                  <Heart className="w-5 h-5 text-emerald-600 animate-pulse" />
-                </div>
-                <div>
-                  <span className="text-slate-800 font-black text-md block leading-tight font-display">{project.beneficiariesCount || 'Communities'}</span>
-                  <p className="text-[10px] text-slate-500 leading-none">Beneficiaries served directly</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Leadership assignments */}
-            {project.teamLeads && project.teamLeads.length > 0 && (
-              <div className="space-y-2 border-t border-slate-100 pt-4">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display">Sunset Coordinators</span>
-                <div className="flex flex-col gap-2">
+          {/* Leadership assignments */}
+          <div className="space-y-3 md:border-l md:border-slate-100 md:pl-8">
+            {project.teamLeads && project.teamLeads.length > 0 ? (
+              <>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display font-semibold">Sunset Coordinators</span>
+                <div className="flex flex-col gap-2 mt-2">
                   {project.teamLeads.map((name, index) => (
                     <div key={index} className="flex items-center gap-3">
-                      <div className="w-7 h-7 bg-rotary-azure/10 border border-rotary-azure/25 text-rotary-azure rounded-full flex items-center justify-center font-bold text-xs">
+                      <div className="w-7 h-7 bg-rotary-azure/10 border border-rotary-azure/25 text-rotary-azure rounded-full flex items-center justify-center font-bold text-xs select-none">
                         {name.replace('Rtn. ', '').charAt(0)}
                       </div>
                       <span className="text-xs font-semibold text-slate-700">{name}</span>
                     </div>
                   ))}
                 </div>
+              </>
+            ) : (
+              <div className="bg-rotary-azure/5 border border-rotary-azure/12 rounded-2.5xl p-4 flex items-start gap-3">
+                <Award className="w-5 h-5 text-rotary-azure shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-bold text-slate-550 uppercase font-display block tracking-wider">Rotary Standard Compliant</span>
+                  <p className="text-[10px] text-slate-500 leading-relaxed font-light">
+                    This service development is coordinated in compliance with focus protocols.
+                  </p>
+                </div>
               </div>
             )}
-          </div>
-
-          <div className="bg-rotary-azure/5 border border-rotary-azure/12 rounded-2.5xl p-4 flex items-start gap-3 mt-6">
-            <Award className="w-5 h-5 text-rotary-azure shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="text-[9px] font-bold text-slate-550 uppercase font-display block tracking-wider">Rotary Standard Compliant</span>
-              <p className="text-[10px] text-slate-500 leading-relaxed font-light">
-                This service development is coordinated in strict compliance with Rotary International Foundation focus protocols.
-              </p>
-            </div>
           </div>
         </div>
       </section>

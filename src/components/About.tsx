@@ -3,6 +3,8 @@ import { ShieldAlert, CheckCircle, Award, Compass, Heart, Award as Merit } from 
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_ABOUT_LAYOUT } from '../supabase-service';
 import SafeImage from './SafeImage';
 
+// No image imports as requested by the user
+
 export default function About() {
   const [activeTest, setActiveTest] = useState<number | null>(0);
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
@@ -42,22 +44,19 @@ export default function About() {
 
   const leadership = [
     {
-      name: 'Rtn. Abdul Manafi Kemokai',
+      name: 'Rtn. Abdul Manaff Kemokai',
       role: 'Club President',
-      desc: 'Pioneering child rights advocate leading Municipal social and Sunset executive operations.',
-      avatarUrl: ''
+      desc: 'Pioneering child rights advocate leading Municipal social and Sunset executive operations.'
     },
     {
-      name: 'Rtn. Adonis Abboud',
-      role: 'Service Projects Director',
-      desc: 'Senior telecommunication pioneer spearheading RCFS community connectivity and service initiatives.',
-      avatarUrl: ''
+      name: 'Rtn. Millicent Cole',
+      role: 'Club Vice President',
+      desc: 'Senior corporate banking specialist coordinating club initiatives and supporting executive activities.'
     },
     {
-      name: 'Rtn. Afouni Kwaku Ampadu',
-      role: 'Membership Chair',
-      desc: 'Eminent marketing champion guiding membership growth and professional fellowship development.',
-      avatarUrl: ''
+      name: 'Rtn. Victor Williams',
+      role: 'President Elect',
+      desc: 'Eminent banking executive and leader preparing to steer RCFS in the coming Sunset session.'
     }
   ];
 
@@ -221,12 +220,15 @@ export default function About() {
                   {/* Gold band accent */}
                   <div className="absolute top-0 left-0 right-0 h-1.5 bg-rotary-gold"></div>
 
-                  <div className="w-20 h-20 rounded-full border-2 border-rotary-azure overflow-hidden mx-auto shadow-sm flex items-center justify-center bg-slate-50">
-                    <SafeImage 
-                      src={leader.avatarUrl} 
-                      alt={leader.name} 
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="w-20 h-20 rounded-full border-2 border-rotary-azure mx-auto shadow-sm flex items-center justify-center bg-sky-50 text-rotary-azure font-extrabold font-display text-xl select-none">
+                    {(() => {
+                      const cleanName = leader.name.replace('Rtn. ', '');
+                      const parts = cleanName.split(' ');
+                      if (parts.length >= 2) {
+                        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+                      }
+                      return parts[0][0].toUpperCase();
+                    })()}
                   </div>
 
                   <div className="space-y-1">
