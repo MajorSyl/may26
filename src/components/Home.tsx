@@ -266,8 +266,60 @@ export default function Home({ onLearnMore }: HomeProps) {
 
     switch (b.id) {
       case 'hero':
-        // Hero is removed as requested by the user
-        return null;
+        return (
+          <section 
+            key={b.id} 
+            id="home-hero" 
+            className="relative w-full overflow-hidden bg-white text-slate-800 border-b border-slate-200/50"
+          >
+            {/* Full-width image row spanning edge-to-edge with solid fill color to prevent cropping */}
+            <div className="w-full bg-[#0A1128] flex items-center justify-center">
+              <picture className="w-full block">
+                <source srcSet="/src/assets/images/hero-connect.jpg" type="image/jpeg" />
+                <img 
+                  src="/src/assets/images/hero-connect.jpg" 
+                  alt="Rotary Club of Freetown Sunset - Together, We Connect" 
+                  className="w-full h-auto max-h-[550px] object-contain object-center mx-auto"
+                  referrerPolicy="no-referrer"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              </picture>
+            </div>
+
+            {/* Content section directly below the image */}
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 text-center space-y-6 md:space-y-8">
+              <div className="space-y-3">
+                <span className="inline-flex bg-rotary-azure/10 text-rotary-azure border border-rotary-azure/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest font-display">
+                  Welcome to Freetown Sunset
+                </span>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold font-display tracking-tight text-[#00246B] leading-tight">
+                  Fellowship, Integrity, and Direct Local Service
+                </h1>
+              </div>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-light max-w-2xl mx-auto">
+                Founded on Freetown's beautiful shores, the <strong>Rotary Club of Freetown Sunset (RCFS)</strong> gathers a diverse cohort of passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
+              </p>
+              <div className="flex flex-wrap justify-center gap-4 pt-2">
+                <button
+                  id="hero-learn-more"
+                  onClick={() => onLearnMore('about')}
+                  className="px-5 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 font-display"
+                >
+                  <span>Read Our Core Values</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+                <button
+                  id="hero-contact-officers"
+                  onClick={() => onLearnMore('contact')}
+                  className="px-5 py-2.5 bg-transparent hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-300 rounded-xl transition-all cursor-pointer font-display font-semibold text-xs uppercase tracking-wider"
+                >
+                  Contact Our Officers
+                </button>
+              </div>
+            </div>
+          </section>
+        );
 
       case 'stats':
         return (
@@ -765,15 +817,15 @@ export default function Home({ onLearnMore }: HomeProps) {
                   About Our Club
                 </span>
                 <h2 className={`text-3xl sm:text-4xl font-extrabold font-display tracking-tight leading-snug ${textStyle}`}>
-                  Fellowship, Integrity, and Direct Local Service
+                  Our Vision, Heritage & Global Action
                 </h2>
               </div>
               
               <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
-                Founded on Freetown's beautiful shores, the <strong>Rotary Club of Freetown Sunset (RCFS)</strong> gathers a diverse cohort of passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
+                Using the core guidelines of Rotary International and our District 9101, our actions focus on pioneering clean solar water access, distributing vital maternal clinical resources, maintaining educational libraries, and running beach reforestation efforts. We turn values into durable, local infrastructure for Freetown.
               </p>
               <p className={`text-sm leading-relaxed font-light ${subtextStyle}`}>
-                Using the core guidelines of Rotary International and our District 9101, our actions focus on pioneering clean solar water access, distributing vital maternal clinical resources, maintaining educational libraries, and running beach reforestation efforts. We turn values into durable, local infrastructure for Freetown.
+                Our club offers an intellectual platform for values-driven professionals, creating synergy for systemic local improvements. Through active partnership with international donor clubs, we secure lasting resources to cultivate health, clean water security, and youth literacy.
               </p>
 
               <div className="pt-2 flex flex-wrap gap-4">
@@ -782,7 +834,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                   onClick={() => onLearnMore('about')}
                   className="px-5 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 font-display"
                 >
-                  <span>Read Our Core Values</span>
+                  <span>Explore Our History</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 <button
@@ -885,7 +937,7 @@ export default function Home({ onLearnMore }: HomeProps) {
   return (
     <div className="space-y-4 pb-24 select-none">
       {layout
-        .filter(b => b.visible !== false && b.id !== 'hero')
+        .filter(b => b.visible !== false)
         .map(b => renderBlock(b))}
     </div>
   );
