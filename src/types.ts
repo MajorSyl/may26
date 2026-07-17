@@ -75,3 +75,9 @@ export interface ProjectApplication {
   submitted_at: string;
   project_title?: string;
 }
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  createdAt?: string;
+}
