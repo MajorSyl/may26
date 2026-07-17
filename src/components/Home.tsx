@@ -27,8 +27,7 @@ import { getDbProjects } from '../db-router';
 import { Project } from '../types';
 import MemberSpotlight from './MemberSpotlight';
 import SafeImage from './SafeImage';
-
-// No image imports as requested by the user
+import heroConnectImage from '../assets/images/hero-connect.jpg';
 
 interface HomeProps {
   onLearnMore: (tabId: string) => void;
@@ -275,10 +274,10 @@ export default function Home({ onLearnMore }: HomeProps) {
             {/* Full-width image row spanning edge-to-edge with solid fill color to prevent cropping */}
             <div className="w-full bg-[#0A1128] flex items-center justify-center">
               <picture className="w-full block">
-                <source srcSet="/src/assets/images/hero-connect.jpg" type="image/jpeg" />
-                <img 
-                  src="/src/assets/images/hero-connect.jpg" 
-                  alt="Rotary Club of Freetown Sunset - Together, We Connect" 
+                <source srcSet={heroConnectImage} type="image/jpeg" />
+                <img
+                  src={heroConnectImage}
+                  alt="Rotary Club of Freetown Sunset - Together, We Connect"
                   className="w-full h-auto max-h-[550px] object-contain object-center mx-auto"
                   referrerPolicy="no-referrer"
                   loading="eager"
