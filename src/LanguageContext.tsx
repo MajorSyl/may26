@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { safeStorage } from './lib/safe-storage';
 
 export type Language = 'en' | 'krio';
 
@@ -127,13 +128,13 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('app_language');
+    const saved = safeStorage.getItem('app_language');
     return (saved === 'en' || saved === 'krio') ? saved : 'en';
   });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('app_language', lang);
+    safeStorage.setItem('app_language', lang);
   };
 
   const t = (key: KeyOfTranslations): string => {

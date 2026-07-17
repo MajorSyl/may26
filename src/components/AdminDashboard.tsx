@@ -20,6 +20,7 @@ import {
 } from '../supabase-service';
 import { motion, AnimatePresence } from 'motion/react';
 import SafeImage from './SafeImage';
+import { safeStorage } from '../lib/safe-storage';
 
 interface AdminDashboardProps {
   onStateRefresh?: () => void;
@@ -198,14 +199,14 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     // Check auth storage on load
   useEffect(() => {
     const checkSession = async () => {
-      const isAuthed = localStorage.getItem('sunset_admin_authorized') === 'true';
+      const isAuthed = safeStorage.getItem('sunset_admin_authorized') === 'true';
       if (isAuthed) {
         if (isSupabaseConfigured && supabase) {
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData?.session?.user) {
             const isAdmin = await checkIsAdmin(sessionData.session.user.id);
             if (!isAdmin) {
-              localStorage.removeItem('sunset_admin_authorized');
+              safeStorage.removeItem('sunset_admin_authorized');
               await supabase.auth.signOut().catch(() => {});
               setIsAuthorized(false);
               return;
@@ -258,7 +259,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     if (normalized === 'freetown-sunset' || normalized === 'rotary2026' || normalized === 'admin') {
       setIsAuthorized(true);
       setAuthError('');
-      localStorage.setItem('sunset_admin_authorized', 'true');
+      safeStorage.setItem('sunset_admin_authorized', 'true');
       triggerToast('Access granted. Welcome to WordPress-style Content Manager!', 'success');
       fetchData();
     } else {
@@ -288,7 +289,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
         }
         setIsAuthorized(true);
         setAuthError('');
-        localStorage.setItem('sunset_admin_authorized', 'true');
+        safeStorage.setItem('sunset_admin_authorized', 'true');
         triggerToast(`Access granted. Authenticated as: ${data.user.email}`, 'success');
         fetchData();
       } else {
@@ -304,7 +305,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
 
   const handleDeauthorize = async () => {
     setIsAuthorized(false);
-    localStorage.removeItem('sunset_admin_authorized');
+    safeStorage.removeItem('sunset_admin_authorized');
     if (supabase) {
       await supabase.auth.signOut().catch(() => {});
     }

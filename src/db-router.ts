@@ -16,21 +16,22 @@ import {
   submitSupabaseApplication
 } from './supabase-service';
 import { INITIAL_MEMBER_DIRECTORY } from './data';
+import { safeStorage } from './lib/safe-storage';
 
 export type DbDriver = 'supabase';
 
 // LocalStorage Persistence helper for Simulator auth
 const getLocalData = <T>(key: string, defaultVal: T): T => {
-  const val = localStorage.getItem(key);
+  const val = safeStorage.getItem(key);
   if (!val) {
-    localStorage.setItem(key, JSON.stringify(defaultVal));
+    safeStorage.setItem(key, JSON.stringify(defaultVal));
     return defaultVal;
   }
   return JSON.parse(val);
 };
 
 const setLocalData = <T>(key: string, data: T) => {
-  localStorage.setItem(key, JSON.stringify(data));
+  safeStorage.setItem(key, JSON.stringify(data));
 };
 
 export const getActiveDbDriver = (): DbDriver => {
@@ -198,7 +199,7 @@ export const logOutUser = async () => {
   if (isSupabaseConfigured && supabase) {
     await supabase.auth.signOut();
   } else {
-    localStorage.removeItem('rcfs_auth_session');
+    safeStorage.removeItem('rcfs_auth_session');
   }
 };
 

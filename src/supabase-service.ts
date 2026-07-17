@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from './types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
+import { safeStorage } from './lib/safe-storage';
 
 // Read configuration from Vite environment
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
@@ -15,16 +16,16 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
 
 // LocalStorage Persistence helper for Simulator
 const getLocalData = <T>(key: string, defaultVal: T): T => {
-  const val = localStorage.getItem(key);
+  const val = safeStorage.getItem(key);
   if (!val) {
-    localStorage.setItem(key, JSON.stringify(defaultVal));
+    safeStorage.setItem(key, JSON.stringify(defaultVal));
     return defaultVal;
   }
   return JSON.parse(val);
 };
 
 const setLocalData = <T>(key: string, data: T) => {
-  localStorage.setItem(key, JSON.stringify(data));
+  safeStorage.setItem(key, JSON.stringify(data));
 };
 
 // -------------------------------------------------------------
