@@ -10,8 +10,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Read any keys configured
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://ijnjntirgpqqdmhhmaft.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
+  console.error('❌ Error: VITE_SUPABASE_URL / SUPABASE_URL environment variable is not defined!');
+  process.exit(1);
+}
 
 console.log('\x1b[36m%s\x1b[0m', '=======================================================');
 console.log('\x1b[35m%s\x1b[0m', '🔍 SUPABASE & MODEL CONTEXT PROTOCOL (MCP) INTEGRATION TEST');
@@ -127,10 +132,11 @@ async function runDiagnostics() {
   console.log('\x1b[32m%s\x1b[0m', '=========================================================');
 
   if (mcpServerHealthy) {
+    const projectRef = new URL(supabaseUrl).hostname.split('.')[0];
     console.log('\n💡 MCP INTEGRATION ADVICE FOR AGENT:');
-    console.log(' Your project ref is: \x1b[35mijnjntirgpqqdmhhmaft\x1b[0m');
+    console.log(` Your project ref is: \x1b[35m${projectRef}\x1b[0m`);
     console.log(' Your official cloud MCP Connection query is:');
-    console.log('\x1b[33mgemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=ijnjntirgpqqdmhhmaft&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"\x1b[0m');
+    console.log(`\x1b[33mgemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=${projectRef}&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"\x1b[0m`);
     console.log('\nBoth the database cloud target and the Supabase cloud MCP server gateways are up.');
   }
 }

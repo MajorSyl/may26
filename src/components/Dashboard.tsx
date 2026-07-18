@@ -184,18 +184,26 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   };
 
   // MCP dynamic configuration helpers
-  const mcpUrlRaw = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://ijnjntirgpqqdmhhmaft.supabase.co';
-  const mcpUrl = (!mcpUrlRaw || mcpUrlRaw === 'undefined') ? 'https://ijnjntirgpqqdmhhmaft.supabase.co' : mcpUrlRaw;
-  
-  const mcpAnonRaw = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'your-supabase-anon-public-key';
+  const mcpUrlRaw = (import.meta as any).env?.VITE_SUPABASE_URL;
+  const mcpUrl = (!mcpUrlRaw || mcpUrlRaw === 'undefined') ? 'https://your-project-id.supabase.co' : mcpUrlRaw;
+
+  const mcpAnonRaw = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
   const mcpAnon = (!mcpAnonRaw || mcpAnonRaw === 'undefined') ? 'your-supabase-anon-public-key' : mcpAnonRaw;
-  
+
   const mcpSelectedKey = mcpKeyType === 'anon' ? mcpAnon : (customServiceRoleKey || 'your-service-role-key-here');
 
   const getMcpConfigString = (): string => {
+    const mcpProjectRef = (() => {
+      try {
+        return new URL(mcpUrl).hostname.split('.')[0];
+      } catch {
+        return 'your-project-id';
+      }
+    })();
+
     switch (mcpActiveTab) {
       case 'gemini':
-        return `# Add the official Supabase cloud connection to your Gemini / AI Studio Workspace agent command-line:\ngemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=ijnjntirgpqqdmhhmaft&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"`;
+        return `# Add the official Supabase cloud connection to your Gemini / AI Studio Workspace agent command-line:\ngemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=${mcpProjectRef}&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"`;
       case 'cursor':
       case 'claude':
       case 'windsurf':

@@ -1,8 +1,13 @@
 import dotenvConfig from 'dotenv';
 dotenvConfig.config();
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://ijnjntirgpqqdmhhmaft.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl) {
+  console.error('❌ Error: VITE_SUPABASE_URL / SUPABASE_URL environment variable is not defined!');
+  process.exit(1);
+}
 
 if (!supabaseKey) {
   console.error('❌ Error: VITE_SUPABASE_ANON_KEY / SUPABASE_ANON_KEY environment variable is not defined!');
