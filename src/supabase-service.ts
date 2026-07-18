@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from './types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber } from './types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
 
@@ -764,6 +764,37 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
   return false;
 };
 
+// 4.8 Newsletter Subscription
+export const submitSupabaseNewsletterSignup = async (email: string): Promise<NewsletterSubscriber> => {
+  const subscriber: NewsletterSubscriber = {
+    id: 'news_' + Math.random().toString(36).substr(2, 9),
+    email,
+    createdAt: new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .insert({
+        id: subscriber.id,
+        email: subscriber.email,
+        created_at: subscriber.createdAt
+      });
+
+    if (error) {
+      console.error('Failed to insert newsletter subscriber to real Supabase database:', error);
+      throw error;
+    }
+    return subscriber;
+  } else {
+    // Simulated Sandbox Mode
+    const list = getLocalData<NewsletterSubscriber[]>('sb_supabase_newsletter_subscribers', []);
+    list.push(subscriber);
+    setLocalData('sb_supabase_newsletter_subscribers', list);
+    return subscriber;
+  }
+};
+
 // 5. Seed Database Script
 export const seedSupabaseTables = async (): Promise<{ success: boolean; message: string; seededCount: number }> => {
   if (!isSupabaseConfigured || !supabase) {
@@ -929,6 +960,13 @@ CREATE TABLE IF NOT EXISTS project_applications (
   submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
+-- 10. Create Newsletter Subscribers Table
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==========================================
@@ -942,6 +980,7 @@ ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE member_contact_info ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 
 -- 1. Policies for 'admins' Table
 -- No public SELECT policy exists on 'admins', making it completely private.
@@ -1012,6 +1051,13 @@ CREATE POLICY "Allow public insert to project_applications" ON project_applicati
   FOR INSERT TO public WITH CHECK (true);
 
 CREATE POLICY "Allow admin full access to project_applications" ON project_applications
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 9. Policies for 'newsletter_subscribers' Table
+CREATE POLICY "Allow anyone to insert newsletter_subscribers" ON newsletter_subscribers
+  FOR INSERT TO public WITH CHECK (true);
+
+CREATE POLICY "Allow admin full access to newsletter_subscribers" ON newsletter_subscribers
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- ==========================================

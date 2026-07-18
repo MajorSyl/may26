@@ -14,7 +14,7 @@ import Contact from './components/Contact';
 
 import { UserProfile, ContactInquiry } from './types';
 import { subscribeToAuth, logOutUser } from './db-router';
-import { submitDbInquiry } from './db-router';
+import { submitDbInquiry, subscribeToNewsletter } from './db-router';
 import { GENERAL_FAQS } from './data';
 import { Mail, Phone, MapPin, Send, Check, Heart, Shield, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -44,6 +44,12 @@ function MainApp() {
   const [contMsg, setContMsg] = useState('');
   const [contLoading, setContLoading] = useState(false);
   const [contSuccess, setContSuccess] = useState(false);
+
+  // Newsletter Subscribe states
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+  const [newsletterError, setNewsletterError] = useState('');
 
   useEffect(() => {
     // Subscribe to reactive Auth logic
@@ -123,6 +129,25 @@ function MainApp() {
       console.error(err);
     } finally {
       setContLoading(false);
+    }
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = newsletterEmail.trim();
+    if (!email) return;
+
+    setNewsletterLoading(true);
+    setNewsletterError('');
+    try {
+      await subscribeToNewsletter(email);
+      setNewsletterSuccess(true);
+      setNewsletterEmail('');
+    } catch (err) {
+      console.error(err);
+      setNewsletterError('Something went wrong. Please try again.');
+    } finally {
+      setNewsletterLoading(false);
     }
   };
 
@@ -331,6 +356,48 @@ function MainApp() {
 
       {/* 5. BRAND FOOTER BAR */}
       <footer className="bg-rotary-dark text-white py-8 px-4 sm:px-6 lg:px-8 border-t border-slate-850">
+        {activeTab === 'home' && (
+          <div className="max-w-4xl mx-auto pb-8 mb-8 border-b border-white/10">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+              <div className="text-center sm:text-left space-y-1">
+                <h3 className="text-sm font-bold font-display uppercase tracking-widest text-white">Subscribe to Updates</h3>
+                <p className="text-[11px] text-slate-400 max-w-sm">Get occasional news about our projects, events, and fellowship activities.</p>
+              </div>
+
+              {newsletterSuccess ? (
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold bg-emerald-400/10 border border-emerald-400/20 px-4 py-2.5 rounded-xl shrink-0">
+                  <Check className="h-4 w-4" />
+                  <span>Thanks for subscribing!</span>
+                </div>
+              ) : (
+                <form onSubmit={handleNewsletterSubmit} className="flex w-full sm:w-auto gap-2">
+                  <input
+                    id="newsletter-email"
+                    type="email"
+                    required
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="flex-1 sm:w-64 bg-white/5 border border-white/15 text-white placeholder:text-slate-500 px-3.5 py-2.5 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-rotary-azure"
+                  />
+                  <button
+                    id="newsletter-submit"
+                    type="submit"
+                    disabled={newsletterLoading}
+                    className="px-4 py-2.5 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0 flex items-center justify-center gap-1.5"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    <span>{newsletterLoading ? 'Submitting...' : 'Subscribe'}</span>
+                  </button>
+                </form>
+              )}
+            </div>
+            {newsletterError && (
+              <p className="text-[10px] text-rose-400 mt-2 text-center sm:text-left">{newsletterError}</p>
+            )}
+          </div>
+        )}
+
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center text-[12px] font-bold uppercase tracking-widest font-display text-slate-450 hover:text-slate-350 select-none">
             {t('serviceAboveSelf')}

@@ -195,7 +195,7 @@ export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
   supabaseAnonKey && 
   !supabaseAnonKey.includes('anon-public-key') &&
-  supabaseUrl !== 'https://ijnjntirgpqqdmhhmaft.supabase.co'
+  supabaseUrl !== 'https://your-project-id.supabase.co'
 );
 
 export let supabase: SupabaseClient | null = null;
@@ -715,7 +715,7 @@ These parameters are defined in `.env.example`:
 *   `VITE_SUPABASE_ANON_KEY`: The public anonymous database client key.
 
 ### Configuration Status
-*   `VITE_SUPABASE_URL` is set to your active project URL (`https://ijnjntirgpqqdmhhmaft.supabase.co`).
+*   `VITE_SUPABASE_URL` is set to your active project URL.
 *   `VITE_SUPABASE_ANON_KEY` is currently expected to be supplied via user environment variables (with fallback to client-side mockup).
 *   **Environments Alignment:** The AI Studio preview environment dynamically inherits these variables at runtime. When deployed to production, the hosting platform (e.g., Vercel or Cloud Run) requires these variables to be configured in its environment dashboard to transition from Local Sandbox to Live Database sync.
 

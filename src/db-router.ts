@@ -1,10 +1,10 @@
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from './types';
-import { 
-  getSupabaseProjects, 
-  saveSupabaseProject, 
-  getSupabaseEvents, 
-  saveSupabaseEvent, 
-  submitSupabaseInquiry, 
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber } from './types';
+import {
+  getSupabaseProjects,
+  saveSupabaseProject,
+  getSupabaseEvents,
+  saveSupabaseEvent,
+  submitSupabaseInquiry,
   upsertSupabaseUser,
   isSupabaseConfigured,
   getSupabaseUsers,
@@ -13,7 +13,8 @@ import {
   getSupabaseRSVPs,
   submitSupabaseRSVP,
   getSupabaseApplications,
-  submitSupabaseApplication
+  submitSupabaseApplication,
+  submitSupabaseNewsletterSignup
 } from './supabase-service';
 import { INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
@@ -64,6 +65,10 @@ export const saveDbEvent = async (event: ClubEvent): Promise<ClubEvent> => {
 
 export const submitDbInquiry = async (inquiry: ContactInquiry): Promise<ContactInquiry> => {
   return submitSupabaseInquiry(inquiry);
+};
+
+export const subscribeToNewsletter = async (email: string): Promise<NewsletterSubscriber> => {
+  return submitSupabaseNewsletterSignup(email);
 };
 
 export const updateDbProfile = async (profile: UserProfile): Promise<UserProfile> => {
