@@ -277,7 +277,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                 <source srcSet={heroConnectImage} type="image/jpeg" />
                 <img
                   src={heroConnectImage}
-                  alt="Rotary Club of Freetown Sunset - Together, We Connect"
+                  alt="Rotary Club of Freetown Sunset - Kerefay Loko MCHP Community Well dedication"
                   className="w-full h-auto max-h-[550px] object-contain object-center mx-auto"
                   referrerPolicy="no-referrer"
                   loading="eager"
