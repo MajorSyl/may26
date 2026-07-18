@@ -1,74 +1,15 @@
 import React, { useState } from 'react';
 import { Shield, Search, Sparkles, Filter, Grid, RefreshCw } from 'lucide-react';
 import SafeImage from './SafeImage';
+import { FULL_MEMBER_LIST } from '../member-data';
 
-export interface VerbatimMember {
-  firstName: string;
-  lastName: string;
-  classification: string;
-}
-
-export const VERBATIM_MEMBER_LIST: VerbatimMember[] = [
-  { firstName: "Abdul Manaff", lastName: "Kemokai", classification: "Child Rights" },
-  { firstName: "Adonis", lastName: "Abboud", classification: "External Telecommunications" },
-  { firstName: "Kwaku Ampadu", lastName: "Afouni", classification: "Sales&Marketing" },
-  { firstName: "Agatha", lastName: "Seriki Vandy", classification: "Education" },
-  { firstName: "Agnes", lastName: "Ann Wairimu", classification: "HRM&Strategic Management" },
-  { firstName: "Ahmad", lastName: "Wurie", classification: "Civil Engineering" },
-  { firstName: "Aina", lastName: "Moore", classification: "Commercial Banking & Management" },
-  { firstName: "Ajara Marie", lastName: "Bomah", classification: "Social Entrepreneur" },
-  { firstName: "Alex", lastName: "Pratt", classification: "Accounting & Finance" },
-  { firstName: "Alex", lastName: "NalloJnr", classification: "Enterprenuership" },
-  { firstName: "Alison", lastName: "French", classification: "Communications" },
-  { firstName: "Amara", lastName: "Oluwole", classification: "Edupreneur" },
-  { firstName: "Arnold", lastName: "Dixon", classification: "Banking" },
-  { firstName: "Arthur", lastName: "Johnson", classification: "Consultancy" },
-  { firstName: "Avril Beduni", lastName: "Renner", classification: "Accounting & Auditing" },
-  { firstName: "Balfour", lastName: "Nketiah-Sarpong", classification: "Chartered Insurance (Insurance Broker)" },
-  { firstName: "Bridget", lastName: "Mogobo", classification: "Information Technology" },
-  { firstName: "Cecil", lastName: "Olo-Williams", classification: "Engineer/Systems Administrator" },
-  { firstName: "Cecilia", lastName: "B. Browne", classification: "Education" },
-  { firstName: "Crispin", lastName: "M. Kaikai", classification: "Clergy" },
-  { firstName: "Davidson", lastName: "Peters-John", classification: "Finance Consultancy" },
-  { firstName: "Emerlin", lastName: "George", classification: "Governance& Administration" },
-  { firstName: "Esther", lastName: "Johnson", classification: "Banking" },
-  { firstName: "Lyndon", lastName: "Baines-Johnson", classification: "Environmental Management" },
-  { firstName: "Emeka", lastName: "Okechukwu", classification: "Pharmacist" },
-  { firstName: "Fatmata", lastName: "Carew", classification: "Tourism Management" },
-  { firstName: "Georgette", lastName: "Okyne", classification: "Civil Engineering" },
-  { firstName: "George", lastName: "Marke", classification: "Accounting & Finance" },
-  { firstName: "Christopher", lastName: "Cole", classification: "Cargo Development" },
-  { firstName: "Elijah", lastName: "Koroma", classification: "Technology Management" },
-  { firstName: "Haja", lastName: "Yeroh Bah", classification: "PublicHealth" },
-  { firstName: "Ibrahim", lastName: "Bangura", classification: "Law & Governance" },
-  { firstName: "Jane", lastName: "Masoba", classification: "Human Resources & Administration" },
-  { firstName: "Jestina", lastName: "Betts", classification: "Human Resource Management" },
-  { firstName: "Josephine", lastName: "Kosia", classification: "Administeration" },
-  { firstName: "Lauratu", lastName: "Johnson", classification: "Accounting" },
-  { firstName: "Lawrence", lastName: "Sesay", classification: "Information Technology & Systems" },
-  { firstName: "Leslie", lastName: "Gordon-Browne", classification: "BusinessDevelopment" },
-  { firstName: "Madinatu", lastName: "Senesie - Kamara", classification: "International Civil Service" },
-  { firstName: "Eric Musyoka", lastName: "Mutulya", classification: "PublicAdministration" },
-  { firstName: "Mariama", lastName: "Sesay", classification: "Pharmaceutical Operations" },
-  { firstName: "Mariama Ruth Jacinta", lastName: "Jaysid-Sankoh", classification: "Law" },
-  { firstName: "Melphina", lastName: "Beoku-Betts", classification: "Education" },
-  { firstName: "Miatta", lastName: "French", classification: "Electoral Administration" },
-  { firstName: "Michaela", lastName: "Serry", classification: "Corporate Law" },
-  { firstName: "Millicent", lastName: "Cole", classification: "Corporate Banking" },
-  { firstName: "Musa Bernard", lastName: "Komeh", classification: "Global Public Health" },
-  { firstName: "Musa", lastName: "Mansaray", classification: "Procurement and Supply Chain Management Specialists" },
-  { firstName: "Noel", lastName: "Asare-Roberts", classification: "IT&Real Estate Consultancy" },
-  { firstName: "Pauline", lastName: "Wanjiru Kibe", classification: "Project management" },
-  { firstName: "Saio", lastName: "Yanka", classification: "Tax and Accounting" },
-  { firstName: "Sallieu", lastName: "Kanu", classification: "BusinessDevelopment" },
-  { firstName: "Sam", lastName: "Kumbo-Leigh", classification: "BusinessManagement" },
-  { firstName: "Stephen", lastName: "Kabba", classification: "Network Technology" },
-  { firstName: "Sylvia", lastName: "Fusu-luki", classification: "Medicine" },
-  { firstName: "UlaomaFestus", lastName: "Omo-Obi", classification: "Health Systems & Development Management" },
-  { firstName: "Victor", lastName: "Williams", classification: "Banking" },
-  { firstName: "Wilhelmina", lastName: "Sho-Cole", classification: "GovernanceProgramme" },
-  { firstName: "Yasmine Bilkis", lastName: "Ibrahim", classification: "Content Creation" }
-];
+// Derived directly from FULL_MEMBER_LIST (the single source of truth in
+// member-data.ts) rather than a separately hand-maintained list, so this
+// roster can never drift out of sync with corrected names/classifications.
+const VERBATIM_MEMBER_LIST = FULL_MEMBER_LIST.map(m => ({
+  name: m.name,
+  classification: m.classification || ''
+}));
 
 export default function VerbatimMembersGrid() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,17 +17,19 @@ export default function VerbatimMembersGrid() {
 
   const filteredMembers = VERBATIM_MEMBER_LIST.filter(member => {
     const term = searchTerm.toLowerCase();
-    const fullName = `${member.firstName} ${member.lastName}`.toLowerCase();
+    const fullName = member.name.toLowerCase();
     const classification = member.classification.toLowerCase();
     return fullName.includes(term) || classification.includes(term);
   });
 
   const sortedMembers = [...filteredMembers].sort((a, b) => {
     if (sortBy === 'first') {
-      return a.firstName.localeCompare(b.firstName);
+      return a.name.localeCompare(b.name);
     }
     if (sortBy === 'last') {
-      return a.lastName.localeCompare(b.lastName);
+      const aLast = a.name.split(' ').slice(-1)[0];
+      const bLast = b.name.split(' ').slice(-1)[0];
+      return aLast.localeCompare(bLast);
     }
     return 0; // maintain original roster index
   });
@@ -175,14 +118,12 @@ export default function VerbatimMembersGrid() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sortedMembers.map((member, idx) => {
-            const rawIndex = VERBATIM_MEMBER_LIST.findIndex(
-              m => m.firstName === member.firstName && m.lastName === member.lastName
-            ) + 1;
-            const fullName = `${member.firstName} ${member.lastName}`;
+            const rawIndex = VERBATIM_MEMBER_LIST.findIndex(m => m.name === member.name) + 1;
+            const fullName = member.name;
 
             return (
               <div
-                key={`${member.firstName}-${member.lastName}-${idx}`}
+                key={`${member.name}-${idx}`}
                 className="bg-white rounded-3xl border border-slate-200/80 hover:border-rotary-azure/30 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col group h-full"
               >
                 {/* Fallback avatar preview utilizing SafeImage */}

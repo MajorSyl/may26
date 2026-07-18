@@ -555,7 +555,6 @@ export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
         committee: coreMatch.committee,
         avatarUrl: coreMatch.avatarUrl || item.avatarUrl || '',
         classification: coreMatch.classification || item.classification || '',
-        birthday: coreMatch.birthday || item.birthday || '',
         isPaulHarrisFellow: coreMatch.isPaulHarrisFellow !== undefined ? coreMatch.isPaulHarrisFellow : item.isPaulHarrisFellow,
         paulHarrisLevel: coreMatch.paulHarrisLevel || item.paulHarrisLevel || 'None',
         tasks: coreMatch.tasks && coreMatch.tasks.length > 0 ? coreMatch.tasks : item.tasks

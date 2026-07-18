@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { INITIAL_MEMBER_DIRECTORY } from '../data';
-import { Search, Shield, Award, Calendar, Phone, Mail, Filter, BookOpen, Crown, UserCheck, Lock, EyeOff, RefreshCw } from 'lucide-react';
+import { Search, Shield, Award, Calendar, Filter, BookOpen, Crown, UserCheck, Lock, EyeOff, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../LanguageContext';
 import { getDbUsers } from '../db-router';
 import VerbatimMembersGrid from './VerbatimMembersGrid';
@@ -110,9 +110,9 @@ export default function MembersDirectory() {
               {language === 'krio' ? '🔐 Prativet En Kɔnfidɛnshal Safti' : '🔐 Private & Confidential Protection'}
             </h4>
             <p className="text-[11.5px] text-slate-500 font-medium leading-snug">
-              {language === 'krio' 
-                ? 'Fɔ mɛmba dɛn yon tin dɛn dey shur, wi dɔn mask/kiba mɛmba dɛn fon nɔmba and imel to di public so nobody go steal am. Ɔl pratik mɛmba dɛn kin luk am na di secure Portal.'
-                : 'To prevent unsolicited automated spam or privacy exposure, active members\' emails and phone numbers are securely obfuscated from public directories. Complete profiles remain accessible via the secure Portal.'}
+              {language === 'krio'
+                ? 'Fɔ mɛmba dɛn yon tin dɛn dey shur, wi nɔ de put mɛmba dɛn fon nɔmba ɔ imel na dis public pej at ɔl. Ɔl pratik mɛmba dɛn kin luk am na di secure Portal.'
+                : 'To protect member privacy, phone numbers and email addresses are never published on this public page. Authorized members and club officers can access full contact details through the secure Portal.'}
             </p>
           </div>
         </div>
@@ -171,7 +171,7 @@ export default function MembersDirectory() {
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            Verbatim Roster (59 Cards)
+            Verbatim Roster ({INITIAL_MEMBER_DIRECTORY.length} Cards)
           </button>
         </div>
 
@@ -293,26 +293,6 @@ export default function MembersDirectory() {
                     ) : (
                       <span className="text-slate-400 font-bold uppercase tracking-wider font-display text-[9px]">Active Sunset Member</span>
                     )}
-
-                    {/* Quick Dial & Contact Row */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {m.phone && (
-                        <button 
-                          onClick={() => alert(language === 'krio' ? 'Dis mɛmba in nɔmba dɔn kiba/mask fɔ prɔtɛkt in yon safti.' : 'This member\'s contact phone is securely masked to guarantee privacy protection.')}
-                          title={`Call ${m.name}`}
-                          className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-400 hover:shadow-2xs transition-all active:scale-95 cursor-pointer"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => alert(language === 'krio' ? 'Dis mɛmba in imel dɔn kiba/mask fɔ prɔtɛkt in yon safti.' : 'This member\'s contact email is securely masked to guarantee privacy protection.')}
-                        title={`Email ${m.name}`}
-                        className="p-2 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-amber-500 hover:border-amber-400 hover:shadow-2xs transition-all active:scale-95 cursor-pointer"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
                   </div>
                 </div>
               );
