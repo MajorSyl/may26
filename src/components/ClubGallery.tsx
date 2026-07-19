@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Filter, Eye, Calendar, MapPin, X, BookOpen } from 'lucide-react';
+import { Calendar, MapPin, X, BookOpen } from 'lucide-react';
 
 interface GalleryPhoto {
   id: string;
@@ -16,148 +16,7 @@ export default function ClubGallery() {
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
   const [activeCategory, setActiveCategory] = useState<'all' | 'meetings' | 'anniversary' | 'outreach' | 'rotaract'>('all');
 
-  const photos: GalleryPhoto[] = [
-    {
-      id: 'real_photo_group_posing_lobby',
-      title: 'West Africa Goodwill General Assembly Fellowship',
-      category: 'meetings',
-      categoryLabel: 'Weekly Meetings & Fellowship',
-      description: 'Rotary Club of Freetown-Sunset members and international delegates posing together looking magnificent in customized matching traditional blue, yellow and pink African print patterns while showcasing official Goodwill jute bags.',
-      date: 'June 08, 2026',
-      location: 'Freetown Secretariat Convention Centre, Sierra Leone',
-      imageUrl: ''
-    },
-    {
-      id: 'real_photo_toilet_handover',
-      title: 'Aberdeen Beach Public Toilet Handover',
-      category: 'outreach',
-      categoryLabel: 'Community Outreach',
-      description: 'The landmark handover ceremony for the newly constructed and fully modernized public hygiene facility on Aberdeen Beach Road, providing essential sanitation services.',
-      date: 'June 01, 2026',
-      location: 'Aberdeen Beach Road, Freetown',
-      imageUrl: ''
-    },
-    {
-      id: 'real_photo_fundraising_gala',
-      title: 'Annual Fundraising Dinner & Gala',
-      category: 'anniversary',
-      categoryLabel: 'Anniversary & Banquet',
-      description: 'District leaders and club members dressed in elegant evening attire, celebrating and cutting the commemorative cake during our grand Annual Fundraising Dinner Gala.',
-      date: 'May 16, 2026',
-      location: 'Freetown, Sierra Leone',
-      imageUrl: ''
-    },
-    {
-      id: 'real_photo_lobby_goodwill',
-      title: 'Goodwill Delegation & African Textiles Showcase',
-      category: 'meetings',
-      categoryLabel: 'Weekly Meetings',
-      description: 'Delegates from the Rotary Club of Freetown-Sunset looking magnificent in customized matching traditional African print garments and holding official Goodwill jute bags.',
-      date: 'May 08, 2026',
-      location: 'Freetown, Sierra Leone',
-      imageUrl: ''
-    },
-    {
-      id: 'real_photo_meeting_dinner',
-      title: 'Fellowship Diner Assembly at Lagoonda Hotel',
-      category: 'meetings',
-      categoryLabel: 'Weekly Meetings',
-      description: 'Capturing moments of high synergy and laughter as local leaders gather for our weekly evening meeting and round-table fellowship at the Lagoonda Hotel.',
-      date: 'May 21, 2026',
-      location: 'Lagoonda Hotel, Freetown',
-      imageUrl: ''
-    },
-    {
-      id: 'real_photo_beach_fellowship',
-      title: 'Beachside Coastal Fellowship Social',
-      category: 'meetings',
-      categoryLabel: 'Weekly Meetings',
-      description: 'An informal outdoor social gathering by the coast where members connect under shared ideals of service, sporting vibrant custom-branded yellow Rotary apparel.',
-      date: 'April 30, 2026',
-      location: 'Aberdeen Beach, Freetown',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_outreach_1',
-      title: 'Water for Tombo Handover Ceremony',
-      category: 'outreach',
-      categoryLabel: 'Community Outreach',
-      description: 'The ceremonial turning of the clean water tap at the Tombo municipal borehole, completed in cooperation with local headmen.',
-      date: 'March 14, 2024',
-      location: 'Tombo Fishing Village, SL',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_meetings_1',
-      title: 'Digital Literacy Assembly Presentation',
-      category: 'meetings',
-      categoryLabel: 'Weekly Meetings',
-      description: 'Sunset session assembly discussing interactive student textbook configurations with education committee directors at Lagoonda Hotel.',
-      date: 'June 04, 2026',
-      location: 'Lagoonda Hotel, Freetown',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_rotaract_1',
-      title: 'Joint Mangrove Clearing Service Project',
-      category: 'rotaract',
-      categoryLabel: 'Rotaract Collaboration',
-      description: 'An early morning beach sanitation drive organized side-by-side with young civic leaders from the Rotaract Club of Freetown.',
-      date: 'November 12, 2025',
-      location: 'Lumley Estuary Beach',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_anniversary_1',
-      title: 'Rotary Charter Night Banquet Gala',
-      category: 'anniversary',
-      categoryLabel: 'Anniversary Celebration',
-      description: 'RCFS charter members and officers raised direct project funding values during our sunset anniversary dinner meeting.',
-      date: 'April 20, 2025',
-      location: 'Bintumani Secretariat, Aberdeen',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_outreach_2',
-      title: 'Waterloo Library Refurbishment Team',
-      category: 'outreach',
-      categoryLabel: 'Community Outreach',
-      description: 'Setting up custom mahogany reading tables and shelving units for the Waterloo secondary resource suite.',
-      date: 'January 18, 2025',
-      location: 'Waterloo Secondary, SL',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_rotaract_2',
-      title: 'Youth Leadership & Career Orientation Seminars',
-      category: 'rotaract',
-      categoryLabel: 'Rotaract Collaboration',
-      description: 'Coordinated specialized mentoring workshops to equip prospective youth officers with modern tech and classification tools.',
-      date: 'February 24, 2026',
-      location: 'Milton Margai Tech Complex',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_outreach_3',
-      title: 'Lumley Estuary Mangrove Sapling Drive',
-      category: 'outreach',
-      categoryLabel: 'Community Outreach',
-      description: 'Environmental volunteers planting resilient mangrove root systems to defend Freetown water channels against maritime erosion.',
-      date: 'June 13, 2025',
-      location: 'Aberdeen Coastal Margin, SL',
-      imageUrl: ''
-    },
-    {
-      id: 'photo_meetings_2',
-      title: 'Sergeant-at-Arms Fellowship Roundtable',
-      category: 'meetings',
-      categoryLabel: 'Weekly Meetings',
-      description: 'Exchanging corporate governance insights during our weekly sunset assembly in Lagoonda Hotel.',
-      date: 'May 14, 2026',
-      location: 'Lagoonda Hotel, Freetown',
-      imageUrl: ''
-    }
-  ];
+  const photos: GalleryPhoto[] = [];
 
   const filteredPhotos = activeCategory === 'all'
     ? photos
@@ -174,7 +33,7 @@ export default function ClubGallery() {
           Club Archives & Memoirs
         </h1>
         <p className="text-slate-500 max-w-2xl font-light text-sm">
-          A written chronicle and archive of our action-packed assemblies, impactful humanitarian outreach campaigns, annual charter milestones, and collaborative projects alongside Freetown Rotaractors.
+          A photo archive of our club meetings, outreach campaigns, and collaborations with Rotaract. This section is being updated with real photos from our activities.
         </p>
       </section>
 

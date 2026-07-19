@@ -1,6 +1,0 @@
-{
-  "name": "Rotary Club of Freetown Sunset",
-  "description": "Official portal for the Rotary Club of Freetown Sunset in Sierra Leone, featuring our impact gallery, service details, and a member dashboard.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

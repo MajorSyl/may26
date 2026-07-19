@@ -17,6 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import SafeImage from './SafeImage';
 
 interface ProjectDetailsProps {
   project: Project;
@@ -120,6 +121,16 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
         </div>
       </section>
 
+      {project.imageUrl && (
+        <section className="rounded-3.5xl overflow-hidden shadow-sm border border-slate-205 max-h-[420px]">
+          <SafeImage
+            src={project.imageUrl}
+            alt={project.title}
+            className="w-full h-full object-cover max-h-[420px]"
+          />
+        </section>
+      )}
+
       {/* 3. METRICS BOARD (IMAGE-FREE) */}
       <section className="bg-white border border-slate-205 rounded-3.5xl p-6 sm:p-8 space-y-6 shadow-sm">
         <h2 className="text-sm font-bold font-display uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">
@@ -129,19 +140,20 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
           {/* Budget Metric */}
           <div className="space-y-3">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display font-semibold">Target Funding & Budget</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl font-black text-slate-800 font-display">{project.budget || '$10,000 USD'}</span>
-            </div>
-            <div className="w-full bg-slate-150 h-2 rounded-full mt-3 overflow-hidden">
-              <div 
-                className={`h-full bg-gradient-to-r from-rotary-azure to-rotary-azure-dark rounded-full`} 
-                style={{ width: project.status === 'Completed' ? '100%' : project.fundingRaised?.includes('83%') ? '83%' : project.fundingRaised?.includes('56%') ? '56%' : '35%' }}
-              />
-            </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 font-display">
-              <span>Raised: {project.fundingRaised || '100%'}</span>
-              <span>Goal met</span>
-            </div>
+            {project.budget ? (
+              <>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-3xl font-black text-slate-800 font-display">{project.budget}</span>
+                </div>
+                {project.fundingRaised && (
+                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 font-display">
+                    <span>Raised: {project.fundingRaised}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-slate-400 font-light leading-relaxed mt-1">Contact a club officer for funding details.</p>
+            )}
           </div>
 
           {/* Beneficiaries Track */}
@@ -212,7 +224,7 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
                 ))
               ) : (
                 <p>
-                  No detailed operations logs have been submitted for this program. However, Freetown Sunset auditors review every site bi-monthly to maintain optimal operational efficiency. Please check back next quarter for updated environmental audits or textbook distribution lists.
+                  No further details have been added for this project yet. Contact a club officer to learn more.
                 </p>
               )}
             </div>

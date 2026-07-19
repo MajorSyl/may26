@@ -1254,7 +1254,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                           required
                           value={evTitle}
                           onChange={(e) => setEvTitle(e.target.value)}
-                          placeholder="e.g., Aberdeen Mangrove Plantation Service Day"
+                          placeholder="e.g., Weekly Club Meeting"
                           className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-800 focus:bg-white focus:ring-1 focus:ring-rotary-azure"
                         />
                       </div>
@@ -1848,19 +1848,31 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                             {m.committee || 'General Fellowship'}
                           </td>
                           <td className="py-3 px-4 text-center select-none font-mono">
-                            <div className="w-16 mx-auto leading-none">
-                              <span className="font-bold text-xs text-slate-700">{m.attendanceRate || 92}%</span>
-                              <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-1 flex">
-                                <div 
-                                  className={`h-full ${Number(m.attendanceRate || 0) > 85 ? 'bg-emerald-400' : 'bg-amber-400'}`}
-                                  style={{ width: `${m.attendanceRate || 92}%` }}
-                                ></div>
+                            {m.attendanceRate != null ? (
+                              <div className="w-16 mx-auto leading-none">
+                                <span className="font-bold text-xs text-slate-700">{m.attendanceRate}%</span>
+                                <div className="w-full bg-slate-100 h-1 rounded-full overflow-hidden mt-1 flex">
+                                  <div
+                                    className={`h-full ${Number(m.attendanceRate) > 85 ? 'bg-emerald-400' : 'bg-amber-400'}`}
+                                    style={{ width: `${m.attendanceRate}%` }}
+                                  ></div>
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              <span className="text-slate-350 text-xs">—</span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-center font-mono">
-                            <span className="font-black text-slate-700">${m.contributedAmount || 0}</span>
-                            <span className="text-[9px] text-slate-400 block font-semibold">Goal: ${m.contributionGoals || 500}</span>
+                            {m.contributedAmount != null || m.contributionGoals != null ? (
+                              <>
+                                <span className="font-black text-slate-700">${m.contributedAmount || 0}</span>
+                                {m.contributionGoals != null && (
+                                  <span className="text-[9px] text-slate-400 block font-semibold">Goal: ${m.contributionGoals}</span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-slate-350 text-xs">—</span>
+                            )}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex justify-end gap-2">

@@ -3,6 +3,7 @@ import { Project } from '../types';
 import { getDbProjects, getActiveDbDriver } from '../db-router';
 import { Info, Filter, Clock, MapPin, RefreshCw, ArrowRight } from 'lucide-react';
 import ProjectDetails from './ProjectDetails';
+import SafeImage from './SafeImage';
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -77,7 +78,7 @@ export default function Gallery() {
             Service Gallery
           </h1>
           <p className="text-slate-500 max-w-2xl font-light">
-            Each entry represents a completed, active, or envisioned sunset service development. We ensure strict funding allocation and measurable community metrics for every venture.
+            A look at our club's community service projects — completed, active, and planned.
           </p>
         </div>
 
@@ -160,7 +161,9 @@ export default function Gallery() {
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-200 text-slate-500">
-          No projects found matching the active filters. Turn off some filters to inspect other projects.
+          {projects.length === 0
+            ? 'Our project portfolio is being updated. Contact a club officer to learn about our current initiatives.'
+            : 'No projects found matching the active filters. Turn off some filters to inspect other projects.'}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -170,11 +173,21 @@ export default function Gallery() {
             const isPlanning = project.status === 'Planning';
 
             return (
-              <div 
-                key={project.id} 
+              <div
+                key={project.id}
                 onClick={() => setSelectedProject(project)}
-                className="bg-white border border-slate-205 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group p-6 space-y-4"
+                className="bg-white border border-slate-205 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group"
               >
+                {project.imageUrl && (
+                  <div className="w-full h-44 overflow-hidden">
+                    <SafeImage
+                      src={project.imageUrl}
+                      alt={project.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-6 space-y-4 flex-grow flex flex-col justify-between">
                 <div className="space-y-4">
                   {/* Category & Status Bar */}
                   <div className="flex items-center justify-between gap-2">
@@ -227,6 +240,7 @@ export default function Gallery() {
                     <span>Explore Project Details</span>
                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" />
                   </div>
+                </div>
                 </div>
               </div>
             );

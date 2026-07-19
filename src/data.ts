@@ -1,135 +1,118 @@
 import { Project, ClubEvent, UserProfile } from './types';
 import { FULL_MEMBER_LIST } from './member-data';
+import kaningo2017Image from './assets/images/projects/kaningo-2017.jpg';
 
 export const INITIAL_PROJECTS: Project[] = [
   {
-    id: 'proj_water_tombo',
-    title: 'Water for Tombo Clean Well Initiative',
-    category: 'Water, Sanitation, and Hygiene',
-    description: 'Constructed three solar-powered borehole water wells and community wash facilities in the coastal fishing village of Tombo, providing direct clean water access and ending water-borne illness spikes.',
-    year: 2024,
-    impact: 'Provided drinkable water to over 5,000 residents and substantially reduced local water-borne health risks.',
+    id: 'proj_hope_orphanage_well',
+    title: 'Water Well – Hope Orphanage',
+    category: 'Water & Sanitation',
+    description: 'Constructed a water well for Hope Orphanage in Grafton Village to improve access to clean water.',
+    year: 2014,
     status: 'Completed',
-    imageUrl: '',
-    details: 'The Tombo community project was launched in response to a surge in preventable water-borne diseases among the local fishing families. Over the course of 6 months, Rotary Club of Freetown Sunset coordinated geological surveys, constructed three deep borehole solar-pumped water stations, and installed public hygiene washrooms. This sustainable infrastructure uses heavy-duty solar panels to continuously pump clean, purified water to elevated storage tanks, ensuring uninterrupted flow even on overcast days. Local volunteers were also trained as a Water Committee to perform standard maintenance, ensuring decades of clean, reliable water.',
-    galleryUrls: [],
-    budget: '$18,500 USD',
-    fundingRaised: '$18,500 USD (100%)',
-    beneficiariesCount: '5,000+ residents',
-    locationName: 'Tombo Coastal Village, Western Rural District',
-    teamLeads: ['Rtn. Abdul Manaff Kemokai', 'Rtn. Dennis Bright']
+    locationName: 'Grafton Village'
   },
   {
-    id: 'proj_literacy_first',
-    title: 'Literacy First Waterloo Libraries',
+    id: 'proj_russel_library',
+    title: 'Russel Community Library',
     category: 'Basic Education and Literacy',
-    description: 'Refurbished local community libraries and delivered 4,500 curriculum-aligned textbooks, educational tablets, and teacher training programs in Waterloo and surrounding peri-urban communities.',
-    year: 2025,
-    impact: 'Rebuilt 2 libraries, benefitting 1,200 secondary students and encouraging stronger reading performance.',
-    status: 'Completed',
-    imageUrl: '',
-    details: 'In collaboration with the Ministry of Basic and Senior Secondary Education, the Rotary Club of Freetown Sunset launched the Literacy First Campaign. This program completely renovated two crumbling community reading rooms in Waterloo, furnishing them with modern reading desks, bookshelves, reliable solar task lighting, and over 4,500 books. Crucially, the club introduced high-durability digital learning tablets preloaded with certified educational courseware and offline research materials. Additionally, we conducted weekend professional development training for 15 local educators to enhance reading instruction methodologies.',
-    galleryUrls: [],
-    budget: '$14,200 USD',
-    fundingRaised: '$14,200 USD (100%)',
-    beneficiariesCount: '1,200+ active students',
-    locationName: 'Waterloo Peri-Urban Community, Freetown',
-    teamLeads: ['Rtn. Afouni Kwaku Ampadu', 'Rtn. Josephine Sheriff']
+    description: 'Built and equipped the Russel Community Library, including books, laptops, and a generator to power the library.',
+    year: 2019,
+    status: 'Completed'
   },
   {
-    id: 'proj_maternal_health',
-    title: 'Safe Motherhood Delivery Kits',
+    id: 'proj_ola_during_solar',
+    title: 'Solar System – Ola During Hospital Pediatric Ward',
+    category: 'Energy',
+    description: 'Installed a solar energy system for the Pediatric Ward at Ola During Hospital.',
+    year: 2022,
+    status: 'Completed'
+  },
+  {
+    id: 'proj_tree_planting',
+    title: '1,000 Tree Planting Initiative',
+    category: 'The Environment',
+    description: 'Planted 1,000 trees in collaboration with the Freetown City Council.',
+    year: 2023,
+    status: 'Completed'
+  },
+  {
+    id: 'proj_ola_during_donations',
+    title: "Ola During Children's Ward Donations",
     category: 'Maternal and Child Health',
-    description: 'Providing sterile midwifery delivery kits, maternal supplements, and solar-power-equipped labor and delivery lamps to local clinics in Freetown’s underserved settlements.',
-    year: 2026,
-    impact: 'Distributed 1,500 clean birth kits and installed lighting systems in 5 labor clinics.',
-    status: 'Active',
-    imageUrl: '',
-    details: 'To combat infant mortality and prevent postpartum infections, the Safe Motherhood initiative supplies standardized, sterile, single-use obstetric delivery kits to remote peripheral health units. Each kit includes crucial supplies such as surgical gloves, clean plastic sheeting, sterilized umbilical cord ties, antiseptic soaps, and baby blankets. The project has also installed solar-powered overhead clinical LED lamps in rural delivery wards, eliminating the hazardous use of flashlight or candlelight during nighttime labor procedures. Sunset club members periodically carry out site assessments and distribution audits directly at each recipient hospital clinic.',
-    galleryUrls: [],
-    budget: '$11,000 USD',
-    fundingRaised: '$9,200 USD (83%)',
-    beneficiariesCount: '1,500+ expectant mothers',
-    locationName: 'Connaught Precinct & East-End Settlement Clinics',
-    teamLeads: ['Rtn. Dr. Fatmata Sesay', 'Rtn. Adonis Abboud']
+    description: "Donated toiletries and hygiene items for babies at the Ola During Children's Ward in 2019 and 2021.",
+    year: 2021,
+    status: 'Completed'
   },
   {
-    id: 'proj_solar_power',
-    title: 'Solar Cold Chain for Clinics',
-    category: 'Disease Prevention and Treatment',
-    description: 'Equipping three community health outposts with photovoltaic solar panels and medical-grade reefers to guarantee the secure preservation of vaccines and cold-sensitive pediatric treatments.',
-    year: 2026,
-    impact: 'Establishes continuous vaccine safety and diagnostics coverage for over 10,000 children.',
-    status: 'Planning',
-    imageUrl: '',
-    details: 'This ambitious upcoming health infrastructure development involves installing specialized hybrid battery-integrated solar power grids specifically dedicated to vaccine storage refrigerators ("cold chains"). Currently, clinical outposts in rural Freetown suffer from unpredictable power outages that frequently spoil critical medication lots. Our planned system utilizes high-quality medical preservation mini-reefers coupled with telemetry alerts. This setup ensures that life-saving infant vaccinations for polio, tetanus, and malaria are safely maintained within the critical 2°C to 8°C range at all times.',
-    galleryUrls: [],
-    budget: '$22,000 USD',
-    fundingRaised: '$12,500 USD (56%)',
-    beneficiariesCount: '10,000+ children',
-    locationName: 'Kissy Rural & Waterloo Community Outposts',
-    teamLeads: ['Rtn. Adonis Abboud', 'Rtn. Abdul Manaff Kemokai']
+    id: 'proj_russel_scholarships',
+    title: 'Russel Rural Community School Scholarships',
+    category: 'Basic Education and Literacy',
+    description: 'Every year from 2014 through 2022, the club awarded scholarships to the top 12 students at Russel Rural Community School, including school materials and personal effects.',
+    year: 2022,
+    status: 'Completed'
   },
   {
-    id: 'proj_lumley_clean',
-    title: 'Sunset Mangrove & Coastal Care',
-    category: 'Supporting the Environment',
-    description: 'Coastal waste mitigation and reforestation of critical mangrove zones along Aberdeen and Lumley beach pathways, collaborating with local youth groups to tackle plastic waste.',
-    year: 2025,
-    impact: 'Planted over 1,000 coastal mangrove seedlings and supported local plastic waste collection.',
+    id: 'proj_russel_furniture',
+    title: 'Russel Rural Community School – Furniture and Renovation',
+    category: 'Basic Education and Literacy',
+    description: 'Provided 100 chairs and tables to Russel Rural Community School in 2015, and completed a classroom renovation with new furniture in 2022.',
+    year: 2022,
+    status: 'Completed'
+  },
+  {
+    id: 'proj_murray_town_refurb',
+    title: 'Murray Town Municipal Primary School Refurbishment',
+    category: 'Basic Education and Literacy',
+    description: 'Refurbished Murray Town Municipal Primary School and provided classroom furniture, including tables and chairs.',
+    year: 2016,
+    status: 'Completed'
+  },
+  {
+    id: 'proj_school_donations',
+    title: 'School Donations – Baw Baw and Tengbeh Town',
+    category: 'Basic Education and Literacy',
+    description: 'Donated school materials and stationery to Baw Baw Municipal School in 2014, and provided radios for school programs to Baw Baw Municipal School and Tengbeh Town Primary School in 2015.',
+    year: 2015,
+    status: 'Completed'
+  },
+  {
+    id: 'proj_john_bosco',
+    title: 'John Bosco Orphanage Child Care Support',
+    category: 'Maternal and Child Health',
+    description: 'Provided child care support to John Bosco Orphanage on Fort Street.',
+    year: 2017,
     status: 'Completed',
-    imageUrl: '',
-    details: 'Rotary Club of Freetown Sunset launched the Coastline Renewal campaign in response to severe coastal erosion and the steady loss of critical mangrove habitats due to municipal development and plastic choking. Club members designed and spearheaded a series of monthly community cleanup days along the Aberdeen and Lumley beach corridors. These efforts gathered extensive quantities of single-use plastics, which were successfully directed to local recycling channels. Additionally, we collaborated with environmental science researchers to plant over a thousand salt-tolerant mangrove seedlings, restoring micro-ecosystems and forming a natural shield against rising shoreline tides.',
-    galleryUrls: [],
-    budget: '$6,800 USD',
-    fundingRaised: '$6,800 USD (100%)',
-    beneficiariesCount: 'Aberdeen-Lumley Coastline Communities',
-    locationName: 'Aberdeen & Lumley Creek Estuary, Freetown',
-    teamLeads: ['Rtn. Sorieba Daffae', 'Rtn. Alpha Cham']
+    locationName: 'Fort Street'
+  },
+  {
+    id: 'proj_kaningo_kamayama',
+    title: 'Kaningo and Kamayama Mudslide Resettlement',
+    category: 'Community Economic Development',
+    description: 'Supported the resettlement and rehabilitation of mudslide victims in the Kaningo and Kamayama communities.',
+    year: 2017,
+    status: 'Completed',
+    imageUrl: kaningo2017Image
+  },
+  {
+    id: 'proj_wellington_fire',
+    title: 'Wellington Fire Victims – Blood Donations',
+    category: 'Community Economic Development',
+    description: 'Organized blood donations in support of victims of the Wellington fire.',
+    year: 2021,
+    status: 'Completed'
+  },
+  {
+    id: 'proj_blood_bank',
+    title: 'Blood Bank / Blood Donation Program',
+    category: 'Health',
+    description: 'Established a blood bank and blood donation program to support emergencies, disasters, and other urgent needs, in collaboration with the Ministry of Health.',
+    year: 2023,
+    status: 'Completed'
   }
 ];
 
-export const INITIAL_EVENTS: ClubEvent[] = [
-  {
-    id: 'ev_literacy_meeting',
-    title: 'Expansion of Youth Literacy in Sierra Leone',
-    date: '2026-06-04',
-    time: '18:30 - 20:00',
-    location: 'Lagoonda Hotel, Cape Road, Aberdeen, Freetown',
-    speaker: 'Hon. Dr. David Sengeh (Minister of Basic Education)',
-    description: 'Join us for our weekly sunset meeting as we host Dr. David Sengeh to discuss collaborative models for Rotary initiatives to support secondary school libraries and digital literacy training centers across Freetown.',
-    type: 'Weekly Meeting'
-  },
-  {
-    id: 'ev_mangrove_drive',
-    title: 'Lumley Mangrove Plantation Service Day',
-    date: '2026-06-13',
-    time: '08:00 - 12:00',
-    location: 'Lumley Beach Estuary Site, Aberdeen, Freetown',
-    description: 'Hands-on community service day! RCFS members, Rotaractors, and local conservationists will meet to plant mangrove saplings, help erect natural erosion walls, and clean up plastic litter.',
-    type: 'Service Project'
-  },
-  {
-    id: 'ev_sunset_gala',
-    title: 'Annual Golden Sunset Charity Gala & Auction',
-    date: '2026-06-27',
-    time: '19:00 - 23:00',
-    location: 'Bintumani Conference Centre, Aberdeen, Freetown',
-    speaker: 'Rotary District 9101 Governor Invite',
-    description: 'Our premier annual fundraising highlight. A beautiful formal evening of music, dining, and live auctions. All tickets and auction fundraising proceeds directly finance our 2026-2027 Rural Solar Borehole Projects.',
-    type: 'Fundraiser'
-  },
-  {
-    id: 'ev_monthly_social',
-    title: 'New Member Information Coffee & Circle',
-    date: '2026-07-05',
-    time: '17:00 - 18:30',
-    location: 'Cabenda Hotel Terrace, Signal Hill, Freetown',
-    speaker: 'Club Membership Director',
-    description: 'A relaxed, warm gathering for prospective members to learn about the Rotary movement, meet our leadership, ask questions, and explore the pathway to nomination and service.',
-    type: 'Social'
-  }
-];
+export const INITIAL_EVENTS: ClubEvent[] = [];
 
 export const GENERAL_FAQS = [
   {
