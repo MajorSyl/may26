@@ -15,8 +15,8 @@ import Contact from './components/Contact';
 import { UserProfile, ContactInquiry } from './types';
 import { subscribeToAuth, logOutUser } from './db-router';
 import { submitDbInquiry, subscribeToNewsletter } from './db-router';
-import { GENERAL_FAQS } from './data';
-import { Mail, Phone, MapPin, Send, Check, Heart, Shield, RefreshCw } from 'lucide-react';
+import { GENERAL_FAQS, SOCIAL_LINKS } from './data';
+import { Mail, Phone, MapPin, Send, Check, Heart, Shield, RefreshCw, Facebook, Instagram } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LanguageProvider, useLanguage } from './LanguageContext';
 
@@ -398,9 +398,33 @@ function MainApp() {
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-5">
           <div className="flex items-center text-[12px] font-bold uppercase tracking-widest font-display text-slate-450 hover:text-slate-350 select-none">
             {t('serviceAboveSelf')}
+          </div>
+
+          {/* Social Media Links */}
+          <div className="flex items-center gap-3">
+            <a
+              href={SOCIAL_LINKS.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit our Facebook page"
+              title="Facebook"
+              className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-white/5 text-slate-300 hover:bg-[#1877F2] hover:border-[#1877F2] hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-200 active:scale-95"
+            >
+              <Facebook className="w-4 h-4" />
+            </a>
+            <a
+              href={SOCIAL_LINKS.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit our Instagram profile"
+              title="Instagram"
+              className="w-9 h-9 flex items-center justify-center rounded-full border border-white/15 bg-white/5 text-slate-300 hover:bg-gradient-to-tr hover:from-[#F58529] hover:via-[#DD2A7B] hover:to-[#8134AF] hover:border-transparent hover:text-white hover:scale-110 hover:shadow-lg transition-all duration-200 active:scale-95"
+            >
+              <Instagram className="w-4 h-4" />
+            </a>
           </div>
 
           <p className="text-[10px] text-slate-400 text-center sm:text-right select-none">
