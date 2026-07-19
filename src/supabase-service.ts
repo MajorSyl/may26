@@ -100,7 +100,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   homeFinancingAudit: "",
   homeMissionTitle: "Serving Freetown Through Fellowship and Action",
   homeMissionBody1: "The Rotary Club of Freetown Sunset (RCFS) is a community of professionals meeting weekly in Freetown, applying Rotary's core principle of Service Above Self to local needs.",
-  homeMissionBody2: "Details about our current and past projects are being updated. Contact a club officer or visit our official Facebook and Instagram pages to learn about our latest work.",
+  homeMissionBody2: "Since 2014, we have carried out projects across water and sanitation, education, maternal and child health, and other areas of local need. Explore our recent projects below, or visit our official Facebook and Instagram pages for our latest work.",
   homeServiceValueTitle1: "Service Above Self",
   homeServiceValueBody1: "We work to identify real community needs and respond with practical, locally-supported solutions.",
   homeServiceValueTitle2: "The 4-Way Test",

@@ -213,7 +213,7 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
                 ))
               ) : (
                 <p>
-                  No detailed operations logs have been submitted for this program. However, Freetown Sunset auditors review every site bi-monthly to maintain optimal operational efficiency. Please check back next quarter for updated environmental audits or textbook distribution lists.
+                  No further details have been added for this project yet. Contact a club officer to learn more.
                 </p>
               )}
             </div>
