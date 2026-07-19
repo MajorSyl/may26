@@ -196,7 +196,7 @@ export default function Events() {
                 Lodge Guest RSVP
               </h3>
               <p className="text-xs text-slate-500 font-light">
-                Submit your visitor details so our hospitality director can welcome you with beverages at our Lumley beach venue.
+                Submit your visitor details so we can welcome you at our next meeting.
               </p>
             </div>
 

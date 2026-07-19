@@ -127,7 +127,7 @@ export const subscribeToAuth = (
               contributionGoals: 500,
               contributedAmount: 150,
               committee: 'Service Projects Committee',
-              tasks: ['Identify Tombo maintenance issues', 'Promote clean water awareness']
+              tasks: []
             };
             await upsertSupabaseUser(newProfile);
             onStateChange(newProfile);
@@ -156,7 +156,7 @@ export const subscribeToAuth = (
             contributionGoals: 500,
             contributedAmount: 150,
             committee: 'Service Projects Committee',
-            tasks: ['Identify Tombo maintenance issues', 'Promote clean water awareness']
+            tasks: []
           };
           await upsertSupabaseUser(newProfile);
           onStateChange(newProfile);
@@ -186,7 +186,7 @@ export const subscribeToAuth = (
           contributionGoals: 1000,
           contributedAmount: 850,
           committee: 'Vocational Service Committee',
-          tasks: ['Prepare Literacy First Waterloo presentation', 'Organize next coffee hour']
+          tasks: []
         };
         profiles.push(profile);
         setLocalData('sb_supabase_users', profiles);
@@ -244,7 +244,7 @@ export const logInUser = async (emailText?: string, nameText?: string): Promise<
         contributionGoals: 1000,
         contributedAmount: 850,
         committee: 'Vocational Service Committee',
-        tasks: ['Prepare Literacy First Waterloo presentation', 'Organize next coffee hour']
+        tasks: []
       };
       profiles.push(profile);
       setLocalData('sb_supabase_users', profiles);

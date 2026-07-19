@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, CheckCircle, Award, Compass, Heart, Award as Merit } from 'lucide-react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_ABOUT_LAYOUT } from '../supabase-service';
+import { FULL_MEMBER_LIST } from '../member-data';
 import SafeImage from './SafeImage';
 
 // No image imports as requested by the user
@@ -23,7 +24,7 @@ export default function About() {
     {
       num: 1,
       q: 'Is it the TRUTH?',
-      desc: 'We advocate for scientific truth, absolute financial clarity, and honest reporting. All club donation sheets are publicly audited.'
+      desc: 'We advocate for honesty and clarity in our reporting and communications.'
     },
     {
       num: 2,
@@ -42,23 +43,13 @@ export default function About() {
     }
   ];
 
-  const leadership = [
-    {
-      name: 'Rtn. Abdul Manaff Kemokai',
-      role: 'Club President',
-      desc: 'Pioneering child rights advocate leading Municipal social and Sunset executive operations.'
-    },
-    {
-      name: 'Rtn. Millicent Cole',
-      role: 'Club Vice President',
-      desc: 'Senior corporate banking specialist coordinating club initiatives and supporting executive activities.'
-    },
-    {
-      name: 'Rtn. Victor Williams',
-      role: 'President Elect',
-      desc: 'Eminent banking executive and leader preparing to steer RCFS in the coming Sunset session.'
-    }
-  ];
+  const leadership = FULL_MEMBER_LIST
+    .filter(m => m.title)
+    .map(m => ({
+      name: m.name,
+      role: m.title as string,
+      desc: m.classification ? `Classification: ${m.classification}` : ''
+    }));
 
   const getBgStyles = (bgColor: PageBlock['bgColor']) => {
     switch (bgColor) {

@@ -77,7 +77,7 @@ export default function Gallery() {
             Service Gallery
           </h1>
           <p className="text-slate-500 max-w-2xl font-light">
-            Each entry represents a completed, active, or envisioned sunset service development. We ensure strict funding allocation and measurable community metrics for every venture.
+            A look at our club's community service projects — completed, active, and planned.
           </p>
         </div>
 
@@ -160,7 +160,9 @@ export default function Gallery() {
         </div>
       ) : filteredProjects.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-dashed border-slate-200 text-slate-500">
-          No projects found matching the active filters. Turn off some filters to inspect other projects.
+          {projects.length === 0
+            ? 'Our project portfolio is being updated. Contact a club officer to learn about our current initiatives.'
+            : 'No projects found matching the active filters. Turn off some filters to inspect other projects.'}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

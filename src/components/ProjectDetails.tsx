@@ -129,19 +129,20 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
           {/* Budget Metric */}
           <div className="space-y-3">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block font-display font-semibold">Target Funding & Budget</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-3xl font-black text-slate-800 font-display">{project.budget || '$10,000 USD'}</span>
-            </div>
-            <div className="w-full bg-slate-150 h-2 rounded-full mt-3 overflow-hidden">
-              <div 
-                className={`h-full bg-gradient-to-r from-rotary-azure to-rotary-azure-dark rounded-full`} 
-                style={{ width: project.status === 'Completed' ? '100%' : project.fundingRaised?.includes('83%') ? '83%' : project.fundingRaised?.includes('56%') ? '56%' : '35%' }}
-              />
-            </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 font-display">
-              <span>Raised: {project.fundingRaised || '100%'}</span>
-              <span>Goal met</span>
-            </div>
+            {project.budget ? (
+              <>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-3xl font-black text-slate-800 font-display">{project.budget}</span>
+                </div>
+                {project.fundingRaised && (
+                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5 font-display">
+                    <span>Raised: {project.fundingRaised}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-slate-400 font-light leading-relaxed mt-1">Contact a club officer for funding details.</p>
+            )}
           </div>
 
           {/* Beneficiaries Track */}

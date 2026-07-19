@@ -1,20 +1,5 @@
 import { UserProfile } from './types';
 
-import abdulPhoto from './assets/images/member_abdul_manafe_1783806739015.jpg';
-import millicentPhoto from './assets/images/member_millicent_cole_1783806748849.jpg';
-import victorPhoto from './assets/images/member_victor_williams_1783806759314.jpg';
-import musaPhoto from './assets/images/member_musa_komeh_1783806767366.jpg';
-import josephinePhoto from './assets/images/member_josephine_kosia_1783806778446.jpg';
-import saioPhoto from './assets/images/member_saio_yanka_1783806789121.jpg';
-import ericPhoto from './assets/images/member_eric_mutulya_1783806797638.jpg';
-import yasminePhoto from './assets/images/member_yasmine_ibrahim_1783806809698.jpg';
-import georgePhoto from './assets/images/member_george_marke_1783806818919.jpg';
-import alisonPhoto from './assets/images/member_alison_french_1783806826773.jpg';
-import agathaPhoto from './assets/images/member_agatha_vandy_1783806836273.jpg';
-import melphinaPhoto from './assets/images/member_melphina_betts_1783806846432.jpg';
-import jestinaPhoto from './assets/images/member_jestina_betts_1783806855527.jpg';
-import lyndonPhoto from './assets/images/member_lyndon_johnson_1783806863939.jpg';
-
 export const FULL_MEMBER_LIST: UserProfile[] = [
   {
     uid: 'mem_1',
@@ -22,15 +7,10 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     role: 'President',
     classification: 'Child Rights',
     joinedDate: '2021-08-15',
-    attendanceRate: 98,
-    contributionGoals: 2000,
-    contributedAmount: 2000,
     committee: 'Executive Board',
     isPaulHarrisFellow: true,
     paulHarrisLevel: 'PHF+3',
-    tasks: ['Chair weekly board synergy meetings', 'Coordinate clean water well expansion'],
     title: 'President',
-    avatarUrl: abdulPhoto
   },
   {
     uid: 'mem_2',
@@ -38,13 +18,9 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     role: 'Club Officer',
     classification: 'External Telecommunications',
     joinedDate: '2022-01-06',
-    attendanceRate: 95,
-    contributionGoals: 1500,
-    contributedAmount: 1200,
     committee: 'Executive Board',
     isPaulHarrisFellow: true,
     paulHarrisLevel: 'PHF+1',
-    tasks: ['Manage international telecommunication relations', 'Oversee Bintumani Charity auction list']
   },
   {
     uid: 'mem_3',
@@ -52,13 +28,9 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     role: 'Club Officer',
     classification: 'Sales & Marketing',
     joinedDate: '2024-07-01',
-    attendanceRate: 91,
-    contributionGoals: 1000,
-    contributedAmount: 800,
     committee: 'Membership Committee',
     isPaulHarrisFellow: true,
     paulHarrisLevel: 'PHF',
-    tasks: ['Organize weekly beachside fellowship hours', 'Run guest orientations for prospective leaders']
   },
   {
     uid: 'mem_4',
@@ -66,15 +38,10 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     role: 'Club Officer',
     classification: 'Education',
     joinedDate: '2024-07-01',
-    attendanceRate: 94,
-    contributionGoals: 1000,
-    contributedAmount: 1000,
     committee: 'Club Administration Committee',
     isPaulHarrisFellow: true,
     paulHarrisLevel: 'PHF',
-    tasks: ['Supervise secondary literacy library programs', 'Manage school leading scores audit'],
     title: 'Club Administration Chair',
-    avatarUrl: agathaPhoto
   },
   {
     uid: 'mem_5',
@@ -82,12 +49,8 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     role: 'Club Officer',
     classification: 'HRM & Strategic Management',
     joinedDate: '2024-07-01',
-    attendanceRate: 92,
-    contributionGoals: 1000,
-    contributedAmount: 900,
     committee: 'HR & Personnel Committee',
     isPaulHarrisFellow: false,
-    tasks: ['Support vocational training coordinator sessions', 'Coordinate annual committee resources']
   },
   {
     uid: 'mem_6',
@@ -132,7 +95,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'New Generation Committee',
     title: 'New Generation Chair',
-    avatarUrl: alisonPhoto
   },
   {
     uid: 'mem_12',
@@ -226,7 +188,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Rotary Foundation Committee',
     title: 'Rotary Foundation Chair',
-    avatarUrl: lyndonPhoto
   },
   {
     uid: 'mem_25',
@@ -257,7 +218,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Service Projects & Fundraising Committee',
     title: 'Service Projects & Fundraising Chair',
-    avatarUrl: georgePhoto
   },
   {
     uid: 'mem_29',
@@ -302,7 +262,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Diaspora Committee',
     title: 'Diaspora Chair',
-    avatarUrl: jestinaPhoto
   },
   {
     uid: 'mem_35',
@@ -312,7 +271,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Executive Board',
     title: 'Secretary',
-    avatarUrl: josephinePhoto
   },
   {
     uid: 'mem_36',
@@ -350,7 +308,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Executive Board',
     title: 'Sergeant-at-Arms',
-    avatarUrl: ericPhoto
   },
   {
     uid: 'mem_41',
@@ -374,7 +331,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Membership Committee',
     title: 'Membership Chair',
-    avatarUrl: melphinaPhoto
   },
   {
     uid: 'mem_44',
@@ -398,7 +354,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Executive Board',
     title: 'Vice President',
-    avatarUrl: millicentPhoto
   },
   {
     uid: 'mem_47',
@@ -408,7 +363,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Executive Board',
     title: 'Immediate Past President',
-    avatarUrl: musaPhoto
   },
   {
     uid: 'mem_48',
@@ -439,7 +393,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Executive Board',
     title: 'Treasurer',
-    avatarUrl: saioPhoto
   },
   {
     uid: 'mem_52',
@@ -484,7 +437,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2022-03-16',
     committee: 'Executive Board',
     title: 'President Elect',
-    avatarUrl: victorPhoto
   },
   {
     uid: 'mem_58',
@@ -501,7 +453,6 @@ export const FULL_MEMBER_LIST: UserProfile[] = [
     joinedDate: '2024-07-01',
     committee: 'Public Image Committee',
     title: 'Public Image Chair',
-    avatarUrl: yasminePhoto
   },
   {
     uid: 'mem_60',

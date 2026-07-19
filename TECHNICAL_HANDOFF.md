@@ -709,15 +709,12 @@ The app contains **two distinct authentication scopes**:
 
 ### Expected Environment Variables
 These parameters are defined in `.env.example`:
-*   `GEMINI_API_KEY`: API key for Gemini model services.
-*   `APP_URL`: The fully qualified public-facing deployment domain (used for callback routing).
 *   `VITE_SUPABASE_URL`: The URL of your Supabase instance.
 *   `VITE_SUPABASE_ANON_KEY`: The public anonymous database client key.
 
 ### Configuration Status
-*   `VITE_SUPABASE_URL` is set to your active project URL.
-*   `VITE_SUPABASE_ANON_KEY` is currently expected to be supplied via user environment variables (with fallback to client-side mockup).
-*   **Environments Alignment:** The AI Studio preview environment dynamically inherits these variables at runtime. When deployed to production, the hosting platform (e.g., Vercel or Cloud Run) requires these variables to be configured in its environment dashboard to transition from Local Sandbox to Live Database sync.
+*   Both variables must be set for the app to connect to a live Supabase project; without them, the app falls back to a local-only simulated mode using browser storage.
+*   **Environments Alignment:** The hosting platform (Vercel) requires these variables to be configured in its environment dashboard for the production deployment to sync with the live Supabase database.
 
 ---
 

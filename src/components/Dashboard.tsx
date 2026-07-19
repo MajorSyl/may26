@@ -203,7 +203,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
 
     switch (mcpActiveTab) {
       case 'gemini':
-        return `# Add the official Supabase cloud connection to your Gemini / AI Studio Workspace agent command-line:\ngemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=${mcpProjectRef}&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"`;
+        return `# Add the official Supabase cloud connection to your Gemini CLI:\ngemini mcp add -t http supabase "https://mcp.supabase.com/mcp?project_ref=${mcpProjectRef}&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"`;
       case 'cursor':
       case 'claude':
       case 'windsurf':
@@ -625,7 +625,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
               type="text"
               value={editTasksText}
               onChange={(e) => setEditTasksText(e.target.value)}
-              placeholder="e.g. Audit Tombo pump lines, Send Waterloo donor certificates"
+              placeholder="e.g. Review project budget, Send donor thank-you notes"
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
             />
           </div>
@@ -973,9 +973,9 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                     <div className="flex flex-col text-left sm:text-right">
                       <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Attendance</span>
                       <span className={`text-[13px] font-black font-display leading-normal mt-0.5 ${
-                        (member.attendanceRate || 0) >= 92 ? 'text-emerald-600' : 'text-amber-500'
+                        member.attendanceRate == null ? 'text-slate-350' : member.attendanceRate >= 92 ? 'text-emerald-600' : 'text-amber-500'
                       }`}>
-                        {member.attendanceRate || 92}%
+                        {member.attendanceRate != null ? `${member.attendanceRate}%` : '—'}
                       </span>
                     </div>
 
@@ -983,7 +983,9 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                     <div className="flex flex-col text-left sm:text-right font-sans">
                       <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider leading-none font-display">Financials</span>
                       <span className="text-[13px] font-extrabold text-[#0f172a] font-display mt-0.5">
-                        ${member.contributedAmount || 0} <span className="text-[10px] font-normal text-slate-400">/ ${member.contributionGoals || 500}</span>
+                        {member.contributedAmount != null || member.contributionGoals != null
+                          ? <>${member.contributedAmount || 0} <span className="text-[10px] font-normal text-slate-400">/ ${member.contributionGoals || 0}</span></>
+                          : <span className="text-slate-350">—</span>}
                       </span>
                     </div>
 
@@ -1125,7 +1127,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
                 Create a free project at <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="font-semibold underline text-amber-900 inline-flex items-center gap-0.5">supabase.com<ExternalLink className="w-2.5 h-2.5" /></a>.
               </li>
               <li>
-                Go to <strong>Project Settings ➔ Secrets</strong> on your AI Studio Workspace, or add these keys to your local `.env` variables:
+                Go to <strong>Project Settings ➔ Environment Variables</strong> on your hosting platform (e.g. Vercel), or add these keys to your local `.env` file:
                 <div className="mt-2 bg-slate-900 text-slate-300 font-mono p-3 rounded-lg text-[10px] overflow-x-auto space-y-1">
                   <div>VITE_SUPABASE_URL="https://your-proj-id.supabase.co"</div>
                   <div>VITE_SUPABASE_ANON_KEY="your-anon-key-string"</div>
@@ -1212,7 +1214,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
         <div className="space-y-1">
           <div className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-display border border-indigo-100">
             <Sliders className="w-3.5 h-3.5 text-indigo-600" />
-            <span>AI Studio Integration Node</span>
+            <span>Developer Tools Integration</span>
           </div>
           <h3 className="font-extrabold font-display text-slate-800 text-lg">
             Model Context Protocol (MCP) Portal
@@ -1357,7 +1359,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
           <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
             <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center text-[11px]">
               <span className="font-bold text-[10px] text-slate-400 uppercase tracking-widest font-mono">
-                {mcpActiveTab === 'gemini' && 'Gemini CLI/AI Studio integration command'}
+                {mcpActiveTab === 'gemini' && 'Gemini CLI integration command'}
                 {mcpActiveTab === 'cursor' && '.cursor/mcp.json or Global MCP Configuration'}
                 {mcpActiveTab === 'claude' && '%APPDATA%/Claude/claude_desktop_config.json'}
                 {mcpActiveTab === 'windsurf' && '~/.codeium/windsurf/mcp_config.json'}
