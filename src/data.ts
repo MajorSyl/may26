@@ -1,5 +1,6 @@
 import { Project, ClubEvent, UserProfile } from './types';
 import { FULL_MEMBER_LIST } from './member-data';
+import kaningo2017Image from './assets/images/projects/kaningo-2017.jpg';
 
 export const INITIAL_PROJECTS: Project[] = [
   {
@@ -90,7 +91,8 @@ export const INITIAL_PROJECTS: Project[] = [
     category: 'Community Economic Development',
     description: 'Supported the resettlement and rehabilitation of mudslide victims in the Kaningo and Kamayama communities.',
     year: 2017,
-    status: 'Completed'
+    status: 'Completed',
+    imageUrl: kaningo2017Image
   },
   {
     id: 'proj_wellington_fire',

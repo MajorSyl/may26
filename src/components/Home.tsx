@@ -377,6 +377,15 @@ export default function Home({ onLearnMore }: HomeProps) {
                       id={`project-card-${project.id}`}
                       className="bg-white rounded-3xl border border-slate-200 hover:border-rotary-azure/30 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full text-slate-850"
                     >
+                      {project.imageUrl && (
+                        <div className="w-full h-44 overflow-hidden">
+                          <SafeImage
+                            src={project.imageUrl}
+                            alt={project.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
                       {/* Content Area with date badge inside */}
                       <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
                         <div className="space-y-2">

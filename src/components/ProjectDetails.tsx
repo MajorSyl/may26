@@ -17,6 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import SafeImage from './SafeImage';
 
 interface ProjectDetailsProps {
   project: Project;
@@ -119,6 +120,16 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
           </div>
         </div>
       </section>
+
+      {project.imageUrl && (
+        <section className="rounded-3.5xl overflow-hidden shadow-sm border border-slate-205 max-h-[420px]">
+          <SafeImage
+            src={project.imageUrl}
+            alt={project.title}
+            className="w-full h-full object-cover max-h-[420px]"
+          />
+        </section>
+      )}
 
       {/* 3. METRICS BOARD (IMAGE-FREE) */}
       <section className="bg-white border border-slate-205 rounded-3.5xl p-6 sm:p-8 space-y-6 shadow-sm">

@@ -3,6 +3,7 @@ import { Project } from '../types';
 import { getDbProjects, getActiveDbDriver } from '../db-router';
 import { Info, Filter, Clock, MapPin, RefreshCw, ArrowRight } from 'lucide-react';
 import ProjectDetails from './ProjectDetails';
+import SafeImage from './SafeImage';
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -172,11 +173,21 @@ export default function Gallery() {
             const isPlanning = project.status === 'Planning';
 
             return (
-              <div 
-                key={project.id} 
+              <div
+                key={project.id}
                 onClick={() => setSelectedProject(project)}
-                className="bg-white border border-slate-205 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group p-6 space-y-4"
+                className="bg-white border border-slate-205 rounded-3xl overflow-hidden shadow-sm hover:shadow-md hover:border-rotary-azure/40 transition-all cursor-pointer flex flex-col justify-between group"
               >
+                {project.imageUrl && (
+                  <div className="w-full h-44 overflow-hidden">
+                    <SafeImage
+                      src={project.imageUrl}
+                      alt={project.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-6 space-y-4 flex-grow flex flex-col justify-between">
                 <div className="space-y-4">
                   {/* Category & Status Bar */}
                   <div className="flex items-center justify-between gap-2">
@@ -229,6 +240,7 @@ export default function Gallery() {
                     <span>Explore Project Details</span>
                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" />
                   </div>
+                </div>
                 </div>
               </div>
             );
