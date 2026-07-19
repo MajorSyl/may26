@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, PageBlock, DEFAULT_HOME_LAYOUT } from '../supabase-service';
 import { getDbProjects } from '../db-router';
 import { Project } from '../types';
+import { SOCIAL_LINKS } from '../data';
 import MemberSpotlight from './MemberSpotlight';
 import SafeImage from './SafeImage';
 import heroConnectImage from '../assets/images/hero-connect.jpg';
@@ -172,7 +173,7 @@ export default function Home({ onLearnMore }: HomeProps) {
   // Handle temporary copy share trigger
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const handleShareClick = (postId: string) => {
-    const shareUrl = `https://www.facebook.com/profile.php?id=100071187714639`;
+    const shareUrl = SOCIAL_LINKS.facebook;
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopiedId(postId);
       setTimeout(() => setCopiedId(null), 2500);
@@ -450,7 +451,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                 </div>
 
                 <a 
-                  href="https://www.facebook.com/profile.php?id=100071187714639" 
+                  href={SOCIAL_LINKS.facebook} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   id="fb-hub-full-btn"
@@ -494,7 +495,7 @@ export default function Home({ onLearnMore }: HomeProps) {
                           </div>
 
                           <a 
-                            href="https://www.facebook.com/profile.php?id=100071187714639" 
+                            href={SOCIAL_LINKS.facebook} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="p-2 text-slate-400 hover:text-[#0056e3] rounded-full hover:bg-slate-50 transition-colors"

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, ShieldAlert, Users, Calendar, Clock, Globe } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, ShieldAlert, Users, Calendar, Clock, Globe, Facebook, Instagram } from 'lucide-react';
 import { submitDbInquiry } from '../db-router';
 import { ContactInquiry } from '../types';
+import { SOCIAL_LINKS } from '../data';
 
 export default function Contact() {
   const [name, setName] = useState('');
@@ -235,6 +236,45 @@ export default function Contact() {
                   <p className="text-white font-semibold mt-0.5">rtn.president@freetownsunset.org</p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Social Media Card */}
+          <section className="bg-white rounded-3xl border border-slate-150 p-6 space-y-4">
+            <h3 className="font-extrabold text-slate-800 text-sm font-display tracking-tight uppercase">Follow Us Online</h3>
+
+            <div className="space-y-3">
+              <a
+                href={SOCIAL_LINKS.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit our Facebook page"
+                className="group flex items-center gap-3 rounded-2xl -m-1 p-1 transition-colors hover:bg-slate-50"
+              >
+                <div className="p-2 rounded-xl bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20 group-hover:bg-[#1877F2] group-hover:text-white group-hover:scale-105 transition-all duration-200">
+                  <Facebook className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">Facebook</span>
+                  <p className="text-slate-700 font-semibold mt-0.5 text-xs group-hover:text-[#1877F2] transition-colors">Rotary Club of Freetown Sunset</p>
+                </div>
+              </a>
+
+              <a
+                href={SOCIAL_LINKS.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit our Instagram profile"
+                className="group flex items-center gap-3 rounded-2xl -m-1 p-1 transition-colors hover:bg-slate-50"
+              >
+                <div className="p-2 rounded-xl bg-gradient-to-tr from-[#F58529]/10 via-[#DD2A7B]/10 to-[#8134AF]/10 text-[#DD2A7B] border border-[#DD2A7B]/20 group-hover:bg-gradient-to-tr group-hover:from-[#F58529] group-hover:via-[#DD2A7B] group-hover:to-[#8134AF] group-hover:text-white group-hover:scale-105 transition-all duration-200">
+                  <Instagram className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">Instagram</span>
+                  <p className="text-slate-700 font-semibold mt-0.5 text-xs group-hover:text-[#DD2A7B] transition-colors">@rcfsunset</p>
+                </div>
+              </a>
             </div>
           </section>
 

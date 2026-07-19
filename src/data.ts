@@ -184,3 +184,8 @@ export const ROTARY_FOCUS_AREAS = [
 export const INITIAL_MEMBER_DIRECTORY: UserProfile[] = [
   ...FULL_MEMBER_LIST
 ];
+
+export const SOCIAL_LINKS = {
+  facebook: 'https://www.facebook.com/profile.php?id=100071187714639',
+  instagram: 'https://www.instagram.com/rcfsunset'
+};
