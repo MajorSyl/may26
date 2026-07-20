@@ -137,36 +137,82 @@ export const submitDbApplication = async (app: ProjectApplication): Promise<Proj
 // tell those two apart (e.g. to show "contact an admin to finish setup")
 // can check supabase.auth.getSession() themselves.
 
+// getSession() reads a saved login from the browser's local storage and,
+// if it looks expired, silently tries to refresh it over the network
+// before resolving. If that refresh call errors or simply never comes
+// back (observed in practice: a stale/corrupted stored session surviving
+// a period of misconfigured Supabase credentials), the promise neither
+// resolves nor rejects -- with no timeout, that left the whole app stuck
+// on its startup loading screen forever, even across hard refreshes,
+// since the same corrupted token was reloaded from storage every time.
+// SESSION_CHECK_TIMEOUT_MS forces the app to give up and treat it as
+// "not logged in" instead, and clears the local session so it doesn't
+// keep tripping this on every subsequent load.
+const SESSION_CHECK_TIMEOUT_MS = 8000;
+
 export const subscribeToAuth = (
   onStateChange: (user: UserProfile | null) => void,
   setLoading: (loading: boolean) => void
 ) => {
   if (isSupabaseConfigured && supabase) {
     setLoading(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        getSupabaseUserByAuthId(session.user.id).then((profile) => {
-          onStateChange(profile);
-          setLoading(false);
-        });
-      } else {
+
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.error('Session check timed out; clearing local session and continuing as logged out.');
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      onStateChange(null);
+      setLoading(false);
+    }, SESSION_CHECK_TIMEOUT_MS);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (settled) return;
+        if (session) {
+          return getSupabaseUserByAuthId(session.user.id).then((profile) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            onStateChange(profile);
+            setLoading(false);
+          });
+        }
+        settled = true;
+        clearTimeout(timeoutId);
         onStateChange(null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        console.error('Session check failed; clearing local session and continuing as logged out.', err);
+        supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        onStateChange(null);
+        setLoading(false);
+      });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);
+      try {
+        if (session) {
+          const profile = await getSupabaseUserByAuthId(session.user.id);
+          onStateChange(profile);
+        } else {
+          onStateChange(null);
+        }
+      } catch (err) {
+        console.error('Auth state change handling failed:', err);
+        onStateChange(null);
+      } finally {
         setLoading(false);
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);
-      if (session) {
-        const profile = await getSupabaseUserByAuthId(session.user.id);
-        onStateChange(profile);
-      } else {
-        onStateChange(null);
-      }
-      setLoading(false);
-    });
-
     return () => {
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   } else {
