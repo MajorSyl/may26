@@ -119,8 +119,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   involvedBadge: "Take Action Today",
   involvedTitle: "Help Us Empower Freetown Communities",
   involvedSubtitle: "Whether you are a local professional looking to give back or an international partner ready to fund systemic change, there are multiple avenues to work with Freetown Sunset.",
-  involvedContactEmail: "freetownsunset@gmail.com",
-  involvedContactPhone: "+232 76 987654",
+  involvedContactEmail: "placeholder@rcfsunset.org",
+  involvedContactPhone: "000000000",
 
   homeLayout: JSON.stringify(DEFAULT_HOME_LAYOUT),
   aboutLayout: JSON.stringify(DEFAULT_ABOUT_LAYOUT)

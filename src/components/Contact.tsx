@@ -213,7 +213,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-none">Voice / WhatsApp</span>
-                  <p className="text-white font-extrabold font-mono mt-0.5 text-sm">076827035</p>
+                  <p className="text-white font-extrabold font-mono mt-0.5 text-sm">000000000 <span className="text-slate-400 font-normal italic text-xs">(placeholder)</span></p>
                 </div>
               </div>
 
@@ -223,7 +223,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-none">Administrative Email</span>
-                  <p className="text-white font-semibold font-mono mt-0.5">contact@freetownsunset.org</p>
+                  <p className="text-white font-semibold font-mono mt-0.5">placeholder@rcfsunset.org <span className="text-slate-400 font-normal italic text-xs">(placeholder)</span></p>
                 </div>
               </div>
 

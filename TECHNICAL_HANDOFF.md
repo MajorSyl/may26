@@ -164,7 +164,7 @@ Here is a comprehensive breakdown of every React component file, its core respon
 *   **Component Dependencies:** `SafeImage`
 
 ### `Contact.tsx`
-*   **Role:** Contact us view displaying local contact information (freetown.sunset@gmail.com), mapped office locations, and an interactive lead generation and inquiry form.
+*   **Role:** Contact us view displaying local contact information (currently placeholder@rcfsunset.org pending confirmed real details), mapped office locations, and an interactive lead generation and inquiry form.
 *   **Component Dependencies:** Lucide-React icons
 *   **Service Dependencies:** `db-router` (submits customer messages).
 
