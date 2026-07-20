@@ -1,4 +1,4 @@
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber } from './types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto } from './types';
 import {
   getSupabaseProjects,
   saveSupabaseProject,
@@ -9,12 +9,25 @@ import {
   isSupabaseConfigured,
   getSupabaseUsers,
   supabase,
-  getSupabaseUser,
+  getSupabaseUserByAuthId,
+  updateSupabaseOwnProfile,
+  updateSupabaseOwnContactInfo,
   getSupabaseRSVPs,
   submitSupabaseRSVP,
   getSupabaseApplications,
   submitSupabaseApplication,
-  submitSupabaseNewsletterSignup
+  submitSupabaseNewsletterSignup,
+  getSupabaseSubmissions,
+  getMySupabaseSubmissions,
+  submitSupabaseSubmission,
+  reviewSupabaseSubmission,
+  getSupabaseGalleryPhotos,
+  promoteSupabaseAdmin,
+  demoteSupabaseAdmin,
+  createLoginSupabaseMember,
+  resetSupabasePin,
+  revokeSupabaseMemberAccount,
+  loginWithRotaryIdAndPin
 } from './supabase-service';
 import { INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
@@ -104,6 +117,14 @@ export const submitDbApplication = async (app: ProjectApplication): Promise<Proj
 // -------------------------------------------------------------
 // AUTH INTEGRATION (Supabase vs Sandbox LocalStorage)
 // -------------------------------------------------------------
+// Accounts are admin-created/invite-only (no open self-signup), so a
+// session with no linked roster row is never fabricated a placeholder
+// profile here -- that would silently invent fake club data for whoever
+// holds the session, the exact thing this app has spent real effort
+// removing elsewhere. onStateChange(null) covers both "logged out" and
+// "logged in but not yet linked to a roster row"; components that need to
+// tell those two apart (e.g. to show "contact an admin to finish setup")
+// can check supabase.auth.getSession() themselves.
 
 export const subscribeToAuth = (
   onStateChange: (user: UserProfile | null) => void,
@@ -113,25 +134,8 @@ export const subscribeToAuth = (
     setLoading(true);
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        getSupabaseUser(session.user.id).then(async (profile) => {
-          if (profile) {
-            onStateChange(profile);
-          } else {
-            // Create user profile
-            const newProfile: UserProfile = {
-              uid: session.user.id,
-              name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Rotary Member',
-              email: session.user.email || '',
-              role: session.user.email === 'bigsyl19@gmail.com' ? 'President' : 'Rotarian',
-              attendanceRate: 92,
-              contributionGoals: 500,
-              contributedAmount: 150,
-              committee: 'Service Projects Committee',
-              tasks: []
-            };
-            await upsertSupabaseUser(newProfile);
-            onStateChange(newProfile);
-          }
+        getSupabaseUserByAuthId(session.user.id).then((profile) => {
+          onStateChange(profile);
           setLoading(false);
         });
       } else {
@@ -143,24 +147,8 @@ export const subscribeToAuth = (
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setLoading(true);
       if (session) {
-        const profile = await getSupabaseUser(session.user.id);
-        if (profile) {
-          onStateChange(profile);
-        } else {
-          const newProfile: UserProfile = {
-            uid: session.user.id,
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Rotary Member',
-            email: session.user.email || '',
-            role: session.user.email === 'bigsyl19@gmail.com' ? 'President' : 'Rotarian',
-            attendanceRate: 92,
-            contributionGoals: 500,
-            contributedAmount: 150,
-            committee: 'Service Projects Committee',
-            tasks: []
-          };
-          await upsertSupabaseUser(newProfile);
-          onStateChange(newProfile);
-        }
+        const profile = await getSupabaseUserByAuthId(session.user.id);
+        onStateChange(profile);
       } else {
         onStateChange(null);
       }
@@ -175,22 +163,7 @@ export const subscribeToAuth = (
     const activeSession = getLocalData<{ uid: string; displayName: string; email: string } | null>('rcfs_auth_session', null);
     if (activeSession) {
       const profiles = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
-      let profile = profiles.find(p => p.uid === activeSession.uid);
-      if (!profile) {
-        profile = {
-          uid: activeSession.uid,
-          name: activeSession.displayName,
-          email: activeSession.email,
-          role: activeSession.email.includes('president') || activeSession.email === 'bigsyl19@gmail.com' ? 'President' : activeSession.email.includes('officer') ? 'Club Officer' : 'Rotarian',
-          attendanceRate: 94,
-          contributionGoals: 1000,
-          contributedAmount: 850,
-          committee: 'Vocational Service Committee',
-          tasks: []
-        };
-        profiles.push(profile);
-        setLocalData('sb_supabase_users', profiles);
-      }
+      const profile = profiles.find(p => p.uid === activeSession.uid) || null;
       onStateChange(profile);
     } else {
       onStateChange(null);
@@ -208,42 +181,31 @@ export const logOutUser = async () => {
   }
 };
 
-export const logInUser = async (emailText?: string, nameText?: string): Promise<UserProfile> => {
+// Rotary ID + 6-digit PIN sign-in only -- there is no self-registration
+// path and no email surface. Members receive their Rotary ID + an initial
+// PIN from an admin (see createLoginSupabaseMember below), which links
+// their auth account to an existing roster row before they ever sign in
+// here. Real Rotary-ID-first lookup and per-ID lockout is enforced by the
+// member-login Edge Function (see loginWithRotaryIdAndPin); this wrapper
+// just falls back to a local simulator when Supabase isn't configured.
+export const logInMember = async (rotaryId: string, pin: string): Promise<UserProfile> => {
   if (isSupabaseConfigured && supabase) {
-    // Standard Google Sign In
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin
-      }
-    });
-    if (error) throw error;
-    return { uid: 'oauth_redirecting' } as any;
+    return loginWithRotaryIdAndPin(rotaryId, pin);
   } else {
-    const email = emailText || 'member@freetownsunset.org';
-    const name = nameText || 'Freetown Rotarian';
     const fakeUid = 'sim_' + Math.random().toString(36).substr(2, 9);
-    
-    const activeSession = {
-      uid: fakeUid,
-      displayName: name,
-      email,
-      emailVerified: true
-    };
+    const normalizedId = rotaryId.trim().toUpperCase();
+    const activeSession = { uid: fakeUid, displayName: normalizedId, email: `${normalizedId.toLowerCase()}@members.rcfs.internal`, emailVerified: true };
     setLocalData('rcfs_auth_session', activeSession);
 
     const profiles = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
-    let profile = profiles.find(p => p.email === email);
+    let profile = profiles.find(p => p.rotaryId === normalizedId);
     if (!profile) {
       profile = {
         uid: fakeUid,
-        name,
-        email,
-        role: email.includes('president') || email === 'bigsyl19@gmail.com' ? 'President' : email.includes('officer') ? 'Club Officer' : 'Rotarian',
-        attendanceRate: 94,
-        contributionGoals: 1000,
-        contributedAmount: 850,
-        committee: 'Vocational Service Committee',
+        name: normalizedId,
+        rotaryId: normalizedId,
+        role: 'Rotarian',
+        committee: 'General Fellowship',
         tasks: []
       };
       profiles.push(profile);
@@ -251,4 +213,94 @@ export const logInUser = async (emailText?: string, nameText?: string): Promise<
     }
     return profile;
   }
+};
+
+export const setOwnPin = async (pin: string): Promise<void> => {
+  if (!/^\d{6}$/.test(pin)) throw new Error('PIN must be exactly 6 digits.');
+  if (!isSupabaseConfigured || !supabase) return;
+  const { error } = await supabase.auth.updateUser({ password: pin });
+  if (error) throw error;
+};
+
+// -------------------------------------------------------------
+// MEMBER SELF-EDIT
+// -------------------------------------------------------------
+
+export const updateOwnProfile = async (
+  uid: string,
+  fields: { name?: string; bio?: string; avatarUrl?: string }
+): Promise<void> => {
+  return updateSupabaseOwnProfile(uid, fields);
+};
+
+export const updateOwnContactInfo = async (
+  uid: string,
+  fields: { email?: string; phone?: string; birthday?: string }
+): Promise<void> => {
+  return updateSupabaseOwnContactInfo(uid, fields);
+};
+
+// -------------------------------------------------------------
+// SUBMISSIONS
+// -------------------------------------------------------------
+
+export const getDbSubmissions = async (): Promise<Submission[]> => {
+  return getSupabaseSubmissions();
+};
+
+export const getMyDbSubmissions = async (authUserId: string): Promise<Submission[]> => {
+  return getMySupabaseSubmissions(authUserId);
+};
+
+export const submitDbSubmission = async (input: {
+  submitterId: string;
+  kind: 'project' | 'photo';
+  title: string;
+  description?: string;
+  category?: string;
+  year?: number;
+  imageUrl?: string;
+}): Promise<Submission> => {
+  return submitSupabaseSubmission(input);
+};
+
+export const reviewDbSubmission = async (
+  submissionId: string,
+  decision: 'approved' | 'rejected',
+  reviewerId: string,
+  rejectReason?: string
+): Promise<void> => {
+  return reviewSupabaseSubmission(submissionId, decision, reviewerId, rejectReason);
+};
+
+// -------------------------------------------------------------
+// CLUB GALLERY
+// -------------------------------------------------------------
+
+export const getDbGalleryPhotos = async (): Promise<GalleryPhoto[]> => {
+  return getSupabaseGalleryPhotos();
+};
+
+// -------------------------------------------------------------
+// ADMIN MANAGEMENT
+// -------------------------------------------------------------
+
+export const promoteToAdmin = async (authUserId: string): Promise<void> => {
+  return promoteSupabaseAdmin(authUserId);
+};
+
+export const demoteFromAdmin = async (authUserId: string): Promise<void> => {
+  return demoteSupabaseAdmin(authUserId);
+};
+
+export const createMemberLogin = async (uid: string, pin: string): Promise<string> => {
+  return createLoginSupabaseMember(uid, pin);
+};
+
+export const resetMemberPin = async (uid: string, pin: string): Promise<void> => {
+  return resetSupabasePin(uid, pin);
+};
+
+export const revokeMemberAccount = async (uid: string): Promise<void> => {
+  return revokeSupabaseMemberAccount(uid);
 };

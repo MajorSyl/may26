@@ -6,9 +6,9 @@ import {
   UploadCloud, Image, Link,
   ArrowUp, ArrowDown, EyeOff, Layout, Palette, Sliders, Settings
 } from 'lucide-react';
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication } from '../types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, Submission } from '../types';
 import { INITIAL_MEMBER_DIRECTORY } from '../data';
-import { 
+import {
   getSupabaseProjects, saveSupabaseProject, deleteSupabaseProject,
   getSupabaseEvents, saveSupabaseEvent, deleteSupabaseEvent,
   getSupabaseUsers, upsertSupabaseUser, deleteSupabaseUser,
@@ -16,7 +16,10 @@ import {
   getSiteSettings, updateSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS,
   PageBlock, DEFAULT_HOME_LAYOUT, DEFAULT_ABOUT_LAYOUT,
   supabase, checkIsAdmin,
-  getSupabaseRSVPs, getSupabaseApplications
+  getSupabaseRSVPs, getSupabaseApplications,
+  getSupabaseSubmissions, reviewSupabaseSubmission,
+  getSupabaseAdminUserIds, promoteSupabaseAdmin, demoteSupabaseAdmin,
+  createLoginSupabaseMember, resetSupabasePin, revokeSupabaseMemberAccount
 } from '../supabase-service';
 import { motion, AnimatePresence } from 'motion/react';
 import SafeImage from './SafeImage';
@@ -27,11 +30,9 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) {
-  // Passcode/Auth verification states
-  const [authMode, setAuthMode] = useState<'passcode' | 'supabase'>('passcode');
+  // Auth verification states
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [passcode, setPasscode] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authError, setAuthError] = useState('');
   
@@ -42,10 +43,18 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   const [inquiries, setInquiries] = useState<ContactInquiry[]>([]);
   const [rsvps, setRsvps] = useState<EventRSVP[]>([]);
   const [applications, setApplications] = useState<ProjectApplication[]>([]);
-  
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
+  const [currentAdminAuthId, setCurrentAdminAuthId] = useState<string | null>(null);
+
   // UI and Loading states
-  const [activeTab, setActiveTab] = useState<'projects' | 'events' | 'members' | 'inquiries' | 'pages' | 'design'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'events' | 'members' | 'inquiries' | 'approvals' | 'pages' | 'design'>('projects');
   const [inquirySubTab, setInquirySubTab] = useState<'messages' | 'rsvps' | 'applications'>('messages');
+  const [approvalsFilter, setApprovalsFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReasonText, setRejectReasonText] = useState('');
+  const [pinInputByUid, setPinInputByUid] = useState<Record<string, string>>({});
+  const [revealedCredential, setRevealedCredential] = useState<{ name: string; rotaryId: string; pin: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -196,26 +205,27 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   // Show Inquiry Info Modal state
   const [selectedInquiry, setSelectedInquiry] = useState<ContactInquiry | null>(null);
 
-    // Check auth storage on load
+    // Check auth storage on load -- always re-verified against a real Supabase
+  // admin session; a stale/tampered local flag with no valid session grants
+  // nothing.
   useEffect(() => {
     const checkSession = async () => {
       const isAuthed = safeStorage.getItem('sunset_admin_authorized') === 'true';
-      if (isAuthed) {
-        if (isSupabaseConfigured && supabase) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData?.session?.user) {
-            const isAdmin = await checkIsAdmin(sessionData.session.user.id);
-            if (!isAdmin) {
-              safeStorage.removeItem('sunset_admin_authorized');
-              await supabase.auth.signOut().catch(() => {});
-              setIsAuthorized(false);
-              return;
-            }
+      if (isAuthed && isSupabaseConfigured && supabase) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.user) {
+          const isAdmin = await checkIsAdmin(sessionData.session.user.id);
+          if (isAdmin) {
+            setCurrentAdminAuthId(sessionData.session.user.id);
+            setIsAuthorized(true);
+            fetchData();
+            return;
           }
+          await supabase.auth.signOut().catch(() => {});
         }
-        setIsAuthorized(true);
-        fetchData();
       }
+      safeStorage.removeItem('sunset_admin_authorized');
+      setIsAuthorized(false);
     };
     checkSession();
   }, []);
@@ -229,14 +239,16 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [projs, evs, mems, inqs, pSettings, fetchedRsvps, fetchedApps] = await Promise.all([
+      const [projs, evs, mems, inqs, pSettings, fetchedRsvps, fetchedApps, fetchedSubs, fetchedAdminIds] = await Promise.all([
         getSupabaseProjects(),
         getSupabaseEvents(),
         getSupabaseUsers(),
         getSupabaseInquiries(),
         getSiteSettings(),
         getSupabaseRSVPs(),
-        getSupabaseApplications()
+        getSupabaseApplications(),
+        getSupabaseSubmissions(),
+        getSupabaseAdminUserIds()
       ]);
       setProjects(projs);
       setEvents(evs);
@@ -245,26 +257,13 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
       setSiteSettings(pSettings);
       setRsvps(fetchedRsvps);
       setApplications(fetchedApps);
+      setSubmissions(fetchedSubs);
+      setAdminUserIds(new Set(fetchedAdminIds));
     } catch (err: any) {
       console.error(err);
       triggerToast('Error loading records: ' + (err.message || err), 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAuthorize = (e: React.FormEvent) => {
-    e.preventDefault();
-    const normalized = passcode.trim();
-    if (normalized === 'freetown-sunset' || normalized === 'rotary2026' || normalized === 'admin') {
-      setIsAuthorized(true);
-      setAuthError('');
-      safeStorage.setItem('sunset_admin_authorized', 'true');
-      triggerToast('Access granted. Welcome to WordPress-style Content Manager!', 'success');
-      fetchData();
-    } else {
-      setAuthError('Invalid administrator passcode. Hint: freetown-sunset');
-      triggerToast('Access Denied', 'error');
     }
   };
 
@@ -287,6 +286,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
           await supabase.auth.signOut().catch(() => {});
           throw new Error('Access Denied: This account is not registered in the database admins table.');
         }
+        setCurrentAdminAuthId(data.user.id);
         setIsAuthorized(true);
         setAuthError('');
         safeStorage.setItem('sunset_admin_authorized', 'true');
@@ -482,6 +482,10 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
       } else if (activeTab === 'events') {
         await deleteSupabaseEvent(id);
       } else if (activeTab === 'members') {
+        const member = members.find(m => m.uid === id);
+        if (member?.authUserId) {
+          await revokeSupabaseMemberAccount(id);
+        }
         await deleteSupabaseUser(id);
       } else if (activeTab === 'inquiries') {
         await deleteSupabaseInquiry(id);
@@ -493,6 +497,121 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     } catch (err: any) {
       console.error(err);
       triggerToast('Delete transaction failed: ' + (err.message || err), 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleReviewSubmission = async (submissionId: string, decision: 'approved' | 'rejected', reason?: string) => {
+    if (!currentAdminAuthId) {
+      triggerToast('Sign in again to review submissions.', 'error');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await reviewSupabaseSubmission(submissionId, decision, currentAdminAuthId, reason);
+      triggerToast(decision === 'approved' ? 'Submission approved and published.' : 'Submission rejected.', 'success');
+      setRejectingId(null);
+      setRejectReasonText('');
+      fetchData();
+      if (onStateRefresh) onStateRefresh();
+    } catch (err: any) {
+      console.error(err);
+      triggerToast('Review failed: ' + (err.message || err), 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePromoteAdmin = async (member: UserProfile) => {
+    if (!member.authUserId) return;
+    if (!window.confirm(`Give ${member.name} full admin access?`)) return;
+    setActionLoading(true);
+    try {
+      await promoteSupabaseAdmin(member.authUserId);
+      triggerToast(`${member.name} is now an admin.`, 'success');
+      fetchData();
+    } catch (err: any) {
+      triggerToast('Could not promote: ' + (err.message || err), 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDemoteAdmin = async (member: UserProfile) => {
+    if (!member.authUserId) return;
+    if (member.authUserId === currentAdminAuthId) {
+      triggerToast('You cannot remove your own admin access.', 'error');
+      return;
+    }
+    if (!window.confirm(`Remove admin access from ${member.name}?`)) return;
+    setActionLoading(true);
+    try {
+      await demoteSupabaseAdmin(member.authUserId);
+      triggerToast(`Admin access removed from ${member.name}.`, 'info');
+      fetchData();
+    } catch (err: any) {
+      triggerToast('Could not demote: ' + (err.message || err), 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const generatePin = (): string => String(Math.floor(100000 + Math.random() * 900000));
+
+  const handleCreateLogin = async (member: UserProfile) => {
+    const pin = (pinInputByUid[member.uid] || '').trim() || generatePin();
+    if (!/^\d{6}$/.test(pin)) {
+      triggerToast('PIN must be exactly 6 digits.', 'error');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const rotaryId = await createLoginSupabaseMember(member.uid, pin);
+      setRevealedCredential({ name: member.name, rotaryId, pin });
+      setPinInputByUid(prev => ({ ...prev, [member.uid]: '' }));
+      fetchData();
+    } catch (err: any) {
+      triggerToast('Could not create login: ' + (err.message || err), 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetPin = async (member: UserProfile) => {
+    const pin = (pinInputByUid[member.uid] || '').trim() || generatePin();
+    if (!/^\d{6}$/.test(pin)) {
+      triggerToast('PIN must be exactly 6 digits.', 'error');
+      return;
+    }
+    if (!window.confirm(`Reset ${member.name}'s PIN? Their current PIN will stop working immediately.`)) return;
+    setActionLoading(true);
+    try {
+      await resetSupabasePin(member.uid, pin);
+      setRevealedCredential({ name: member.name, rotaryId: member.rotaryId || '', pin });
+      setPinInputByUid(prev => ({ ...prev, [member.uid]: '' }));
+      fetchData();
+    } catch (err: any) {
+      triggerToast('Could not reset PIN: ' + (err.message || err), 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRevokeMemberAccount = async (member: UserProfile) => {
+    if (!member.authUserId) return;
+    if (member.authUserId === currentAdminAuthId) {
+      triggerToast('You cannot revoke your own account this way.', 'error');
+      return;
+    }
+    if (!window.confirm(`Revoke ${member.name}'s login? They will no longer be able to sign in.`)) return;
+    setActionLoading(true);
+    try {
+      await revokeSupabaseMemberAccount(member.uid);
+      triggerToast(`Revoked login access for ${member.name}.`, 'info');
+      fetchData();
+    } catch (err: any) {
+      triggerToast('Could not revoke account: ' + (err.message || err), 'error');
     } finally {
       setActionLoading(false);
     }
@@ -572,72 +691,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
             <p className="text-xs text-slate-400 capitalize">Authorized Officers of Freetown Sunset Sunset Chapter</p>
           </div>
 
-          {/* Auth Mode Tabs */}
-          {isSupabaseConfigured && (
-            <div className="flex border-b border-slate-100 pb-2">
-              <button
-                type="button"
-                onClick={() => { setAuthMode('passcode'); setAuthError(''); }}
-                className={`flex-1 pb-2 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
-                  authMode === 'passcode'
-                    ? 'border-rotary-azure text-rotary-azure'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                Passcode Gate
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthMode('supabase'); setAuthError(''); }}
-                className={`flex-1 pb-2 text-xs font-bold uppercase tracking-wider text-center border-b-2 transition-all ${
-                  authMode === 'supabase'
-                    ? 'border-rotary-azure text-rotary-azure'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                Supabase Auth
-              </button>
-            </div>
-          )}
-
-          {authMode === 'passcode' ? (
-            <form onSubmit={handleAuthorize} className="space-y-4">
-              <div className="space-y-2 text-xs font-semibold text-slate-600">
-                <label htmlFor="admin-passcode-field" className="block text-slate-500 font-display">Administrator Password</label>
-                <div className="relative">
-                  <input
-                    id="admin-passcode-field"
-                    type="password"
-                    value={passcode}
-                    onChange={(e) => setPasscode(e.target.value)}
-                    placeholder="Enter access code..."
-                    autoFocus
-                    required
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rotary-azure/50 focus:border-rotary-azure text-sm text-slate-800"
-                  />
-                  <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                </div>
-                <p className="text-[10px] text-slate-400 font-normal leading-relaxed text-center bg-slate-50 p-2 rounded-lg mt-2 border border-dashed border-slate-200">
-                  ⚠️ Hint for local test review: <code className="font-bold bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-[11px] select-all">freetown-sunset</code> or <code className="font-bold bg-slate-200 text-slate-700 px-1 py-0.5 rounded text-[11px] select-all">rotary2026</code>
-                </p>
-              </div>
-
-              {authError && (
-                <div className="p-3 border border-rose-200 bg-rose-50 text-rose-700 font-semibold text-[11px] rounded-lg flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
-                  <span>{authError}</span>
-                </div>
-              )}
-
-              <button
-                id="admin-auth-submit-btn"
-                type="submit"
-                className="w-full py-3 bg-rotary-azure hover:bg-rotary-azure-dark text-white font-extrabold uppercase text-xs tracking-wider rounded-xl transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rotary-azure"
-              >
-                Unlock Dashboard
-              </button>
-            </form>
-          ) : (
+          {isSupabaseConfigured ? (
             <form onSubmit={handleSupabaseLogin} className="space-y-4">
               <div className="space-y-4">
                 <div className="space-y-1">
@@ -648,6 +702,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="admin@example.com"
+                    autoFocus
                     required
                     className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rotary-azure/50 focus:border-rotary-azure text-sm text-slate-800"
                   />
@@ -688,6 +743,11 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                 <span>Sign In with Supabase</span>
               </button>
             </form>
+          ) : (
+            <div className="p-3 border border-amber-200 bg-amber-50 text-amber-700 font-semibold text-[11px] rounded-lg flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+              <span>Admin access requires a configured Supabase project (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).</span>
+            </div>
           )}
 
           <p className="text-[10px] text-slate-400 text-center select-none">
@@ -824,13 +884,34 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
         )}
       </AnimatePresence>
 
+      {/* CREDENTIAL REVEAL -- shown once after creating a login or resetting a
+          PIN. Does not auto-dismiss (unlike the toast) since the admin needs
+          time to copy/write this down; it is never retrievable again. */}
+      {revealedCredential && (
+        <div className="bg-slate-900 text-white rounded-2xl p-5 shadow-xl border border-rotary-gold/40 flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-rotary-gold">New Login Credentials -- share these now</p>
+            <p className="text-sm">
+              <strong>{revealedCredential.name}</strong>: Rotary ID <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">{revealedCredential.rotaryId}</span>, PIN <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">{revealedCredential.pin}</span>
+            </p>
+            <p className="text-[10px] text-slate-400">This won't be shown again -- tell the member directly (in person, phone, etc).</p>
+          </div>
+          <button
+            onClick={() => setRevealedCredential(null)}
+            className="text-slate-400 hover:text-white font-black cursor-pointer shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* MAIN LAYOUT CONTROLS (SEARCH & TABS ROW) */}
       <div className="bg-white border border-slate-150 rounded-2xl shadow-xs overflow-hidden">
         
         {/* Visual Tab Selection header block */}
         <div className="bg-slate-50 border-b border-slate-150 px-4 py-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-1 bg-slate-200/50 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
-            {(['projects', 'events', 'members', 'inquiries', 'pages', 'design'] as const).map((tab) => (
+            {(['approvals', 'projects', 'events', 'members', 'inquiries', 'pages', 'design'] as const).map((tab) => (
               <button
                 key={tab}
                 id={`admin-tab-btn-${tab}`}
@@ -840,18 +921,23 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                   setStatusFilter('All');
                   setIsFormOpen(false);
                 }}
-                className={`px-4 py-2 rounded-lg text-xs font-bold leading-none uppercase tracking-wider transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold leading-none uppercase tracking-wider transition-all duration-200 whitespace-nowrap cursor-pointer relative ${
                   activeTab === tab
                     ? 'bg-white text-slate-800 shadow-xs border border-slate-200 font-black'
                     : 'text-slate-500 hover:text-slate-805 hover:bg-slate-200/20'
                 }`}
               >
-                {tab === 'projects' ? '📂 Projects' : tab === 'events' ? '📅 Events' : tab === 'members' ? '👥 Members' : tab === 'inquiries' ? '📥 Inquiries' : tab === 'pages' ? '📝 Page Copy' : '🎨 Design & Layout'}
+                {tab === 'approvals' ? '✅ Approvals' : tab === 'projects' ? '📂 Projects' : tab === 'events' ? '📅 Events' : tab === 'members' ? '👥 Members' : tab === 'inquiries' ? '📥 Inquiries' : tab === 'pages' ? '📝 Page Copy' : '🎨 Design & Layout'}
+                {tab === 'approvals' && submissions.filter(s => s.status === 'pending').length > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                    {submissions.filter(s => s.status === 'pending').length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
 
-          {activeTab !== 'pages' && activeTab !== 'design' ? (
+          {activeTab !== 'pages' && activeTab !== 'design' && activeTab !== 'approvals' ? (
             <div className="flex items-center gap-3 w-full md:w-auto">
               {/* SEARCH BOX */}
               <div className="relative w-full md:w-48 xl:w-64">
@@ -1591,6 +1677,107 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
         ) : (
           <div className="overflow-x-auto">
 
+            {/* TAB: APPROVALS QUEUE -- member-submitted projects/photos */}
+            {activeTab === 'approvals' && (
+              <div className="min-w-[700px] space-y-4">
+                <div className="flex gap-2 border-b border-slate-150 pb-3 mb-2">
+                  {(['pending', 'approved', 'rejected', 'all'] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setApprovalsFilter(f)}
+                      className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        approvalsFilter === f ? 'bg-rotary-azure text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                      }`}
+                    >
+                      {f} {f !== 'all' && `(${submissions.filter(s => s.status === f).length})`}
+                    </button>
+                  ))}
+                </div>
+
+                {submissions.filter(s => approvalsFilter === 'all' || s.status === approvalsFilter).length === 0 ? (
+                  <div className="text-center py-16 text-slate-400 text-xs">No {approvalsFilter !== 'all' ? approvalsFilter : ''} submissions.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions
+                      .filter(s => approvalsFilter === 'all' || s.status === approvalsFilter)
+                      .map((sub) => {
+                        const submitter = members.find(m => m.authUserId === sub.submitterId);
+                        return (
+                          <div key={sub.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3">
+                            <div className="flex items-start justify-between gap-4 flex-wrap">
+                              <div className="flex items-start gap-3">
+                                {sub.imageUrl && (
+                                  <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-200">
+                                    <SafeImage src={sub.imageUrl} alt={sub.title} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-bold text-slate-800 text-sm">{sub.title}</h4>
+                                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{sub.kind}</span>
+                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                      sub.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                      sub.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                                    }`}>{sub.status}</span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-500 mt-1">
+                                    Submitted by <strong>{submitter?.name || 'Unknown member'}</strong>
+                                    {sub.category && <> • {sub.category}</>}
+                                    {sub.year && <> • {sub.year}</>}
+                                  </p>
+                                  {sub.description && <p className="text-xs text-slate-600 mt-2 max-w-xl">{sub.description}</p>}
+                                  {sub.status === 'rejected' && sub.rejectReason && (
+                                    <p className="text-[11px] text-rose-600 mt-2"><strong>Rejection reason:</strong> {sub.rejectReason}</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {sub.status === 'pending' && (
+                                <div className="flex flex-col gap-2 shrink-0">
+                                  <button
+                                    onClick={() => handleReviewSubmission(sub.id, 'approved')}
+                                    disabled={actionLoading}
+                                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg disabled:opacity-60"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => { setRejectingId(rejectingId === sub.id ? null : sub.id); setRejectReasonText(''); }}
+                                    disabled={actionLoading}
+                                    className="px-4 py-1.5 border border-rose-300 text-rose-600 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-wider rounded-lg disabled:opacity-60"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {rejectingId === sub.id && (
+                              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                                <input
+                                  type="text"
+                                  placeholder="Reason (optional)"
+                                  value={rejectReasonText}
+                                  onChange={(e) => setRejectReasonText(e.target.value)}
+                                  className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs"
+                                />
+                                <button
+                                  onClick={() => handleReviewSubmission(sub.id, 'rejected', rejectReasonText)}
+                                  disabled={actionLoading}
+                                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg disabled:opacity-60"
+                                >
+                                  Confirm Reject
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* TAB: PROJECTS TABLE VIEW */}
             {activeTab === 'projects' && (
               <div className="min-w-[850px]">
@@ -1776,13 +1963,14 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                       <th className="py-3 px-4">Rotary Committee</th>
                       <th className="py-3 px-4 text-center">Attendance %</th>
                       <th className="py-3 px-4 text-center">Charity Contribution</th>
+                      <th className="py-3 px-4">Account Access</th>
                       <th className="py-3 px-4 text-right">Database Operations</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-[11px] font-semibold text-slate-600">
                     {filteredMembers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-16 text-center text-slate-400">
+                        <td colSpan={7} className="py-16 text-center text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-3">
                             <Users className="h-10 w-10 text-slate-300 animate-bounce" />
                             <p className="text-xs font-bold text-slate-550 max-w-sm leading-relaxed">
@@ -1872,6 +2060,77 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                               </>
                             ) : (
                               <span className="text-slate-350 text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-[10px] font-mono font-bold text-slate-600 block mb-1.5">{m.rotaryId || '—'}</span>
+                            {m.authUserId ? (
+                              <div className="flex flex-col gap-1.5 items-start">
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  Login Active
+                                </span>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {adminUserIds.has(m.authUserId) ? (
+                                    <button
+                                      onClick={() => handleDemoteAdmin(m)}
+                                      className="px-2 py-1 border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-md text-[9px] uppercase font-bold"
+                                    >
+                                      Remove Admin
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handlePromoteAdmin(m)}
+                                      className="px-2 py-1 border border-rotary-gold/40 text-rotary-gold-dark hover:bg-rotary-gold/10 rounded-md text-[9px] uppercase font-bold"
+                                    >
+                                      Make Admin
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleRevokeMemberAccount(m)}
+                                    className="px-2 py-1 border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-md text-[9px] uppercase font-bold"
+                                  >
+                                    Revoke
+                                  </button>
+                                </div>
+                                {adminUserIds.has(m.authUserId) && (
+                                  <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rotary-gold/10 text-rotary-gold-dark">Admin</span>
+                                )}
+                                <div className="flex items-center gap-1.5 pt-1">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={6}
+                                    placeholder="new 6-digit PIN"
+                                    value={pinInputByUid[m.uid] ?? ''}
+                                    onChange={(e) => setPinInputByUid(prev => ({ ...prev, [m.uid]: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                                    className="w-28 bg-slate-50 border border-slate-200 rounded-md px-2 py-1 text-[10px] font-mono tracking-widest"
+                                  />
+                                  <button
+                                    onClick={() => handleResetPin(m)}
+                                    className="px-2 py-1 border border-slate-200 text-slate-600 hover:bg-slate-100 rounded-md text-[9px] uppercase font-bold whitespace-nowrap"
+                                  >
+                                    Reset PIN
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-1.5">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  maxLength={6}
+                                  placeholder="leave blank to auto-generate"
+                                  value={pinInputByUid[m.uid] ?? ''}
+                                  onChange={(e) => setPinInputByUid(prev => ({ ...prev, [m.uid]: e.target.value.replace(/\D/g, '').slice(0, 6) }))}
+                                  className="w-40 bg-slate-50 border border-slate-200 rounded-md px-2 py-1 text-[10px] font-mono tracking-widest"
+                                />
+                                <button
+                                  onClick={() => handleCreateLogin(m)}
+                                  className="px-2 py-1 bg-rotary-azure text-white rounded-md text-[9px] uppercase font-bold w-fit"
+                                >
+                                  Create Login
+                                </button>
+                              </div>
                             )}
                           </td>
                           <td className="py-3 px-4 text-right">

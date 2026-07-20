@@ -16,6 +16,38 @@ export interface UserProfile {
   joinedDate?: string;
   birthday?: string;
   title?: string;
+  bio?: string;
+  authUserId?: string;
+  isAdmin?: boolean;
+  rotaryId?: string;
+}
+
+export interface Submission {
+  id: string;
+  submitterId: string;
+  submitterName?: string;
+  kind: 'project' | 'photo';
+  title: string;
+  description?: string;
+  category?: string;
+  year?: number;
+  imageUrl?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejectReason?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  publishedId?: string;
+  createdAt: string;
+}
+
+export interface GalleryPhoto {
+  id: string;
+  title: string;
+  description?: string;
+  category: 'meetings' | 'anniversary' | 'outreach' | 'rotaract';
+  imageUrl: string;
+  takenDate?: string;
+  location?: string;
 }
 
 export interface Project {

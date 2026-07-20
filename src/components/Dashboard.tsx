@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, Project, ClubEvent } from '../types';
-import { 
+import { UserProfile, Submission } from '../types';
+import {
   getDbProjects,
   getDbEvents,
   getDbUsers,
-  saveDbProject, 
-  saveDbEvent, 
-  updateDbProfile, 
-  getActiveDbDriver, 
-  setActiveDbDriver, 
+  getActiveDbDriver,
+  setActiveDbDriver,
   isDriverSimulated,
-  logInUser
+  logInMember,
+  setOwnPin,
+  updateOwnProfile,
+  updateOwnContactInfo,
+  getMyDbSubmissions,
+  submitDbSubmission
 } from '../db-router';
-import { seedSupabaseTables, GET_SUPABASE_SQL_SCHEMA, isSupabaseConfigured } from '../supabase-service';
-import { 
-  Users, 
-  User, 
-  Mail, 
-  Plus, 
-  Calendar, 
-  DollarSign, 
-  FolderPlus, 
-  MapPin, 
-  CheckSquare, 
-  Smile, 
+import { seedSupabaseTables, GET_SUPABASE_SQL_SCHEMA, isSupabaseConfigured, supabase } from '../supabase-service';
+import {
+  Users,
+  Mail,
+  Plus,
+  Calendar,
+  DollarSign,
+  FolderPlus,
+  MapPin,
+  CheckSquare,
   AlertCircle,
   HelpCircle,
   Database,
@@ -39,7 +39,10 @@ import {
   Search,
   Filter,
   Shield,
-  Briefcase
+  Briefcase,
+  Upload,
+  X,
+  Clock
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -49,38 +52,53 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: DashboardProps) {
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginName, setLoginName] = useState('');
+  const [loginRotaryId, setLoginRotaryId] = useState('');
+  const [loginPin, setLoginPin] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Change PIN (available anytime, not just first login -- there's no email
+  // recovery path, so this is the only way a member updates their own PIN)
+  const [showChangePin, setShowChangePin] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinChangeError, setPinChangeError] = useState('');
+  const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
+  const [pinChangeLoading, setPinChangeLoading] = useState(false);
 
   // Profile Edit states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
-  const [editCommittee, setEditCommittee] = useState(user?.committee || '');
-  const [editTasksText, setEditTasksText] = useState(user?.tasks?.join(', ') || '');
+  const [editBio, setEditBio] = useState(user?.bio || '');
+  const [editContactEmail, setEditContactEmail] = useState(user?.email || '');
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
+  const [profileSaveError, setProfileSaveError] = useState('');
 
-  // Add Project states (Officers Only)
-  const [projTitle, setProjTitle] = useState('');
-  const [projCat, setProjCat] = useState('Water, Sanitation, & Hygiene');
-  const [projDesc, setProjDesc] = useState('');
-  const [projYear, setProjYear] = useState('2026');
-  const [projImpact, setProjImpact] = useState('');
-  const [projStatus, setProjStatus] = useState<'Completed' | 'Active' | 'Planning'>('Active');
-  const [projSaved, setProjSaved] = useState(false);
+  // My Submissions state
+  const [mySubmissions, setMySubmissions] = useState<Submission[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [subKind, setSubKind] = useState<'project' | 'photo'>('project');
+  const [subTitle, setSubTitle] = useState('');
+  const [subDescription, setSubDescription] = useState('');
+  const [subCategory, setSubCategory] = useState('');
+  const [subYear, setSubYear] = useState(String(new Date().getFullYear()));
+  const [subImageUrl, setSubImageUrl] = useState('');
+  const [subImageUploading, setSubImageUploading] = useState(false);
+  const [subSaving, setSubSaving] = useState(false);
+  const [subError, setSubError] = useState('');
+  const [subSuccess, setSubSuccess] = useState(false);
 
-  // Add Event states (Officers/President Only)
-  const [evTitle, setEvTitle] = useState('');
-  const [evDate, setEvDate] = useState('2026-06-18');
-  const [evTime, setEvTime] = useState('18:30 - 20:00');
-  const [evLocation, setEvLocation] = useState('Lagoonda Hotel, Freetown');
-  const [evSpeaker, setEvSpeaker] = useState('');
-  const [evDesc, setEvDesc] = useState('');
-  const [evType, setEvType] = useState<'Weekly Meeting' | 'Service Project' | 'Social' | 'Fundraiser'>('Weekly Meeting');
-  const [evSaved, setEvSaved] = useState(false);
-
-  // Contribution simulation input
-  const [addContAmount, setAddContAmount] = useState('50');
+  useEffect(() => {
+    if (!user?.authUserId) {
+      setMySubmissions([]);
+      return;
+    }
+    setSubmissionsLoading(true);
+    getMyDbSubmissions(user.authUserId)
+      .then(setMySubmissions)
+      .finally(() => setSubmissionsLoading(false));
+  }, [user?.authUserId, subSuccess]);
 
   // Supabase & Database Sync states
   const [activeDriver, setActiveDriverState] = useState<'supabase'>(getActiveDbDriver() as 'supabase');
@@ -240,141 +258,114 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
     setLoading(true);
     setLoginError('');
     try {
-      const email = loginEmail || 'ka••••••@gmail.com';
-      const name = loginName || 'Afouni Kwaku Ampadu';
-      const profile = await logInUser(email, name);
-      onLoginSuccess(profile);
-    } catch (err) {
-      setLoginError('Could not log in. Make sure your email conforms to requirements.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSimQuickLogin = async (role: 'Rotarian' | 'Club Officer' | 'President') => {
-    setLoading(true);
-    setLoginError('');
-    try {
-      let email = 'ka••••••@gmail.com';
-      let name = 'Afouni Kwaku Ampadu';
-      if (role === 'Club Officer') {
-        email = 'di••••••@yahoo.com';
-        name = 'Adonis Abboud';
-      } else if (role === 'President') {
-        email = 'am••••••@yahoo.co.uk';
-        name = 'Abdul Manaff Kemokai';
-      }
-      const profile = await logInUser(email, name);
-      onLoginSuccess(profile);
-    } catch (err) {
-      setLoginError('Quick login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSupabaseGoogleLogin = async () => {
-    setLoading(true);
-    setLoginError('');
-    try {
-      const profile = await logInUser();
+      const profile = await logInMember(loginRotaryId, loginPin);
       onLoginSuccess(profile);
     } catch (err: any) {
-      setLoginError('Google Sign-In failed. Verify Supabase redirect URL allows connection.');
+      setLoginError(err?.message || 'Could not log in. Check your Rotary ID and PIN.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinChangeError('');
+    if (!/^\d{6}$/.test(newPin)) {
+      setPinChangeError('PIN must be exactly 6 digits.');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      setPinChangeError('PINs do not match.');
+      return;
+    }
+    setPinChangeLoading(true);
+    try {
+      await setOwnPin(newPin);
+      setPinChangeSuccess(true);
+      setNewPin('');
+      setConfirmPin('');
+      setTimeout(() => {
+        setShowChangePin(false);
+        setPinChangeSuccess(false);
+      }, 2500);
+    } catch (err: any) {
+      setPinChangeError(err?.message || 'Could not change PIN.');
+    } finally {
+      setPinChangeLoading(false);
     }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    setProfileSaveError('');
     try {
-      const updated: UserProfile = {
-        ...user,
-        name: editName,
-        committee: editCommittee,
-        tasks: editTasksText ? editTasksText.split(',').map(t => t.trim()) : []
-      };
-      const saved = await updateDbProfile(updated);
-      onLoginSuccess(saved);
+      await updateOwnProfile(user.uid, { name: editName, bio: editBio });
+      await updateOwnContactInfo(user.uid, { email: editContactEmail, phone: editPhone });
+      onLoginSuccess({ ...user, name: editName, bio: editBio, email: editContactEmail, phone: editPhone });
       setIsEditingProfile(false);
       onStateRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setProfileSaveError(err?.message || 'Could not save your profile.');
     }
   };
 
-  const handleAddContribution = async () => {
-    if (!user) return;
-    const addition = parseFloat(addContAmount) || 0;
-    try {
-      const updated: UserProfile = {
-        ...user,
-        contributedAmount: (user.contributedAmount || 0) + addition
-      };
-      const saved = await updateDbProfile(updated);
-      onLoginSuccess(saved);
-      setAddContAmount('50');
-      onStateRefresh();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleCreateProject = async (e: React.FormEvent) => {
+  const handleSubmitContribution = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projTitle) return;
-
-    const newProject: Project = {
-      id: 'proj_' + Math.random().toString(36).substr(2, 9),
-      title: projTitle,
-      category: projCat,
-      description: projDesc,
-      year: parseInt(projYear) || 2026,
-      impact: projImpact,
-      status: projStatus,
-      imageUrl: ''
-    };
-
+    if (!user?.authUserId) return;
+    setSubError('');
+    if (!subTitle.trim()) {
+      setSubError('Title is required.');
+      return;
+    }
+    if (subKind === 'photo' && !subImageUrl) {
+      setSubError('Please upload a photo before submitting.');
+      return;
+    }
+    setSubSaving(true);
     try {
-      await saveDbProject(newProject);
-      setProjSaved(true);
-      setProjTitle('');
-      setProjDesc('');
-      setProjImpact('');
-      onStateRefresh();
-      setTimeout(() => setProjSaved(false), 5000);
-    } catch (err) {
-      console.error(err);
+      await submitDbSubmission({
+        submitterId: user.authUserId,
+        kind: subKind,
+        title: subTitle,
+        description: subDescription,
+        category: subCategory,
+        year: subYear ? parseInt(subYear, 10) : undefined,
+        imageUrl: subImageUrl || undefined
+      });
+      setSubTitle('');
+      setSubDescription('');
+      setSubCategory('');
+      setSubImageUrl('');
+      setShowSubmitForm(false);
+      setSubSuccess(true);
+      setTimeout(() => setSubSuccess(false), 100);
+    } catch (err: any) {
+      setSubError(err?.message || 'Could not submit. Please try again.');
+    } finally {
+      setSubSaving(false);
     }
   };
 
-  const handleCreateEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!evTitle) return;
-
-    const newEvent: ClubEvent = {
-      id: 'ev_' + Math.random().toString(36).substr(2, 9),
-      title: evTitle,
-      date: evDate,
-      time: evTime,
-      location: evLocation,
-      speaker: evSpeaker,
-      description: evDesc,
-      type: evType
-    };
-
+  const handleSubmissionImageUpload = async (file: File) => {
+    if (!user?.authUserId || !supabase) return;
+    setSubImageUploading(true);
+    setSubError('');
     try {
-      await saveDbEvent(newEvent);
-      setEvSaved(true);
-      setEvTitle('');
-      setEvSpeaker('');
-      setEvDesc('');
-      onStateRefresh();
-      setTimeout(() => setEvSaved(false), 5000);
-    } catch (err) {
-      console.error(err);
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${user.authUserId}/submissions/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('member-uploads').upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+      if (uploadErr) throw uploadErr;
+      const { data } = supabase.storage.from('member-uploads').getPublicUrl(path);
+      setSubImageUrl(data.publicUrl);
+    } catch (err: any) {
+      setSubError(err?.message || 'Could not upload image.');
+    } finally {
+      setSubImageUploading(false);
     }
   };
 
@@ -402,81 +393,42 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
             </div>
           )}
 
-          {/* Quick Simulation Toggles (CRITICAL FOR PORTABLE DEMO REVIEW) */}
-          <div className="space-y-3 bg-slate-50 border border-slate-100 p-5 rounded-2xl relative">
-            <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1">
-              Select Demo Role (Instant Sandbox Simulation)
-            </span>
-            <p className="text-[10px] text-slate-400 leading-normal mb-3">
-              Reviewers can instantly assume preconfigured roles to analyze target-monitoring metrics and officer tools:
-            </p>
-            <div className="flex flex-col gap-2">
-              <button
-                id="login-sim-pres"
-                onClick={() => handleSimQuickLogin('President')}
-                className="w-full py-2.5 px-3 bg-white hover:bg-rotary-gold/5 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs hover:border-rotary-gold/40"
-              >
-                <span>President (Abdul Manaff Kemokai)</span>
-                <span className="text-[9px] bg-rotary-gold/10 text-rotary-gold px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Full Admin Access</span>
-              </button>
-
-              <button
-                id="login-sim-off"
-                onClick={() => handleSimQuickLogin('Club Officer')}
-                className="w-full py-2.5 px-3 bg-white hover:bg-rotary-azure/5 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs hover:border-rotary-azure/40"
-              >
-                <span>Officer (Adonis Abboud)</span>
-                <span className="text-[9px] bg-rotary-azure/10 text-rotary-azure px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Officer Access</span>
-              </button>
-
-              <button
-                id="login-sim-rot"
-                onClick={() => handleSimQuickLogin('Rotarian')}
-                className="w-full py-2.5 px-3 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200 rounded-xl transition-all flex items-center justify-between shadow-xs"
-              >
-                <span>Rotarian Member (Afouni Kwaku Ampadu)</span>
-                <span className="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold whitespace-nowrap uppercase tracking-wider font-display">Member Metrics Only</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-slate-100"></div>
-            <span className="flex-shrink mx-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest font-display">OR REGISTER CUSTOM</span>
-            <div className="flex-grow border-t border-slate-100"></div>
-          </div>
+          <p className="text-xs text-slate-500 text-center leading-relaxed">
+            Member accounts are created by a club officer. If you're a member without a login yet, contact an officer to be added.
+          </p>
 
           <form onSubmit={handleCustomLogin} className="space-y-4">
             <div>
-              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Your Full Name</label>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Rotary ID</label>
               <div className="relative">
-                <User className="absolute left-3.5 top-3 text-slate-400 h-4 w-4" />
+                <Shield className="absolute left-3.5 top-3 text-slate-400 h-4 w-4" />
                 <input
-                  id="custom-login-name"
+                  id="custom-login-rotary-id"
                   type="text"
-                  placeholder="e.g. Aina Moore"
-                  value={loginName}
-                  onChange={(e) => setLoginName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+                  placeholder="e.g. RCFS-001"
+                  value={loginRotaryId}
+                  onChange={(e) => setLoginRotaryId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700 uppercase"
+                  autoCapitalize="characters"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-3 text-slate-400 h-4 w-4" />
-                <input
-                  id="custom-login-email"
-                  type="email"
-                  placeholder="e.g. alieu@freetownsunset.org"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
-                  required
-                />
-              </div>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">6-Digit PIN</label>
+              <input
+                id="custom-login-pin"
+                type="password"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                placeholder="••••••"
+                value={loginPin}
+                onChange={(e) => setLoginPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700 tracking-widest"
+                required
+              />
             </div>
 
             <button
@@ -488,30 +440,14 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
               {loading ? (
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               ) : (
-                'Create & Enter Simulator Portal'
+                'Sign In'
               )}
             </button>
-          </form>
 
-          {/* Real Supabase Google Login Trigger */}
-          <div className="pt-2 border-t border-slate-50">
-            <button
-              id="supabase-google-login-btn"
-              type="button"
-              onClick={handleSupabaseGoogleLogin}
-              disabled={loading}
-              className="w-full py-3 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold font-display text-xs uppercase tracking-wider rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
-            >
-              {isDriverSimulated('supabase') ? (
-                <span>⚠️ Supabase Auth Offline (Simulation Active)</span>
-              ) : (
-                <>
-                  <Smile className="h-4.5 w-4.5 text-rotary-azure font-bold" />
-                  Sign In With Real Google Auth
-                </>
-              )}
-            </button>
-          </div>
+            <p className="text-center text-[11px] text-slate-400">
+              Forgot your PIN? Contact a club officer to reset it.
+            </p>
+          </form>
         </div>
       </div>
     );
@@ -526,9 +462,6 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const goalAmt = user.contributionGoals || 500;
   const recAmt = user.contributedAmount || 150;
   const goalPercentage = Math.min(100, Math.floor((recAmt / goalAmt) * 100));
-
-  const isPresident = user.role === 'President';
-  const isOfficer = user.role === 'Club Officer' || isPresident;
 
   // Filter member profiles for Directory rendering
   const filteredMembers = membersList.filter(member => {
@@ -569,33 +502,99 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
             Welcome Back, Rtn. {user.name}
           </h1>
           <p className="text-xs text-slate-500 font-medium">
-            Assigned: <strong className="text-slate-700">{user.committee || 'General Fellowship'}</strong> • Email: <strong className="text-slate-700">{user.email}</strong>
+            Assigned: <strong className="text-slate-700">{user.committee || 'General Fellowship'}</strong> • Rotary ID: <strong className="text-slate-700">{user.rotaryId}</strong>
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 shrink-0">
           <button
+            id="change-pin-action-btn"
+            onClick={() => { setShowChangePin(!showChangePin); setPinChangeError(''); }}
+            className="px-4 py-2.5 text-xs font-bold font-display uppercase border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl transition-all shadow-xs"
+          >
+            {showChangePin ? 'Cancel' : 'Change My PIN'}
+          </button>
+          <button
             id="edit-profile-action-btn"
             onClick={() => {
               setEditName(user.name);
-              setEditCommittee(user.committee || '');
-              setEditTasksText(user.tasks?.join(', ') || '');
+              setEditBio(user.bio || '');
+              setEditContactEmail(user.email || '');
+              setEditPhone(user.phone || '');
+              setProfileSaveError('');
               setIsEditingProfile(!isEditingProfile);
             }}
             className="px-4 py-2.5 text-xs font-bold font-display uppercase border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl transition-all shadow-xs"
           >
-            {isEditingProfile ? 'Cancel Edit' : 'Modify Profile Work'}
+            {isEditingProfile ? 'Cancel Edit' : 'Edit My Profile'}
           </button>
         </div>
       </section>
 
+      {showChangePin && (
+        <section className="bg-white border border-rotary-gold/30 p-6 rounded-3xl shadow-md space-y-3">
+          <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider font-display flex items-center gap-2">
+            <Shield className="h-4 w-4 text-rotary-gold" />
+            Change My PIN
+          </h3>
+          {pinChangeSuccess ? (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-3 rounded-xl text-xs flex items-center gap-2">
+              <Check className="h-4 w-4 shrink-0" />
+              <span>PIN changed.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleChangePin} className="space-y-3 max-w-sm">
+              {pinChangeError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl text-xs">{pinChangeError}</div>
+              )}
+              <input
+                id="new-pin-field"
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="New 6-digit PIN"
+                value={newPin}
+                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700 tracking-widest"
+                required
+              />
+              <input
+                id="confirm-pin-field"
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="Confirm new PIN"
+                value={confirmPin}
+                onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700 tracking-widest"
+                required
+              />
+              <button
+                id="change-pin-submit-btn"
+                type="submit"
+                disabled={pinChangeLoading}
+                className="px-6 py-2 bg-rotary-gold hover:bg-rotary-gold-dark text-slate-900 text-xs font-bold uppercase rounded-lg shadow-sm"
+              >
+                {pinChangeLoading ? 'Saving...' : 'Save New PIN'}
+              </button>
+            </form>
+          )}
+        </section>
+      )}
+
       {/* 2. DYNAMIC PROFILE FORMED LAYOUT */}
       {isEditingProfile && (
         <form onSubmit={handleUpdateProfile} className="bg-white border border-rotary-azure/20 p-6 rounded-3xl shadow-md space-y-4">
-          <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider font-display">Edit Profile & Assigned Tasks</h3>
+          <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider font-display">Edit My Profile</h3>
+          <p className="text-[11px] text-slate-400 -mt-2">
+            You can update your name, bio, and contact info. Your role, committee, and other roster details are managed by a club officer.
+          </p>
+          {profileSaveError && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl text-xs">{profileSaveError}</div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Registered Name</label>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Full Name</label>
               <input
                 id="edit-profile-name"
                 type="text"
@@ -607,35 +606,47 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
             </div>
 
             <div>
-              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Assigned Sunset Committee</label>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Phone</label>
               <input
-                id="edit-profile-committee"
+                id="edit-profile-phone"
                 type="text"
-                value={editCommittee}
-                onChange={(e) => setEditCommittee(e.target.value)}
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="e.g. +232 76 123456"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Assigned Daily Tasks (separate with commas)</label>
+            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Contact Email</label>
             <input
-              id="edit-profile-tasks"
-              type="text"
-              value={editTasksText}
-              onChange={(e) => setEditTasksText(e.target.value)}
-              placeholder="e.g. Review project budget, Send donor thank-you notes"
+              id="edit-profile-email"
+              type="email"
+              value={editContactEmail}
+              onChange={(e) => setEditContactEmail(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
             />
           </div>
 
-          <button 
+          <div>
+            <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Bio</label>
+            <textarea
+              id="edit-profile-bio"
+              value={editBio}
+              onChange={(e) => setEditBio(e.target.value)}
+              rows={3}
+              placeholder="A short bio about yourself"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+            />
+          </div>
+
+          <button
             id="edit-profile-submit-btn"
-            type="submit" 
+            type="submit"
             className="px-6 py-2 bg-rotary-azure hover:bg-rotary-azure/90 text-white text-xs font-bold uppercase rounded-lg shadow-sm"
           >
-            Save Profile Alterations
+            Save Profile
           </button>
         </form>
       )}
@@ -713,7 +724,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
               Contribution Tracker
             </h3>
             <p className="text-xs text-slate-500 font-light">
-              Submit pledges or record mock payments. Your yearly Sunset target is: <strong className="text-rotary-gold">${goalAmt} USD</strong>.
+              Your yearly Sunset target is: <strong className="text-rotary-gold">${goalAmt} USD</strong>.
             </p>
           </div>
 
@@ -725,40 +736,15 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
 
             {/* Visual Bar gauge with exact parameters */}
             <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="bg-rotary-gold h-full rounded-full transition-all duration-500"
                 style={{ width: `${goalPercentage}%` }}
               ></div>
             </div>
-
-            {/* Form simulation to record mock additions */}
-            <div className="pt-2 flex items-center gap-2">
-              <select
-                id="contribution-add-select"
-                value={addContAmount}
-                onChange={(e) => setAddContAmount(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-semibold focus:ring-1 focus:ring-rotary-azure"
-              >
-                <option value="25">$25 USD</option>
-                <option value="50">$50 USD</option>
-                <option value="100">$100 USD</option>
-                <option value="250">$250 USD</option>
-              </select>
-
-              <button
-                id="contribution-add-btn"
-                type="button"
-                onClick={handleAddContribution}
-                className="px-3.5 py-1.5 bg-rotary-gold hover:bg-rotary-gold-dark text-slate-900 border border-rotary-gold/20 font-bold text-xs uppercase font-display rounded-lg tracking-wider shadow-xs hover:shadow-md transition-shadow flex items-center gap-1"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Contribution
-              </button>
-            </div>
           </div>
 
           <p className="text-[10px] text-slate-400 leading-normal">
-            * Recorded receipts are processed by the Club Treasurer and updated in Firestore with valid audit trails within 72 hours.
+            * Contribution records are managed by a club officer. Contact one to report a payment or update your pledge.
           </p>
         </div>
       </section>
@@ -770,7 +756,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
           Committee Active Task Files
         </h3>
         <p className="text-xs text-slate-500 font-light">
-          Your tasks align directly with your assigned committee. Modify your profile above to change these tasks:
+          Tasks assigned to you by a club officer:
         </p>
 
         {user.tasks && user.tasks.length > 0 ? (
@@ -1395,251 +1381,177 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
         </div>
       </section>
 
-      {/* 5. IMPLEMENTATION CONTROLS (RESTRICTED TO OFFICERS / PRESIDENTS ONLY!) */}
-      {isOfficer && (
-        <section className="bg-slate-900 text-white rounded-3xl p-6 sm:p-10 border border-slate-800 shadow-xl space-y-10 relative">
-          
-          <div className="space-y-2">
-            <span className="inline-flex bg-rotary-gold/20 text-rotary-gold border border-rotary-gold/30 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider font-display">
-              Administrative Control Console
-            </span>
-            <h2 className="text-2xl font-extrabold font-display tracking-tight text-white leading-none">
-              Officer Operations Node
-            </h2>
-            <p className="text-xs text-slate-400 font-light max-w-2xl">
-              You are authenticated as a <strong>{user.role}</strong>. Secure client validations are active. You can append new programs or impact projects directly into Firestore database collections.
+      {/* 5. MY SUBMISSIONS -- projects/photos I've submitted for admin approval */}
+      <section className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="font-extrabold font-display text-slate-800 text-lg flex items-center gap-2">
+              <FolderPlus className="h-5 w-5 text-rotary-azure" />
+              My Submissions
+            </h3>
+            <p className="text-xs text-slate-500 font-light">
+              Submit a project or photo for the club to feature. An admin reviews it before it goes live -- nothing you submit is published automatically.
             </p>
           </div>
+          <button
+            id="show-submit-form-btn"
+            onClick={() => { setShowSubmitForm(!showSubmitForm); setSubError(''); }}
+            className="px-4 py-2.5 text-xs font-bold font-display uppercase bg-rotary-azure hover:bg-rotary-azure/90 text-white rounded-xl transition-all shadow-xs shrink-0"
+          >
+            {showSubmitForm ? 'Cancel' : '+ New Submission'}
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* ADD PROJECT FORM */}
-            <div className="space-y-6 bg-slate-950/40 p-5 sm:p-6 rounded-2xl border border-slate-800">
-              <h3 className="font-extrabold font-display text-white text-base flex items-center gap-2">
-                <FolderPlus className="h-5 w-5 text-rotary-azure" />
-                Deploy New Service Project
-              </h3>
+        {showSubmitForm && (
+          <form onSubmit={handleSubmitContribution} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-4">
+            {subError && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl text-xs">{subError}</div>
+            )}
 
-              <form onSubmit={handleCreateProject} className="space-y-4 text-xs font-medium">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Project Title</label>
-                    <input
-                      id="create-proj-title"
-                      type="text"
-                      placeholder="e.g. Literacy First"
-                      value={projTitle}
-                      onChange={(e) => setProjTitle(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Focus Sector</label>
-                    <select
-                      id="create-proj-cat"
-                      value={projCat}
-                      onChange={(e) => setProjCat(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-1 focus:ring-rotary-azure"
-                    >
-                      <option value="Water, Sanitation, & Hygiene">Water & Hygiene</option>
-                      <option value="Basic Education & Literacy">Basic Education & Literacy</option>
-                      <option value="Maternal & Child Health">Maternal & Child Health</option>
-                      <option value="Disease Prevention & Treatment">Disease Prevention</option>
-                      <option value="Supporting the Environment">Supporting Environment</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Project Objectives / Summary</label>
-                  <textarea
-                    id="create-proj-desc"
-                    placeholder="Provide brief structural goals or parameters..."
-                    value={projDesc}
-                    onChange={(e) => setProjDesc(e.target.value)}
-                    className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white h-20 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure resize-none"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Year Completed</label>
-                    <input
-                      id="create-proj-year"
-                      type="number"
-                      value={projYear}
-                      onChange={(e) => setProjYear(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Impact Metrics</label>
-                    <input
-                      id="create-proj-impact"
-                      type="text"
-                      placeholder="e.g. 5,000 served"
-                      value={projImpact}
-                      onChange={(e) => setProjImpact(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Status</label>
-                    <select
-                      id="create-proj-status"
-                      value={projStatus}
-                      onChange={(e) => setProjStatus(e.target.value as any)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    >
-                      <option value="Completed">Completed</option>
-                      <option value="Active">Active</option>
-                      <option value="Planning">Planning</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  id="create-proj-submit"
-                  type="submit"
-                  className="w-full py-3 bg-rotary-azure hover:bg-rotary-azure/90 text-white font-bold font-display uppercase tracking-wider rounded-xl transition-all shadow-md"
-                >
-                  Publish Project to Directory
-                </button>
-
-                {projSaved && (
-                  <div className="p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-xl text-center text-[10px] font-bold font-display uppercase">
-                    ✔ project published successfully!
-                  </div>
-                )}
-              </form>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSubKind('project')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase font-display border ${subKind === 'project' ? 'bg-rotary-azure text-white border-rotary-azure' : 'bg-white text-slate-600 border-slate-200'}`}
+              >
+                Project
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubKind('photo')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase font-display border ${subKind === 'photo' ? 'bg-rotary-azure text-white border-rotary-azure' : 'bg-white text-slate-600 border-slate-200'}`}
+              >
+                Photo
+              </button>
             </div>
 
-            {/* ADD MEETING EVENT FORM */}
-            <div className="space-y-6 bg-slate-950/40 p-5 sm:p-6 rounded-2xl border border-slate-800">
-              <h3 className="font-extrabold font-display text-white text-base flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-rotary-gold" />
-                Schedule New Weekly Meeting / Event
-              </h3>
+            <div>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Title</label>
+              <input
+                id="submission-title"
+                type="text"
+                value={subTitle}
+                onChange={(e) => setSubTitle(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+                required
+              />
+            </div>
 
-              <form onSubmit={handleCreateEvent} className="space-y-4 text-xs font-medium">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Event Title</label>
-                    <input
-                      id="create-ev-title"
-                      type="text"
-                      placeholder="e.g. Sunset Coffee Circle"
-                      value={evTitle}
-                      onChange={(e) => setEvTitle(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Meeting Type / Tag</label>
-                    <select
-                      id="create-ev-type"
-                      value={evType}
-                      onChange={(e) => setEvType(e.target.value as any)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:ring-1 focus:ring-rotary-azure"
-                    >
-                      <option value="Weekly Meeting">Weekly Meeting</option>
-                      <option value="Service Project">Service Project</option>
-                      <option value="Social">Social</option>
-                      <option value="Fundraiser">Fundraiser</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Meeting Date</label>
-                    <input
-                      id="create-ev-date"
-                      type="date"
-                      value={evDate}
-                      onChange={(e) => setEvDate(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Hourly Range</label>
-                    <input
-                      id="create-ev-time"
-                      type="text"
-                      placeholder="e.g. 18:30 - 20:00"
-                      value={evTime}
-                      onChange={(e) => setEvTime(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Meeting Hall Location</label>
-                    <input
-                      id="create-ev-loc"
-                      type="text"
-                      placeholder="Lagoonda Hotel"
-                      value={evLocation}
-                      onChange={(e) => setEvLocation(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Key Guest Speaker</label>
-                    <input
-                      id="create-ev-speaker"
-                      type="text"
-                      placeholder="Speaker (Optional)"
-                      value={evSpeaker}
-                      onChange={(e) => setEvSpeaker(e.target.value)}
-                      className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                    />
-                  </div>
-                </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Category</label>
+                <input
+                  id="submission-category"
+                  type="text"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  placeholder={subKind === 'project' ? 'e.g. Water & Sanitation' : 'e.g. outreach'}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+                />
+              </div>
+              {subKind === 'project' && (
                 <div>
-                  <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider font-display mb-1.5">Brief description / agenda</label>
-                  <textarea
-                    id="create-ev-desc"
-                    placeholder="Describe presentation topics or assembly detail..."
-                    value={evDesc}
-                    onChange={(e) => setEvDesc(e.target.value)}
-                    className="w-full bg-slate-850 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white h-20 focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure resize-none"
+                  <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Year</label>
+                  <input
+                    id="submission-year"
+                    type="number"
+                    value={subYear}
+                    onChange={(e) => setSubYear(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
                   />
                 </div>
-
-                <button
-                  id="create-ev-submit"
-                  type="submit"
-                  className="w-full py-3 bg-rotary-gold hover:bg-rotary-gold-dark text-slate-900 border border-rotary-gold/25 font-bold font-display uppercase tracking-wider rounded-xl transition-all shadow-md"
-                >
-                  Post Meeting Event
-                </button>
-
-                {evSaved && (
-                  <div className="p-3 bg-emerald-950 border border-emerald-800 text-emerald-300 rounded-xl text-center text-[10px] font-bold font-display uppercase">
-                    ✔ Event posted successfully!
-                  </div>
-                )}
-              </form>
+              )}
             </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">Description</label>
+              <textarea
+                id="submission-description"
+                value={subDescription}
+                onChange={(e) => setSubDescription(e.target.value)}
+                rows={3}
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rotary-azure focus:border-rotary-azure font-medium text-slate-700"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider font-display mb-1.5">
+                Photo {subKind === 'photo' ? '(required)' : '(optional)'}
+              </label>
+              {subImageUrl ? (
+                <div className="relative w-40 h-28 rounded-xl overflow-hidden border border-slate-200">
+                  <img src={subImageUrl} alt="Upload preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setSubImageUrl('')}
+                    className="absolute top-1 right-1 bg-slate-900/70 text-white rounded-full p-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 w-fit px-3.5 py-2 bg-white border border-dashed border-slate-300 rounded-xl text-xs font-semibold text-slate-600 cursor-pointer hover:border-rotary-azure">
+                  <Upload className="h-3.5 w-3.5" />
+                  {subImageUploading ? 'Uploading...' : 'Upload photo'}
+                  <input
+                    id="submission-image-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={subImageUploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleSubmissionImageUpload(file);
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+
+            <button
+              id="submission-submit-btn"
+              type="submit"
+              disabled={subSaving || subImageUploading}
+              className="px-6 py-2 bg-rotary-azure hover:bg-rotary-azure/90 text-white text-xs font-bold uppercase rounded-lg shadow-sm disabled:opacity-60"
+            >
+              {subSaving ? 'Submitting...' : 'Submit for Review'}
+            </button>
+          </form>
+        )}
+
+        {submissionsLoading ? (
+          <p className="text-xs text-slate-400">Loading your submissions...</p>
+        ) : mySubmissions.length === 0 ? (
+          <p className="text-xs text-slate-400 italic">You haven't submitted anything yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {mySubmissions.map((sub) => (
+              <div key={sub.id} className="flex items-start gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  sub.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                  sub.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {sub.status === 'approved' ? <Check className="h-4 w-4" /> : sub.status === 'rejected' ? <X className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="text-xs font-bold text-slate-800">{sub.title}</h4>
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">{sub.kind}</span>
+                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      sub.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                      sub.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                    }`}>{sub.status}</span>
+                  </div>
+                  {sub.description && <p className="text-xs text-slate-500 mt-1">{sub.description}</p>}
+                  {sub.status === 'rejected' && sub.rejectReason && (
+                    <p className="text-[11px] text-rose-600 mt-1"><strong>Reason:</strong> {sub.rejectReason}</p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }
