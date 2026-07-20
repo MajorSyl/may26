@@ -78,7 +78,10 @@ Deno.serve(async (req: Request) => {
       if (attempts >= MAX_ATTEMPTS) {
         update.pin_locked_until = new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000).toISOString();
       }
-      await adminClient.from("users").update(update).eq("uid", member.uid);
+      // Bookkeeping only -- the caller doesn't need to wait on this to see
+      // their error, and waitUntil keeps it running after the response is
+      // sent instead of adding a full round trip to every failed attempt.
+      EdgeRuntime.waitUntil(adminClient.from("users").update(update).eq("uid", member.uid));
 
       if (attempts >= MAX_ATTEMPTS) {
         return json({ error: `Too many attempts. Try again in ${LOCKOUT_MINUTES} minutes.` }, 429);
@@ -86,8 +89,9 @@ Deno.serve(async (req: Request) => {
       return json({ error: GENERIC_ERROR }, 401);
     }
 
-    // Success: clear the lockout state.
-    await adminClient.from("users").update({ failed_pin_attempts: 0, pin_locked_until: null }).eq("uid", member.uid);
+    // Success: clear the lockout state in the background -- same reasoning,
+    // the client already has its tokens and doesn't need to wait for this.
+    EdgeRuntime.waitUntil(adminClient.from("users").update({ failed_pin_attempts: 0, pin_locked_until: null }).eq("uid", member.uid));
 
     return json({
       success: true,
