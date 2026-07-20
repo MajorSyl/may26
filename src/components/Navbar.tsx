@@ -62,9 +62,6 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
 
-              // Only display specialized tabs if authenticated/admin
-              if (tab.isDash && !user) return null;
-
               return (
                 <button
                   key={tab.id}
@@ -179,9 +176,6 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
           <div className="flex flex-col">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
-              
-              // Only display specialized tabs if authenticated
-              if (tab.isDash && !user) return null;
 
               return (
                 <button

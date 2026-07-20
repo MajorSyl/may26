@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber } from './types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto, ChatMessage, TimelinePost, TimelineComment } from './types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
 
@@ -342,7 +342,10 @@ export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> 
         phone: contactInfo?.phone || '',
         joinedDate: data.joineddate || '',
         birthday: contactInfo?.birthday || '',
-        avatarUrl: data.avatarurl || ''
+        avatarUrl: data.avatarurl || '',
+        bio: data.bio || '',
+        authUserId: data.auth_user_id || undefined,
+        rotaryId: data.rotary_id || undefined
       } as UserProfile;
     } catch (err) {
       console.error('Supabase query error (UserProfile):', err);
@@ -352,6 +355,80 @@ export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> 
     // Simulated Sandbox Mode
     const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
     return list.find(u => u.uid === uid) || null;
+  }
+};
+
+// Looks up a roster profile by the linked Supabase Auth user id (used to
+// resolve a login session to a member's roster row). Returns null both when
+// no row is linked yet and on any query error -- callers must not treat
+// null as "safe to fabricate a placeholder profile", since accounts are
+// admin-created/invite-only and every real member already has a roster row.
+export const getSupabaseUserByAuthId = async (authUserId: string): Promise<UserProfile | null> => {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('uid')
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return getSupabaseUser(data.uid);
+    } catch (err) {
+      console.error('Supabase query error (UserProfile by auth id):', err);
+      return null;
+    }
+  } else {
+    const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
+    return list.find(u => u.authUserId === authUserId) || null;
+  }
+};
+
+// Member self-edit: only the fields a member may change about themselves.
+// The DB trigger protect_admin_only_user_fields() is the real enforcement
+// boundary (it silently reverts anything else even if sent), but scoping
+// the client-side call to just these fields keeps intent honest and avoids
+// a request that looks like it changed data it silently didn't.
+export const updateSupabaseOwnProfile = async (
+  uid: string,
+  fields: { name?: string; bio?: string; avatarUrl?: string }
+): Promise<void> => {
+  if (isSupabaseConfigured && supabase) {
+    const payload: Record<string, any> = {};
+    if (fields.name !== undefined) payload.name = fields.name;
+    if (fields.bio !== undefined) payload.bio = fields.bio;
+    if (fields.avatarUrl !== undefined) payload.avatarurl = fields.avatarUrl;
+
+    const { error } = await supabase.from('users').update(payload).eq('uid', uid);
+    if (error) throw error;
+  } else {
+    const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
+    const idx = list.findIndex(u => u.uid === uid);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...fields };
+      setLocalData('sb_supabase_users', list);
+    }
+  }
+};
+
+// Member self-edit for contact info (email/phone/birthday), gated by the
+// self-select/self-insert/self-update RLS policies on member_contact_info.
+export const updateSupabaseOwnContactInfo = async (
+  uid: string,
+  fields: { email?: string; phone?: string; birthday?: string }
+): Promise<void> => {
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('member_contact_info')
+      .upsert({ uid, ...fields });
+    if (error) throw error;
+  } else {
+    const list = getLocalData<UserProfile[]>('sb_supabase_users', INITIAL_MEMBER_DIRECTORY);
+    const idx = list.findIndex(u => u.uid === uid);
+    if (idx !== -1) {
+      list[idx] = { ...list[idx], ...fields };
+      setLocalData('sb_supabase_users', list);
+    }
   }
 };
 
@@ -517,9 +594,9 @@ export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
             name: d.name,
             email: contact?.email || '',
             role: d.role,
-            attendanceRate: d.attendanceRate !== undefined ? d.attendanceRate : (d.attendancerate !== undefined ? d.attendancerate : 92),
-            contributionGoals: d.contributionGoals !== undefined ? d.contributionGoals : (d.contributiongoals !== undefined ? d.contributiongoals : 500),
-            contributedAmount: d.contributedAmount !== undefined ? d.contributedAmount : (d.contributedamount !== undefined ? d.contributedamount : 150),
+            attendanceRate: d.attendanceRate !== undefined ? d.attendanceRate : (d.attendancerate ?? undefined),
+            contributionGoals: d.contributionGoals !== undefined ? d.contributionGoals : (d.contributiongoals ?? undefined),
+            contributedAmount: d.contributedAmount !== undefined ? d.contributedAmount : (d.contributedamount ?? undefined),
             committee: d.committee,
             tasks: d.tasks || [],
             classification: d.classification || '',
@@ -528,7 +605,10 @@ export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
             phone: contact?.phone || '',
             joinedDate: d.joinedDate !== undefined ? d.joinedDate : (d.joineddate || ''),
             birthday: contact?.birthday || '',
-            avatarUrl: d.avatarUrl !== undefined ? d.avatarUrl : (d.avatarurl || '')
+            avatarUrl: d.avatarUrl !== undefined ? d.avatarUrl : (d.avatarurl || ''),
+            bio: d.bio || '',
+            authUserId: d.auth_user_id || undefined,
+            rotaryId: d.rotary_id || undefined
           };
         }) as UserProfile[];
       }
@@ -762,6 +842,264 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
   return false;
 };
 
+// -------------------------------------------------------------
+// SUBMISSIONS (member project/photo submissions awaiting approval)
+// -------------------------------------------------------------
+
+const mapSubmissionRow = (d: any): Submission => ({
+  id: d.id,
+  submitterId: d.submitter_id,
+  kind: d.kind,
+  title: d.title,
+  description: d.description || '',
+  category: d.category || '',
+  year: d.year ?? undefined,
+  imageUrl: d.image_url || '',
+  status: d.status,
+  rejectReason: d.reject_reason || undefined,
+  reviewedBy: d.reviewed_by || undefined,
+  reviewedAt: d.reviewed_at || undefined,
+  publishedId: d.published_id || undefined,
+  createdAt: d.created_at
+});
+
+// Admin: every submission, newest first.
+export const getSupabaseSubmissions = async (): Promise<Submission[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Supabase query error (submissions):', error);
+    return [];
+  }
+  return (data || []).map(mapSubmissionRow);
+};
+
+// Member: only their own submissions, newest first.
+export const getMySupabaseSubmissions = async (authUserId: string): Promise<Submission[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('submitter_id', authUserId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Supabase query error (my submissions):', error);
+    return [];
+  }
+  return (data || []).map(mapSubmissionRow);
+};
+
+export const submitSupabaseSubmission = async (input: {
+  submitterId: string;
+  kind: 'project' | 'photo';
+  title: string;
+  description?: string;
+  category?: string;
+  year?: number;
+  imageUrl?: string;
+}): Promise<Submission> => {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Submissions require a configured Supabase project.');
+  }
+  const { data, error } = await supabase
+    .from('submissions')
+    .insert({
+      submitter_id: input.submitterId,
+      kind: input.kind,
+      title: input.title,
+      description: input.description || null,
+      category: input.category || null,
+      year: input.year ?? null,
+      image_url: input.imageUrl || null,
+      status: 'pending'
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return mapSubmissionRow(data);
+};
+
+// Admin approve/reject. Approving copies the submission's content into the
+// live public tables (`projects` for kind='project', `gallery_photos` for
+// kind='photo') and stamps published_id; rejecting just records the reason.
+// reviewerId is the admin's own auth id (for reviewed_by).
+export const reviewSupabaseSubmission = async (
+  submissionId: string,
+  decision: 'approved' | 'rejected',
+  reviewerId: string,
+  rejectReason?: string
+): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Submissions require a configured Supabase project.');
+  }
+
+  const { data: submission, error: fetchErr } = await supabase
+    .from('submissions')
+    .select('*')
+    .eq('id', submissionId)
+    .single();
+  if (fetchErr || !submission) throw fetchErr || new Error('Submission not found');
+
+  let publishedId: string | null = null;
+
+  if (decision === 'approved') {
+    if (submission.kind === 'project') {
+      publishedId = 'proj_sub_' + submissionId;
+      const { error: pubErr } = await supabase.from('projects').insert({
+        id: publishedId,
+        title: submission.title,
+        category: submission.category || 'Community Economic Development',
+        description: submission.description || '',
+        year: submission.year || new Date().getFullYear(),
+        status: 'Completed',
+        imageUrl: submission.image_url || null
+      });
+      if (pubErr) throw pubErr;
+    } else {
+      const { data: photoRow, error: pubErr } = await supabase
+        .from('gallery_photos')
+        .insert({
+          title: submission.title,
+          description: submission.description || null,
+          category: (submission.category as string) || 'outreach',
+          image_url: submission.image_url,
+          submission_id: submissionId
+        })
+        .select('id')
+        .single();
+      if (pubErr) throw pubErr;
+      publishedId = photoRow.id;
+    }
+  }
+
+  const { error: updateErr } = await supabase
+    .from('submissions')
+    .update({
+      status: decision,
+      reject_reason: decision === 'rejected' ? (rejectReason || null) : null,
+      reviewed_by: reviewerId,
+      reviewed_at: new Date().toISOString(),
+      published_id: publishedId
+    })
+    .eq('id', submissionId);
+  if (updateErr) throw updateErr;
+};
+
+// -------------------------------------------------------------
+// CLUB GALLERY PHOTOS
+// -------------------------------------------------------------
+
+export const getSupabaseGalleryPhotos = async (): Promise<GalleryPhoto[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('gallery_photos')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('Supabase query error (gallery_photos):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    title: d.title,
+    description: d.description || '',
+    category: d.category,
+    imageUrl: d.image_url,
+    takenDate: d.taken_date || '',
+    location: d.location || ''
+  }));
+};
+
+// -------------------------------------------------------------
+// ADMIN MANAGEMENT (promote/demote; account create/revoke via Edge Function)
+// -------------------------------------------------------------
+
+// Set of auth user ids currently holding admin privileges. Only readable by
+// an admin (the `admins` table has no public/self-select policy), so this
+// naturally returns an empty set for a non-admin caller rather than erroring.
+export const getSupabaseAdminUserIds = async (): Promise<string[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase.from('admins').select('user_id');
+  if (error) {
+    console.error('Supabase query error (admins):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => d.user_id);
+};
+
+export const promoteSupabaseAdmin = async (authUserId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('admins').insert({ user_id: authUserId });
+  if (error) throw error;
+};
+
+export const demoteSupabaseAdmin = async (authUserId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('admins').delete().eq('user_id', authUserId);
+  if (error) throw error;
+};
+
+// All three call the member-accounts Edge Function, which alone holds the
+// service_role key needed to create/reset/delete another user's auth
+// account. See supabase/functions/member-accounts/index.ts.
+export const createLoginSupabaseMember = async (uid: string, pin: string): Promise<string> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { data, error } = await supabase.functions.invoke('member-accounts', {
+    body: { action: 'create_login', uid, pin }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data.rotaryId as string;
+};
+
+export const resetSupabasePin = async (uid: string, pin: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { data, error } = await supabase.functions.invoke('member-accounts', {
+    body: { action: 'reset_pin', uid, pin }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+};
+
+export const revokeSupabaseMemberAccount = async (uid: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { data, error } = await supabase.functions.invoke('member-accounts', {
+    body: { action: 'revoke', uid }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+};
+
+// Calls the public/unauthenticated member-login Edge Function (Rotary ID +
+// PIN, with per-Rotary-ID lockout enforced server-side -- see
+// supabase/functions/member-login/index.ts) and adopts the returned session
+// locally. Throws with the function's user-facing error message on failure
+// (invalid credentials, lockout, etc.) so the caller can show it directly.
+export const loginWithRotaryIdAndPin = async (rotaryId: string, pin: string): Promise<UserProfile> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { data, error } = await supabase.functions.invoke('member-login', {
+    body: { rotaryId, pin }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+
+  const { error: sessionErr } = await supabase.auth.setSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token
+  });
+  if (sessionErr) throw sessionErr;
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) throw new Error('Login failed.');
+
+  const profile = await getSupabaseUserByAuthId(userData.user.id);
+  if (!profile) throw new Error('Your account is not yet linked to a member profile. Please contact a club officer.');
+  return profile;
+};
+
 // 4.8 Newsletter Subscription
 export const submitSupabaseNewsletterSignup = async (email: string): Promise<NewsletterSubscriber> => {
   const subscriber: NewsletterSubscriber = {
@@ -791,6 +1129,193 @@ export const submitSupabaseNewsletterSignup = async (email: string): Promise<New
     setLocalData('sb_supabase_newsletter_subscribers', list);
     return subscriber;
   }
+};
+
+// -------------------------------------------------------------
+// GROUP CHAT — single shared real-time room for all logged-in members
+// -------------------------------------------------------------
+
+export const getSupabaseChatMessages = async (limitCount = 200): Promise<ChatMessage[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('id, sender_id, sender_name, content, created_at, chat_message_reactions(id, emoji, user_id)')
+    .order('created_at', { ascending: true })
+    .limit(limitCount);
+  if (error) {
+    console.error('Supabase query error (chat_messages):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    senderId: d.sender_id,
+    senderName: d.sender_name,
+    content: d.content,
+    createdAt: d.created_at,
+    reactions: (d.chat_message_reactions || []).map((r: any) => ({ id: r.id, emoji: r.emoji, userId: r.user_id }))
+  }));
+};
+
+export const sendSupabaseChatMessage = async (senderId: string, senderName: string, content: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error('Message cannot be empty.');
+  const { error } = await supabase.from('chat_messages').insert({ sender_id: senderId, sender_name: senderName, content: trimmed });
+  if (error) throw error;
+};
+
+export const deleteSupabaseChatMessage = async (messageId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('chat_messages').delete().eq('id', messageId);
+  if (error) throw error;
+};
+
+// Reactions toggle server-side: insert, and if that member already reacted
+// with this exact emoji (unique violation), remove it instead. Server is
+// the source of truth rather than trusting local UI state.
+export const toggleSupabaseChatReaction = async (messageId: string, userId: string, emoji: string): Promise<'added' | 'removed'> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error: insertErr } = await supabase.from('chat_message_reactions').insert({ message_id: messageId, user_id: userId, emoji });
+  if (!insertErr) return 'added';
+  if (insertErr.code === '23505') {
+    const { error: deleteErr } = await supabase.from('chat_message_reactions').delete().match({ message_id: messageId, user_id: userId, emoji });
+    if (deleteErr) throw deleteErr;
+    return 'removed';
+  }
+  throw insertErr;
+};
+
+// Raw Realtime passthrough -- callers merge these into their own local
+// state. DELETE payloads carry only the columns covered by each table's
+// replica identity (see schema.sql): chat_messages needs just `id` for
+// delete (default identity), but chat_message_reactions is set to REPLICA
+// IDENTITY FULL so its delete payload also includes message_id/user_id/emoji.
+export const subscribeToChatRealtime = (handlers: {
+  onMessageInsert: (row: { id: string; sender_id: string; sender_name: string; content: string; created_at: string }) => void;
+  onMessageDelete: (id: string) => void;
+  onReactionInsert: (row: { id: string; message_id: string; user_id: string; emoji: string }) => void;
+  onReactionDelete: (row: { id: string; message_id: string; user_id: string; emoji: string }) => void;
+}): (() => void) => {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  const client = supabase;
+  const channel = client
+    .channel('chat_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+      handlers.onMessageInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
+      handlers.onMessageDelete((payload.old as any).id);
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_message_reactions' }, (payload) => {
+      handlers.onReactionInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_message_reactions' }, (payload) => {
+      handlers.onReactionDelete(payload.old as any);
+    })
+    .subscribe();
+  return () => { client.removeChannel(channel); };
+};
+
+// -------------------------------------------------------------
+// MEMBER TIMELINE — instant-publish feed (no approval queue), with comments
+// -------------------------------------------------------------
+
+export const getSupabaseTimelinePosts = async (limitCount = 100): Promise<TimelinePost[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('timeline_posts')
+    .select('id, author_id, author_name, author_avatar_url, content, image_url, created_at, timeline_comments(id, post_id, author_id, author_name, content, created_at)')
+    .order('created_at', { ascending: false })
+    .limit(limitCount);
+  if (error) {
+    console.error('Supabase query error (timeline_posts):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    authorId: d.author_id,
+    authorName: d.author_name,
+    authorAvatarUrl: d.author_avatar_url || undefined,
+    content: d.content || undefined,
+    imageUrl: d.image_url || undefined,
+    createdAt: d.created_at,
+    comments: (d.timeline_comments || [])
+      .map((c: any) => ({
+        id: c.id,
+        postId: c.post_id,
+        authorId: c.author_id,
+        authorName: c.author_name,
+        content: c.content,
+        createdAt: c.created_at
+      }))
+      .sort((a: TimelineComment, b: TimelineComment) => a.createdAt.localeCompare(b.createdAt))
+  }));
+};
+
+export const createSupabaseTimelinePost = async (input: {
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  content?: string;
+  imageUrl?: string;
+}): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const trimmedContent = (input.content || '').trim();
+  if (!trimmedContent && !input.imageUrl) throw new Error('Add some text or a photo to post.');
+  const { error } = await supabase.from('timeline_posts').insert({
+    author_id: input.authorId,
+    author_name: input.authorName,
+    author_avatar_url: input.authorAvatarUrl || null,
+    content: trimmedContent || null,
+    image_url: input.imageUrl || null
+  });
+  if (error) throw error;
+};
+
+export const deleteSupabaseTimelinePost = async (postId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('timeline_posts').delete().eq('id', postId);
+  if (error) throw error;
+};
+
+export const addSupabaseTimelineComment = async (postId: string, authorId: string, authorName: string, content: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error('Comment cannot be empty.');
+  const { error } = await supabase.from('timeline_comments').insert({ post_id: postId, author_id: authorId, author_name: authorName, content: trimmed });
+  if (error) throw error;
+};
+
+export const deleteSupabaseTimelineComment = async (commentId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('timeline_comments').delete().eq('id', commentId);
+  if (error) throw error;
+};
+
+export const subscribeToTimelineRealtime = (handlers: {
+  onPostInsert: (row: { id: string; author_id: string; author_name: string; author_avatar_url: string | null; content: string | null; image_url: string | null; created_at: string }) => void;
+  onPostDelete: (id: string) => void;
+  onCommentInsert: (row: { id: string; post_id: string; author_id: string; author_name: string; content: string; created_at: string }) => void;
+  onCommentDelete: (row: { id: string; post_id: string }) => void;
+}): (() => void) => {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  const client = supabase;
+  const channel = client
+    .channel('timeline_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'timeline_posts' }, (payload) => {
+      handlers.onPostInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'timeline_posts' }, (payload) => {
+      handlers.onPostDelete((payload.old as any).id);
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'timeline_comments' }, (payload) => {
+      handlers.onCommentInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'timeline_comments' }, (payload) => {
+      handlers.onCommentDelete(payload.old as any);
+    })
+    .subscribe();
+  return () => { client.removeChannel(channel); };
 };
 
 // 5. Seed Database Script
@@ -855,6 +1380,7 @@ export const seedSupabaseTables = async (): Promise<{ success: boolean; message:
 // 6. SQL Schema Script code Block (for presentation inside instructions)
 export const GET_SUPABASE_SQL_SCHEMA = () => `
 -- Copy and run this script in your Supabase SQL Editor:
+-- (kept in sync with supabase/schema.sql — see that file for full comments)
 
 -- 1. Create Admins Table
 CREATE TABLE IF NOT EXISTS admins (
@@ -874,6 +1400,28 @@ BEGIN
   );
 END;
 $$;
+
+-- 2.1 Create is_linked_member() helper function -- true only for a Supabase
+-- Auth session linked to an actual roster row. Used by chat/timeline
+-- policies as a second layer on top of the 'authenticated' role check,
+-- since Supabase Auth's public signup toggle (a project-level setting this
+-- app's code can't enforce) could otherwise let a non-member "authenticated"
+-- session read/post there.
+CREATE OR REPLACE FUNCTION is_linked_member()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users WHERE auth_user_id = auth.uid()
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION is_linked_member() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION is_linked_member() TO authenticated;
 
 -- 3. Create Projects Table
 CREATE TABLE IF NOT EXISTS projects (
@@ -901,7 +1449,15 @@ CREATE TABLE IF NOT EXISTS events (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
--- 5. Create Users Table (Now completely safe and public - email, phone, birthday relocated)
+-- 5. Create Users Table (public roster; auth_user_id links a row to a
+-- Supabase Auth account so that member can self-edit name/bio/avatarurl).
+-- rotary_id is the member-facing login identifier (e.g. RCFS-001),
+-- auto-assigned by the assign_rotary_id trigger below -- never set it
+-- manually. The PIN itself is never stored here; it *is* the Supabase Auth
+-- password on auth_user_id, so Supabase's own bcrypt hashing covers it.
+-- failed_pin_attempts / pin_locked_until back the per-Rotary-ID login
+-- lockout (see the REVOKE SELECT below that keeps these unreadable by
+-- anyone but the service role).
 CREATE TABLE IF NOT EXISTS users (
   uid TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -916,8 +1472,19 @@ CREATE TABLE IF NOT EXISTS users (
   paulharrislevel TEXT,
   joineddate TEXT,
   avatarurl TEXT,
+  bio TEXT,
+  auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
+  rotary_id TEXT UNIQUE,
+  failed_pin_attempts INTEGER NOT NULL DEFAULT 0,
+  pin_locked_until TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS rotary_id TEXT UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_pin_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP WITH TIME ZONE;
 
 -- 6. Create Member Contact Info Table (Relocated sensitive data)
 CREATE TABLE IF NOT EXISTS member_contact_info (
@@ -965,6 +1532,182 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
+-- 11. Create Submissions Table (member-submitted projects/photos awaiting
+-- admin approval; never publicly readable — see RLS policies below)
+CREATE TABLE IF NOT EXISTS submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  submitter_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('project', 'photo')),
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT,
+  year INTEGER,
+  image_url TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  reject_reason TEXT,
+  reviewed_by UUID REFERENCES auth.users(id),
+  reviewed_at TIMESTAMP WITH TIME ZONE,
+  published_id TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 12. Create Gallery Photos Table (the Club Gallery's backing table;
+-- public read, admin-only write)
+CREATE TABLE IF NOT EXISTS gallery_photos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL CHECK (category IN ('meetings', 'anniversary', 'outreach', 'rotaract')),
+  image_url TEXT NOT NULL,
+  taken_date TEXT,
+  location TEXT,
+  submission_id UUID REFERENCES submissions(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 13. Trigger function: silently reverts admin-only roster columns
+-- (role, committee, attendance/contribution figures, tasks, classification,
+-- Paul Harris status, joined date, auth_user_id, rotary_id, PIN lockout
+-- state) if a non-admin updates their own users row. A member may still
+-- change name/bio/avatarurl.
+CREATE OR REPLACE FUNCTION protect_admin_only_user_fields()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    NEW.role := OLD.role;
+    NEW.committee := OLD.committee;
+    NEW.attendancerate := OLD.attendancerate;
+    NEW.contributiongoals := OLD.contributiongoals;
+    NEW.contributedamount := OLD.contributedamount;
+    NEW.tasks := OLD.tasks;
+    NEW.classification := OLD.classification;
+    NEW.ispaulharrisfellow := OLD.ispaulharrisfellow;
+    NEW.paulharrislevel := OLD.paulharrislevel;
+    NEW.joineddate := OLD.joineddate;
+    NEW.auth_user_id := OLD.auth_user_id;
+    NEW.rotary_id := OLD.rotary_id;
+    NEW.failed_pin_attempts := OLD.failed_pin_attempts;
+    NEW.pin_locked_until := OLD.pin_locked_until;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- 14. Trigger function: assigns the next sequential RCFS-NNN Rotary ID on
+-- insert whenever the caller doesn't supply one, so every path that creates
+-- a users row (the roster seed button, an admin adding a member one at a
+-- time, or any future path) gets a Rotary ID without the client having to
+-- compute it. Simple MAX+1 rather than a real sequence: this table only
+-- ever gets inserted into by a single admin at a time (sequential seed loop
+-- or a form submission), so the tiny race window is an acceptable tradeoff
+-- against the complexity of a dedicated sequence.
+CREATE OR REPLACE FUNCTION assign_rotary_id()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  next_num INTEGER;
+BEGIN
+  IF NEW.rotary_id IS NULL THEN
+    SELECT COALESCE(MAX(SUBSTRING(rotary_id FROM 6)::int), 0) + 1
+    INTO next_num
+    FROM users
+    WHERE rotary_id ~ '^RCFS-\d+$';
+
+    NEW.rotary_id := 'RCFS-' || LPAD(next_num::text, 3, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- 15. Trigger function: blocks an admin from deleting their own admins row
+CREATE OR REPLACE FUNCTION prevent_self_admin_removal()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF OLD.user_id = auth.uid() THEN
+    RAISE EXCEPTION 'Admins cannot remove their own admin privileges.';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+-- All three trigger functions above only fire as triggers; they are not
+-- meant to be called directly as an RPC endpoint. Revoking EXECUTE doesn't
+-- affect trigger firing. Must revoke from PUBLIC *and* anon/authenticated
+-- explicitly — this project carries an ALTER DEFAULT PRIVILEGES rule that
+-- grants EXECUTE directly to anon/authenticated on every newly created
+-- function (Supabase's standard default for PostgREST RPC exposure), which
+-- a PUBLIC-only revoke does not remove.
+REVOKE EXECUTE ON FUNCTION protect_admin_only_user_fields() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION prevent_self_admin_removal() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION assign_rotary_id() FROM PUBLIC, anon, authenticated;
+
+-- 16. Create Chat Messages Table (single shared real-time room for all
+-- logged-in members; sender_name is a denormalized snapshot for Realtime)
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  sender_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 2000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 17. Create Chat Message Reactions Table (one row per message/member/emoji)
+CREATE TABLE IF NOT EXISTS chat_message_reactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL CHECK (char_length(emoji) <= 8),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  UNIQUE (message_id, user_id, emoji)
+);
+
+-- 18. Create Timeline Posts Table (member feed; publishes instantly, no
+-- approval step, unlike submissions)
+CREATE TABLE IF NOT EXISTS timeline_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  author_avatar_url TEXT,
+  content TEXT,
+  image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  CHECK (
+    (content IS NOT NULL AND char_length(btrim(content)) > 0 AND char_length(content) <= 5000)
+    OR image_url IS NOT NULL
+  )
+);
+
+-- 19. Create Timeline Comments Table
+CREATE TABLE IF NOT EXISTS timeline_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES timeline_posts(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 1000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_message_reactions_message_id ON chat_message_reactions(message_id);
+CREATE INDEX IF NOT EXISTS idx_timeline_comments_post_id ON timeline_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_timeline_posts_created_at ON timeline_posts(created_at);
+
+-- Widen Realtime DELETE payloads for these two child tables so the client
+-- gets message_id/post_id, not just the deleted row's own primary key.
+ALTER TABLE chat_message_reactions REPLICA IDENTITY FULL;
+ALTER TABLE timeline_comments REPLICA IDENTITY FULL;
+
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==========================================
@@ -979,6 +1722,7 @@ ALTER TABLE member_contact_info ENABLE ROW LEVEL SECURITY;
 ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 
 -- 1. Policies for 'admins' Table
 -- No public SELECT policy exists on 'admins', making it completely private.
@@ -986,55 +1730,109 @@ ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow admin read and write on admins" ON admins
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+DROP TRIGGER IF EXISTS trg_prevent_self_admin_removal ON admins;
+CREATE TRIGGER trg_prevent_self_admin_removal
+  BEFORE DELETE ON admins
+  FOR EACH ROW EXECUTE FUNCTION prevent_self_admin_removal();
+
 -- 2. Policies for 'projects' Table
 DROP POLICY IF EXISTS "Allow anyone to read projects" ON projects;
 DROP POLICY IF EXISTS "Allow admin full access to projects" ON projects;
 
-CREATE POLICY "Allow anyone to read projects" ON projects 
+CREATE POLICY "Allow anyone to read projects" ON projects
   FOR SELECT TO public USING (true);
 
-CREATE POLICY "Allow admin full access to projects" ON projects 
+CREATE POLICY "Allow admin full access to projects" ON projects
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- 3. Policies for 'events' Table
 DROP POLICY IF EXISTS "Allow anyone to read events" ON events;
 DROP POLICY IF EXISTS "Allow admin full access to events" ON events;
 
-CREATE POLICY "Allow anyone to read events" ON events 
+CREATE POLICY "Allow anyone to read events" ON events
   FOR SELECT TO public USING (true);
 
-CREATE POLICY "Allow admin full access to events" ON events 
+CREATE POLICY "Allow admin full access to events" ON events
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- 4. Policies for 'users' Table
 DROP POLICY IF EXISTS "Allow anyone to select on users" ON users;
 DROP POLICY IF EXISTS "Allow admin full access to users" ON users;
 
-CREATE POLICY "Allow anyone to select on users" ON users 
+CREATE POLICY "Allow anyone to select on users" ON users
   FOR SELECT TO public USING (true);
 
-CREATE POLICY "Allow admin full access to users" ON users 
+CREATE POLICY "Allow admin full access to users" ON users
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
--- Reset users permissions (removing custom CLS revokes, since users table has no sensitive columns)
+DROP POLICY IF EXISTS "Allow self update on users" ON users;
+CREATE POLICY "Allow self update on users" ON users
+  FOR UPDATE TO authenticated
+  USING (auth_user_id = auth.uid())
+  WITH CHECK (auth_user_id = auth.uid());
+
+DROP TRIGGER IF EXISTS trg_protect_admin_only_user_fields ON users;
+CREATE TRIGGER trg_protect_admin_only_user_fields
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION protect_admin_only_user_fields();
+
+DROP TRIGGER IF EXISTS trg_assign_rotary_id ON users;
+CREATE TRIGGER trg_assign_rotary_id
+  BEFORE INSERT ON users
+  FOR EACH ROW EXECUTE FUNCTION assign_rotary_id();
+
+-- Table-level privileges (a prerequisite to RLS — without these grants no
+-- policy above, including the admin one, can ever write against real Supabase)
 REVOKE ALL PRIVILEGES ON users FROM public, anon, authenticated;
 GRANT SELECT ON users TO public, anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON users TO authenticated;
 
--- 5. Policies for 'member_contact_info' Table (Strictly Admin-only)
+-- Lockout state must never be readable by anyone but the service role (used
+-- by the member-login Edge Function) and admins via direct table access --
+-- exposing the attempt counter/lockout time to a caller trying to brute
+-- force a PIN would leak useful timing/state information.
+REVOKE SELECT (failed_pin_attempts, pin_locked_until) ON users FROM public, anon, authenticated;
+
+-- 5. Policies for 'member_contact_info' Table (admin full access; a member
+-- can read/write only their own row, matched via users.auth_user_id)
 CREATE POLICY "Allow admin select on member_contact_info" ON member_contact_info
   FOR SELECT TO authenticated USING (is_admin());
 
 CREATE POLICY "Allow admin write on member_contact_info" ON member_contact_info
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+DROP POLICY IF EXISTS "Allow self select on member_contact_info" ON member_contact_info;
+CREATE POLICY "Allow self select on member_contact_info" ON member_contact_info
+  FOR SELECT TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Allow self insert on member_contact_info" ON member_contact_info;
+CREATE POLICY "Allow self insert on member_contact_info" ON member_contact_info
+  FOR INSERT TO authenticated
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
+  ));
+
+DROP POLICY IF EXISTS "Allow self update on member_contact_info" ON member_contact_info;
+CREATE POLICY "Allow self update on member_contact_info" ON member_contact_info
+  FOR UPDATE TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
+  ))
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
+  ));
+
 -- 6. Policies for 'inquiries' Table
 DROP POLICY IF EXISTS "Allow anyone to insert inquiries" ON inquiries;
 DROP POLICY IF EXISTS "Allow admin full access to inquiries" ON inquiries;
 
-CREATE POLICY "Allow anyone to insert inquiries" ON inquiries 
+CREATE POLICY "Allow anyone to insert inquiries" ON inquiries
   FOR INSERT TO public WITH CHECK (true);
 
-CREATE POLICY "Allow admin full access to inquiries" ON inquiries 
+CREATE POLICY "Allow admin full access to inquiries" ON inquiries
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
 -- 7. Policies for 'event_rsvps' Table
@@ -1058,6 +1856,116 @@ CREATE POLICY "Allow anyone to insert newsletter_subscribers" ON newsletter_subs
 CREATE POLICY "Allow admin full access to newsletter_subscribers" ON newsletter_subscribers
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+-- 10. Policies for 'submissions' Table (no public policy exists at all —
+-- visitors never see pending/rejected content, or another member's rows).
+-- A member may insert/select/update only their own rows, and only update
+-- while status is still 'pending'. Admins have full access.
+DROP POLICY IF EXISTS "Allow members to insert own pending submissions" ON submissions;
+CREATE POLICY "Allow members to insert own pending submissions" ON submissions
+  FOR INSERT TO authenticated
+  WITH CHECK (submitter_id = auth.uid() AND status = 'pending');
+
+DROP POLICY IF EXISTS "Allow members to select own submissions" ON submissions;
+CREATE POLICY "Allow members to select own submissions" ON submissions
+  FOR SELECT TO authenticated
+  USING (submitter_id = auth.uid());
+
+DROP POLICY IF EXISTS "Allow members to update own pending submissions" ON submissions;
+CREATE POLICY "Allow members to update own pending submissions" ON submissions
+  FOR UPDATE TO authenticated
+  USING (submitter_id = auth.uid() AND status = 'pending')
+  WITH CHECK (submitter_id = auth.uid() AND status = 'pending');
+
+DROP POLICY IF EXISTS "Allow admin full access to submissions" ON submissions;
+CREATE POLICY "Allow admin full access to submissions" ON submissions
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 11. Policies for 'gallery_photos' Table (public read, admin-only write)
+ALTER TABLE gallery_photos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow anyone to read gallery_photos" ON gallery_photos;
+CREATE POLICY "Allow anyone to read gallery_photos" ON gallery_photos
+  FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow admin full access to gallery_photos" ON gallery_photos;
+CREATE POLICY "Allow admin full access to gallery_photos" ON gallery_photos
+  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+-- 12. Policies for 'chat_messages' Table (members-only, no anon/public
+-- access; read/post requires is_linked_member() or is_admin() on top of
+-- the authenticated role; own-message delete, admin delete-any)
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read chat messages" ON chat_messages;
+CREATE POLICY "Members can read chat messages" ON chat_messages
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can send chat messages" ON chat_messages;
+CREATE POLICY "Members can send chat messages" ON chat_messages
+  FOR INSERT TO authenticated WITH CHECK (sender_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own chat messages, admins any" ON chat_messages;
+CREATE POLICY "Members can delete own chat messages, admins any" ON chat_messages
+  FOR DELETE TO authenticated USING (sender_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON chat_messages FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON chat_messages TO authenticated;
+
+-- 13. Policies for 'chat_message_reactions' Table
+ALTER TABLE chat_message_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can read chat reactions" ON chat_message_reactions
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can add own chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can add own chat reactions" ON chat_message_reactions
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can remove own chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can remove own chat reactions" ON chat_message_reactions
+  FOR DELETE TO authenticated USING (user_id = auth.uid());
+
+REVOKE ALL PRIVILEGES ON chat_message_reactions FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON chat_message_reactions TO authenticated;
+
+-- 14. Policies for 'timeline_posts' Table (members-only feed; own-post
+-- delete, admin delete-any)
+ALTER TABLE timeline_posts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read timeline posts" ON timeline_posts;
+CREATE POLICY "Members can read timeline posts" ON timeline_posts
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can create timeline posts" ON timeline_posts;
+CREATE POLICY "Members can create timeline posts" ON timeline_posts
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own timeline posts, admins any" ON timeline_posts;
+CREATE POLICY "Members can delete own timeline posts, admins any" ON timeline_posts
+  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON timeline_posts FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON timeline_posts TO authenticated;
+
+-- 15. Policies for 'timeline_comments' Table
+ALTER TABLE timeline_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read timeline comments" ON timeline_comments;
+CREATE POLICY "Members can read timeline comments" ON timeline_comments
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can create timeline comments" ON timeline_comments;
+CREATE POLICY "Members can create timeline comments" ON timeline_comments
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own timeline comments, admins any" ON timeline_comments;
+CREATE POLICY "Members can delete own timeline comments, admins any" ON timeline_comments
+  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON timeline_comments FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON timeline_comments TO authenticated;
+
 -- ==========================================
 -- SEED INITIAL ADMIN USER
 -- ==========================================
@@ -1072,4 +1980,45 @@ alter publication supabase_realtime add table projects;
 alter publication supabase_realtime add table events;
 alter publication supabase_realtime add table event_rsvps;
 alter publication supabase_realtime add table project_applications;
+alter publication supabase_realtime add table submissions;
+alter publication supabase_realtime add table gallery_photos;
+alter publication supabase_realtime add table chat_messages;
+alter publication supabase_realtime add table chat_message_reactions;
+alter publication supabase_realtime add table timeline_posts;
+alter publication supabase_realtime add table timeline_comments;
+
+-- ==========================================
+-- STORAGE — member-uploads bucket
+-- ==========================================
+-- Bucket is public=true so object URLs render without any RLS check; no
+-- SELECT policy is added (that would only enable authenticated file
+-- listing, which isn't needed). A member may only write inside
+-- member-uploads/<their auth uid>/...
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('member-uploads', 'member-uploads', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Allow public read on member-uploads" ON storage.objects;
+
+DROP POLICY IF EXISTS "Allow members to upload to their own folder" ON storage.objects;
+CREATE POLICY "Allow members to upload to their own folder" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "Allow members to update their own files" ON storage.objects;
+CREATE POLICY "Allow members to update their own files" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text)
+  WITH CHECK (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "Allow members to delete their own files" ON storage.objects;
+CREATE POLICY "Allow members to delete their own files" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+DROP POLICY IF EXISTS "Allow admin full access to member-uploads" ON storage.objects;
+CREATE POLICY "Allow admin full access to member-uploads" ON storage.objects
+  FOR ALL TO authenticated
+  USING (bucket_id = 'member-uploads' AND is_admin())
+  WITH CHECK (bucket_id = 'member-uploads' AND is_admin());
 `;

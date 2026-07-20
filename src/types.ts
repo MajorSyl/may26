@@ -16,6 +16,38 @@ export interface UserProfile {
   joinedDate?: string;
   birthday?: string;
   title?: string;
+  bio?: string;
+  authUserId?: string;
+  isAdmin?: boolean;
+  rotaryId?: string;
+}
+
+export interface Submission {
+  id: string;
+  submitterId: string;
+  submitterName?: string;
+  kind: 'project' | 'photo';
+  title: string;
+  description?: string;
+  category?: string;
+  year?: number;
+  imageUrl?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejectReason?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  publishedId?: string;
+  createdAt: string;
+}
+
+export interface GalleryPhoto {
+  id: string;
+  title: string;
+  description?: string;
+  category: 'meetings' | 'anniversary' | 'outreach' | 'rotaract';
+  imageUrl: string;
+  takenDate?: string;
+  location?: string;
 }
 
 export interface Project {
@@ -80,4 +112,39 @@ export interface NewsletterSubscriber {
   id: string;
   email: string;
   createdAt?: string;
+}
+
+export interface ChatReaction {
+  id: string;
+  emoji: string;
+  userId: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  createdAt: string;
+  reactions: ChatReaction[];
+}
+
+export interface TimelineComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TimelinePost {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  content?: string;
+  imageUrl?: string;
+  createdAt: string;
+  comments: TimelineComment[];
 }
