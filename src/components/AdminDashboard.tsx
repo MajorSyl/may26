@@ -150,7 +150,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
   const [projImpact, setProjImpact] = useState('');
   const [projStatus, setProjStatus] = useState<'Completed' | 'Active' | 'Planning'>('Active');
   const [projImageUrl, setProjImageUrl] = useState('');
-  const [imageSourceTab, setImageSourceTab] = useState<'preset' | 'upload' | 'url'>('preset');
+  const [imageSourceTab, setImageSourceTab] = useState<'upload' | 'url'>('upload');
 
   const handleImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -328,7 +328,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
     setProjImpact('');
     setProjStatus('Active');
     setProjImageUrl('');
-    setImageSourceTab('preset');
+    setImageSourceTab('upload');
 
     // Event Init
     setEvTitle('');
@@ -1116,7 +1116,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                           
                           {/* Tab buttons */}
                           <div className="flex items-center gap-1 bg-slate-200/60 p-0.5 rounded-lg text-[10px] font-bold select-none shrink-0">
-                            {(['preset', 'upload', 'url'] as const).map(tab => (
+                            {(['upload', 'url'] as const).map(tab => (
                               <button
                                 key={tab}
                                 type="button"
@@ -1127,7 +1127,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                                     : 'text-slate-500 hover:text-slate-800'
                                 }`}
                               >
-                                {tab === 'preset' ? '✨ Presets' : tab === 'upload' ? '📤 Upload' : '🔗 URL'}
+                                {tab === 'upload' ? '📤 Upload' : '🔗 URL'}
                               </button>
                             ))}
                           </div>
@@ -1137,71 +1137,6 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
                           {/* Main input option tab panels */}
                           <div className="lg:col-span-2 space-y-3">
                             
-                            {imageSourceTab === 'preset' && (
-                              <div className="space-y-2">
-                                <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Select a premium curated focal preset:</span>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {[
-                                    {
-                                      name: 'Safe Water Well',
-                                      url: '',
-                                      tag: 'WASH'
-                                    },
-                                    {
-                                      name: 'Youth Education',
-                                      url: '',
-                                      tag: 'Literacy'
-                                    },
-                                    {
-                                      name: 'Midwife Kits',
-                                      url: '',
-                                      tag: 'Pediatrics'
-                                    },
-                                    {
-                                      name: 'Peacebuilding Support',
-                                      url: '',
-                                      tag: 'Peace'
-                                    },
-                                    {
-                                      name: 'Green Climate Support',
-                                      url: '',
-                                      tag: 'Environment'
-                                    },
-                                    {
-                                      name: 'Professional Syndicate',
-                                      url: '',
-                                      tag: 'Fellowship'
-                                    }
-                                  ].map((p, idx) => (
-                                    <button
-                                      key={p.url}
-                                      type="button"
-                                      onClick={() => setProjImageUrl(p.url)}
-                                      className={`group relative text-left rounded-xl overflow-hidden aspect-video border transition-all ${
-                                        projImageUrl === p.url
-                                          ? 'ring-2 ring-rotary-azure border-transparent scale-98 shadow-xs'
-                                          : 'border-slate-200 hover:border-slate-400'
-                                      }`}
-                                    >
-                                      <img
-                                        src={p.url}
-                                        alt={p.name}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                      />
-                                      <div className="absolute inset-x-0 bottom-0 bg-slate-900/60 p-1 text-center text-[8px] font-black uppercase text-white truncate">
-                                        {p.name}
-                                      </div>
-                                      {projImageUrl === p.url && (
-                                        <div className="absolute top-1 right-1 bg-rotary-azure text-white p-0.5 rounded-full">
-                                          <Check className="h-2.5 w-2.5" />
-                                        </div>
-                                      )}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
                             {imageSourceTab === 'upload' && (
                               <div className="space-y-2">
                                 <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">Drag or select a local image file:</span>
