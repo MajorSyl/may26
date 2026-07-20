@@ -330,6 +330,17 @@ GRANT EXECUTE ON FUNCTION is_linked_member() TO authenticated;
 -- to their previous values. A member can still update their own name, bio,
 -- and avatarurl. This is defense-in-depth — even if a client-side bug sent
 -- a role change, the database would refuse to apply it.
+--
+-- Must also let a `service_role` caller through: the member-accounts and
+-- member-login Edge Functions update these exact columns (auth_user_id,
+-- failed_pin_attempts, pin_locked_until) using the service_role key, which
+-- has no auth.uid() (no JWT `sub` claim) -- so is_admin() evaluates false
+-- for them too, and without this check this trigger silently reverted
+-- their updates even though the .update() call itself reported no error
+-- (caught live: Create Login appeared to succeed but never actually linked
+-- the new auth account to the roster row). service_role already bypasses
+-- RLS entirely; it's the most trusted role in this system, gated by the
+-- Edge Functions' own admin checks before ever touching this table.
 CREATE OR REPLACE FUNCTION protect_admin_only_user_fields()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -337,7 +348,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NOT is_admin() THEN
+  IF NOT is_admin() AND auth.role() IS DISTINCT FROM 'service_role' THEN
     NEW.role := OLD.role;
     NEW.committee := OLD.committee;
     NEW.attendancerate := OLD.attendancerate;
