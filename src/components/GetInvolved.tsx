@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { submitDbInquiry } from '../db-router';
 import { ContactInquiry } from '../types';
-import { Users, User, Mail, Check, Send, Sparkles } from 'lucide-react';
+import { Users, User, Mail, Check, Send } from 'lucide-react';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../supabase-service';
 
 export default function GetInvolved() {
@@ -78,9 +78,9 @@ export default function GetInvolved() {
       {/* 2. MEMBERSHIP FORM SCREEN */}
       <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
         
-        {/* Dynamic decorative backdrop sparkles */}
+        {/* Decorative backdrop watermark */}
         <div className="absolute top-0 right-0 p-8 opacity-5 text-rotary-gold">
-          <Sparkles className="h-24 w-24" />
+          <Users className="h-24 w-24" />
         </div>
 
         <div className="space-y-6">
