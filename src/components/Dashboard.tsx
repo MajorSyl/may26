@@ -15,6 +15,8 @@ import {
   submitDbSubmission
 } from '../db-router';
 import { seedSupabaseTables, GET_SUPABASE_SQL_SCHEMA, isSupabaseConfigured, supabase } from '../supabase-service';
+import ChatRoom from './ChatRoom';
+import MemberTimeline from './MemberTimeline';
 import {
   Users,
   Mail,
@@ -73,6 +75,9 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const [editContactEmail, setEditContactEmail] = useState(user?.email || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
   const [profileSaveError, setProfileSaveError] = useState('');
+
+  // Community (Club Chat / Member Timeline) state
+  const [communityTab, setCommunityTab] = useState<'chat' | 'timeline'>('chat');
 
   // My Submissions state
   const [mySubmissions, setMySubmissions] = useState<Submission[]>([]);
@@ -1551,6 +1556,32 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
             ))}
           </div>
         )}
+      </section>
+
+      {/* 6. COMMUNITY -- live club chat + member timeline */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+          <button
+            id="community-tab-chat"
+            onClick={() => setCommunityTab('chat')}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+              communityTab === 'chat' ? 'bg-rotary-azure text-white' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Club Chat
+          </button>
+          <button
+            id="community-tab-timeline"
+            onClick={() => setCommunityTab('timeline')}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+              communityTab === 'timeline' ? 'bg-rotary-azure text-white' : 'text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Member Timeline
+          </button>
+        </div>
+
+        {communityTab === 'chat' ? <ChatRoom user={user} /> : <MemberTimeline user={user} />}
       </section>
     </div>
   );

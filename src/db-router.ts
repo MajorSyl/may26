@@ -1,4 +1,4 @@
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto } from './types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto, ChatMessage, TimelinePost } from './types';
 import {
   getSupabaseProjects,
   saveSupabaseProject,
@@ -27,7 +27,18 @@ import {
   createLoginSupabaseMember,
   resetSupabasePin,
   revokeSupabaseMemberAccount,
-  loginWithRotaryIdAndPin
+  loginWithRotaryIdAndPin,
+  getSupabaseChatMessages,
+  sendSupabaseChatMessage,
+  deleteSupabaseChatMessage,
+  toggleSupabaseChatReaction,
+  subscribeToChatRealtime,
+  getSupabaseTimelinePosts,
+  createSupabaseTimelinePost,
+  deleteSupabaseTimelinePost,
+  addSupabaseTimelineComment,
+  deleteSupabaseTimelineComment,
+  subscribeToTimelineRealtime
 } from './supabase-service';
 import { INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
@@ -304,3 +315,56 @@ export const resetMemberPin = async (uid: string, pin: string): Promise<void> =>
 export const revokeMemberAccount = async (uid: string): Promise<void> => {
   return revokeSupabaseMemberAccount(uid);
 };
+
+// -------------------------------------------------------------
+// GROUP CHAT & MEMBER TIMELINE
+// -------------------------------------------------------------
+// Members-only, live-Supabase features -- there is no local sandbox
+// simulation of Realtime, so these simply no-op/return-empty when Supabase
+// isn't configured (isDriverSimulated) and the UI shows that state directly.
+
+export const getDbChatMessages = async (): Promise<ChatMessage[]> => {
+  return getSupabaseChatMessages();
+};
+
+export const sendDbChatMessage = async (senderId: string, senderName: string, content: string): Promise<void> => {
+  return sendSupabaseChatMessage(senderId, senderName, content);
+};
+
+export const deleteDbChatMessage = async (messageId: string): Promise<void> => {
+  return deleteSupabaseChatMessage(messageId);
+};
+
+export const toggleDbChatReaction = async (messageId: string, userId: string, emoji: string): Promise<'added' | 'removed'> => {
+  return toggleSupabaseChatReaction(messageId, userId, emoji);
+};
+
+export const subscribeToDbChatRealtime = subscribeToChatRealtime;
+
+export const getDbTimelinePosts = async (): Promise<TimelinePost[]> => {
+  return getSupabaseTimelinePosts();
+};
+
+export const createDbTimelinePost = async (input: {
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  content?: string;
+  imageUrl?: string;
+}): Promise<void> => {
+  return createSupabaseTimelinePost(input);
+};
+
+export const deleteDbTimelinePost = async (postId: string): Promise<void> => {
+  return deleteSupabaseTimelinePost(postId);
+};
+
+export const addDbTimelineComment = async (postId: string, authorId: string, authorName: string, content: string): Promise<void> => {
+  return addSupabaseTimelineComment(postId, authorId, authorName, content);
+};
+
+export const deleteDbTimelineComment = async (commentId: string): Promise<void> => {
+  return deleteSupabaseTimelineComment(commentId);
+};
+
+export const subscribeToDbTimelineRealtime = subscribeToTimelineRealtime;

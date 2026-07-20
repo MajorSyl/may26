@@ -113,3 +113,38 @@ export interface NewsletterSubscriber {
   email: string;
   createdAt?: string;
 }
+
+export interface ChatReaction {
+  id: string;
+  emoji: string;
+  userId: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  content: string;
+  createdAt: string;
+  reactions: ChatReaction[];
+}
+
+export interface TimelineComment {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TimelinePost {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  content?: string;
+  imageUrl?: string;
+  createdAt: string;
+  comments: TimelineComment[];
+}

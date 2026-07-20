@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto } from './types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto, ChatMessage, TimelinePost, TimelineComment } from './types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
 
@@ -1131,6 +1131,193 @@ export const submitSupabaseNewsletterSignup = async (email: string): Promise<New
   }
 };
 
+// -------------------------------------------------------------
+// GROUP CHAT — single shared real-time room for all logged-in members
+// -------------------------------------------------------------
+
+export const getSupabaseChatMessages = async (limitCount = 200): Promise<ChatMessage[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('id, sender_id, sender_name, content, created_at, chat_message_reactions(id, emoji, user_id)')
+    .order('created_at', { ascending: true })
+    .limit(limitCount);
+  if (error) {
+    console.error('Supabase query error (chat_messages):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    senderId: d.sender_id,
+    senderName: d.sender_name,
+    content: d.content,
+    createdAt: d.created_at,
+    reactions: (d.chat_message_reactions || []).map((r: any) => ({ id: r.id, emoji: r.emoji, userId: r.user_id }))
+  }));
+};
+
+export const sendSupabaseChatMessage = async (senderId: string, senderName: string, content: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error('Message cannot be empty.');
+  const { error } = await supabase.from('chat_messages').insert({ sender_id: senderId, sender_name: senderName, content: trimmed });
+  if (error) throw error;
+};
+
+export const deleteSupabaseChatMessage = async (messageId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('chat_messages').delete().eq('id', messageId);
+  if (error) throw error;
+};
+
+// Reactions toggle server-side: insert, and if that member already reacted
+// with this exact emoji (unique violation), remove it instead. Server is
+// the source of truth rather than trusting local UI state.
+export const toggleSupabaseChatReaction = async (messageId: string, userId: string, emoji: string): Promise<'added' | 'removed'> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error: insertErr } = await supabase.from('chat_message_reactions').insert({ message_id: messageId, user_id: userId, emoji });
+  if (!insertErr) return 'added';
+  if (insertErr.code === '23505') {
+    const { error: deleteErr } = await supabase.from('chat_message_reactions').delete().match({ message_id: messageId, user_id: userId, emoji });
+    if (deleteErr) throw deleteErr;
+    return 'removed';
+  }
+  throw insertErr;
+};
+
+// Raw Realtime passthrough -- callers merge these into their own local
+// state. DELETE payloads carry only the columns covered by each table's
+// replica identity (see schema.sql): chat_messages needs just `id` for
+// delete (default identity), but chat_message_reactions is set to REPLICA
+// IDENTITY FULL so its delete payload also includes message_id/user_id/emoji.
+export const subscribeToChatRealtime = (handlers: {
+  onMessageInsert: (row: { id: string; sender_id: string; sender_name: string; content: string; created_at: string }) => void;
+  onMessageDelete: (id: string) => void;
+  onReactionInsert: (row: { id: string; message_id: string; user_id: string; emoji: string }) => void;
+  onReactionDelete: (row: { id: string; message_id: string; user_id: string; emoji: string }) => void;
+}): (() => void) => {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  const client = supabase;
+  const channel = client
+    .channel('chat_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (payload) => {
+      handlers.onMessageInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
+      handlers.onMessageDelete((payload.old as any).id);
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_message_reactions' }, (payload) => {
+      handlers.onReactionInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_message_reactions' }, (payload) => {
+      handlers.onReactionDelete(payload.old as any);
+    })
+    .subscribe();
+  return () => { client.removeChannel(channel); };
+};
+
+// -------------------------------------------------------------
+// MEMBER TIMELINE — instant-publish feed (no approval queue), with comments
+// -------------------------------------------------------------
+
+export const getSupabaseTimelinePosts = async (limitCount = 100): Promise<TimelinePost[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('timeline_posts')
+    .select('id, author_id, author_name, author_avatar_url, content, image_url, created_at, timeline_comments(id, post_id, author_id, author_name, content, created_at)')
+    .order('created_at', { ascending: false })
+    .limit(limitCount);
+  if (error) {
+    console.error('Supabase query error (timeline_posts):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    authorId: d.author_id,
+    authorName: d.author_name,
+    authorAvatarUrl: d.author_avatar_url || undefined,
+    content: d.content || undefined,
+    imageUrl: d.image_url || undefined,
+    createdAt: d.created_at,
+    comments: (d.timeline_comments || [])
+      .map((c: any) => ({
+        id: c.id,
+        postId: c.post_id,
+        authorId: c.author_id,
+        authorName: c.author_name,
+        content: c.content,
+        createdAt: c.created_at
+      }))
+      .sort((a: TimelineComment, b: TimelineComment) => a.createdAt.localeCompare(b.createdAt))
+  }));
+};
+
+export const createSupabaseTimelinePost = async (input: {
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  content?: string;
+  imageUrl?: string;
+}): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const trimmedContent = (input.content || '').trim();
+  if (!trimmedContent && !input.imageUrl) throw new Error('Add some text or a photo to post.');
+  const { error } = await supabase.from('timeline_posts').insert({
+    author_id: input.authorId,
+    author_name: input.authorName,
+    author_avatar_url: input.authorAvatarUrl || null,
+    content: trimmedContent || null,
+    image_url: input.imageUrl || null
+  });
+  if (error) throw error;
+};
+
+export const deleteSupabaseTimelinePost = async (postId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('timeline_posts').delete().eq('id', postId);
+  if (error) throw error;
+};
+
+export const addSupabaseTimelineComment = async (postId: string, authorId: string, authorName: string, content: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const trimmed = content.trim();
+  if (!trimmed) throw new Error('Comment cannot be empty.');
+  const { error } = await supabase.from('timeline_comments').insert({ post_id: postId, author_id: authorId, author_name: authorName, content: trimmed });
+  if (error) throw error;
+};
+
+export const deleteSupabaseTimelineComment = async (commentId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('timeline_comments').delete().eq('id', commentId);
+  if (error) throw error;
+};
+
+export const subscribeToTimelineRealtime = (handlers: {
+  onPostInsert: (row: { id: string; author_id: string; author_name: string; author_avatar_url: string | null; content: string | null; image_url: string | null; created_at: string }) => void;
+  onPostDelete: (id: string) => void;
+  onCommentInsert: (row: { id: string; post_id: string; author_id: string; author_name: string; content: string; created_at: string }) => void;
+  onCommentDelete: (row: { id: string; post_id: string }) => void;
+}): (() => void) => {
+  if (!isSupabaseConfigured || !supabase) return () => {};
+  const client = supabase;
+  const channel = client
+    .channel('timeline_realtime')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'timeline_posts' }, (payload) => {
+      handlers.onPostInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'timeline_posts' }, (payload) => {
+      handlers.onPostDelete((payload.old as any).id);
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'timeline_comments' }, (payload) => {
+      handlers.onCommentInsert(payload.new as any);
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'timeline_comments' }, (payload) => {
+      handlers.onCommentDelete(payload.old as any);
+    })
+    .subscribe();
+  return () => { client.removeChannel(channel); };
+};
+
 // 5. Seed Database Script
 export const seedSupabaseTables = async (): Promise<{ success: boolean; message: string; seededCount: number }> => {
   if (!isSupabaseConfigured || !supabase) {
@@ -1213,6 +1400,28 @@ BEGIN
   );
 END;
 $$;
+
+-- 2.1 Create is_linked_member() helper function -- true only for a Supabase
+-- Auth session linked to an actual roster row. Used by chat/timeline
+-- policies as a second layer on top of the 'authenticated' role check,
+-- since Supabase Auth's public signup toggle (a project-level setting this
+-- app's code can't enforce) could otherwise let a non-member "authenticated"
+-- session read/post there.
+CREATE OR REPLACE FUNCTION is_linked_member()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users WHERE auth_user_id = auth.uid()
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION is_linked_member() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION is_linked_member() TO authenticated;
 
 -- 3. Create Projects Table
 CREATE TABLE IF NOT EXISTS projects (
@@ -1434,12 +1643,70 @@ $$;
 
 -- All three trigger functions above only fire as triggers; they are not
 -- meant to be called directly as an RPC endpoint. Revoking EXECUTE doesn't
--- affect trigger firing. Must revoke from PUBLIC (not just anon/authenticated) —
--- CREATE FUNCTION grants EXECUTE to PUBLIC by default and those roles
--- inherit through it.
-REVOKE EXECUTE ON FUNCTION protect_admin_only_user_fields() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION prevent_self_admin_removal() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION assign_rotary_id() FROM PUBLIC;
+-- affect trigger firing. Must revoke from PUBLIC *and* anon/authenticated
+-- explicitly — this project carries an ALTER DEFAULT PRIVILEGES rule that
+-- grants EXECUTE directly to anon/authenticated on every newly created
+-- function (Supabase's standard default for PostgREST RPC exposure), which
+-- a PUBLIC-only revoke does not remove.
+REVOKE EXECUTE ON FUNCTION protect_admin_only_user_fields() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION prevent_self_admin_removal() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION assign_rotary_id() FROM PUBLIC, anon, authenticated;
+
+-- 16. Create Chat Messages Table (single shared real-time room for all
+-- logged-in members; sender_name is a denormalized snapshot for Realtime)
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  sender_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 2000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 17. Create Chat Message Reactions Table (one row per message/member/emoji)
+CREATE TABLE IF NOT EXISTS chat_message_reactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL CHECK (char_length(emoji) <= 8),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  UNIQUE (message_id, user_id, emoji)
+);
+
+-- 18. Create Timeline Posts Table (member feed; publishes instantly, no
+-- approval step, unlike submissions)
+CREATE TABLE IF NOT EXISTS timeline_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  author_avatar_url TEXT,
+  content TEXT,
+  image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  CHECK (
+    (content IS NOT NULL AND char_length(btrim(content)) > 0 AND char_length(content) <= 5000)
+    OR image_url IS NOT NULL
+  )
+);
+
+-- 19. Create Timeline Comments Table
+CREATE TABLE IF NOT EXISTS timeline_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES timeline_posts(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 1000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_message_reactions_message_id ON chat_message_reactions(message_id);
+CREATE INDEX IF NOT EXISTS idx_timeline_comments_post_id ON timeline_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_timeline_posts_created_at ON timeline_posts(created_at);
+
+-- Widen Realtime DELETE payloads for these two child tables so the client
+-- gets message_id/post_id, not just the deleted row's own primary key.
+ALTER TABLE chat_message_reactions REPLICA IDENTITY FULL;
+ALTER TABLE timeline_comments REPLICA IDENTITY FULL;
 
 -- ==========================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
@@ -1624,6 +1891,81 @@ DROP POLICY IF EXISTS "Allow admin full access to gallery_photos" ON gallery_pho
 CREATE POLICY "Allow admin full access to gallery_photos" ON gallery_photos
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+-- 12. Policies for 'chat_messages' Table (members-only, no anon/public
+-- access; read/post requires is_linked_member() or is_admin() on top of
+-- the authenticated role; own-message delete, admin delete-any)
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read chat messages" ON chat_messages;
+CREATE POLICY "Members can read chat messages" ON chat_messages
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can send chat messages" ON chat_messages;
+CREATE POLICY "Members can send chat messages" ON chat_messages
+  FOR INSERT TO authenticated WITH CHECK (sender_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own chat messages, admins any" ON chat_messages;
+CREATE POLICY "Members can delete own chat messages, admins any" ON chat_messages
+  FOR DELETE TO authenticated USING (sender_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON chat_messages FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON chat_messages TO authenticated;
+
+-- 13. Policies for 'chat_message_reactions' Table
+ALTER TABLE chat_message_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can read chat reactions" ON chat_message_reactions
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can add own chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can add own chat reactions" ON chat_message_reactions
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can remove own chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can remove own chat reactions" ON chat_message_reactions
+  FOR DELETE TO authenticated USING (user_id = auth.uid());
+
+REVOKE ALL PRIVILEGES ON chat_message_reactions FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON chat_message_reactions TO authenticated;
+
+-- 14. Policies for 'timeline_posts' Table (members-only feed; own-post
+-- delete, admin delete-any)
+ALTER TABLE timeline_posts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read timeline posts" ON timeline_posts;
+CREATE POLICY "Members can read timeline posts" ON timeline_posts
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can create timeline posts" ON timeline_posts;
+CREATE POLICY "Members can create timeline posts" ON timeline_posts
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own timeline posts, admins any" ON timeline_posts;
+CREATE POLICY "Members can delete own timeline posts, admins any" ON timeline_posts
+  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON timeline_posts FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON timeline_posts TO authenticated;
+
+-- 15. Policies for 'timeline_comments' Table
+ALTER TABLE timeline_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read timeline comments" ON timeline_comments;
+CREATE POLICY "Members can read timeline comments" ON timeline_comments
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can create timeline comments" ON timeline_comments;
+CREATE POLICY "Members can create timeline comments" ON timeline_comments
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own timeline comments, admins any" ON timeline_comments;
+CREATE POLICY "Members can delete own timeline comments, admins any" ON timeline_comments
+  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON timeline_comments FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON timeline_comments TO authenticated;
+
 -- ==========================================
 -- SEED INITIAL ADMIN USER
 -- ==========================================
@@ -1640,6 +1982,10 @@ alter publication supabase_realtime add table event_rsvps;
 alter publication supabase_realtime add table project_applications;
 alter publication supabase_realtime add table submissions;
 alter publication supabase_realtime add table gallery_photos;
+alter publication supabase_realtime add table chat_messages;
+alter publication supabase_realtime add table chat_message_reactions;
+alter publication supabase_realtime add table timeline_posts;
+alter publication supabase_realtime add table timeline_comments;
 
 -- ==========================================
 -- STORAGE — member-uploads bucket

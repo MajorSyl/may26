@@ -210,6 +210,69 @@ CREATE TABLE IF NOT EXISTS gallery_photos (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
 );
 
+-- 1.12 Chat Messages — a single shared real-time room for all logged-in
+-- members (see 3.12/5 below). sender_name is a denormalized snapshot taken
+-- at send time so a client can render an incoming Realtime INSERT event
+-- without a join back to `users`.
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  sender_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 2000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+-- 1.13 Chat Message Reactions — one row per (message, member, emoji); a
+-- member reacting twice with the same emoji just toggles it off (unique
+-- constraint + client does insert-or-delete).
+CREATE TABLE IF NOT EXISTS chat_message_reactions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL CHECK (char_length(emoji) <= 8),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  UNIQUE (message_id, user_id, emoji)
+);
+
+-- 1.14 Timeline Posts — the member feed. Unlike submissions, these publish
+-- instantly with no approval step. author_name/author_avatar_url are
+-- denormalized snapshots for the same reason as chat_messages.sender_name.
+CREATE TABLE IF NOT EXISTS timeline_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  author_avatar_url TEXT,
+  content TEXT,
+  image_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
+  CHECK (
+    (content IS NOT NULL AND char_length(btrim(content)) > 0 AND char_length(content) <= 5000)
+    OR image_url IS NOT NULL
+  )
+);
+
+-- 1.15 Timeline Comments
+CREATE TABLE IF NOT EXISTS timeline_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES timeline_posts(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 1000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_message_reactions_message_id ON chat_message_reactions(message_id);
+CREATE INDEX IF NOT EXISTS idx_timeline_comments_post_id ON timeline_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_timeline_posts_created_at ON timeline_posts(created_at);
+
+-- A DELETE's Realtime payload.old only carries the primary key by default.
+-- The client needs message_id/post_id too (to know which parent's reaction
+-- or comment list to remove from), so widen what's captured on delete for
+-- just these two child tables.
+ALTER TABLE chat_message_reactions REPLICA IDENTITY FULL;
+ALTER TABLE timeline_comments REPLICA IDENTITY FULL;
+
 -- -----------------------------------------------------------------------------
 -- 2. HELPER FUNCTIONS
 -- -----------------------------------------------------------------------------
@@ -228,6 +291,34 @@ BEGIN
   );
 END;
 $$;
+
+-- is_linked_member() — true only for a Supabase Auth session that's linked
+-- to an actual roster row. This app has no public self-signup path in its
+-- own UI (accounts are admin-created only), but Supabase Auth's public
+-- email signup is a project-level toggle this app's code can't enforce --
+-- so being `authenticated` alone doesn't guarantee real club membership.
+-- Used by chat/timeline policies (3.12-3.15) as a second layer on top of
+-- the `authenticated` role check, the same way member_contact_info and
+-- submissions already scope access to real roster members.
+CREATE OR REPLACE FUNCTION is_linked_member()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users WHERE auth_user_id = auth.uid()
+  );
+END;
+$$;
+
+-- Referenced directly inside RLS policy expressions below, so the
+-- querying role needs EXECUTE on it (same reasoning as is_admin()) --
+-- granted to authenticated only; anon never has an auth.uid() to match
+-- against so there's no reason to expose it there too.
+REVOKE EXECUTE ON FUNCTION is_linked_member() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION is_linked_member() TO authenticated;
 
 -- protect_admin_only_user_fields() — trigger function that guards the
 -- roster fields a member must never be able to change on their own row
@@ -316,13 +407,19 @@ $$;
 -- triggers, not be called directly as an RPC endpoint (PostgREST exposes
 -- every function in the public schema by default). Revoking EXECUTE
 -- doesn't affect trigger firing, since that isn't gated by the invoking
--- role's function privileges. Must revoke from PUBLIC, not just
--- anon/authenticated — CREATE FUNCTION grants EXECUTE to PUBLIC by default,
--- and anon/authenticated inherit through PUBLIC, so revoking from those
--- roles alone leaves them able to execute it via the inherited PUBLIC grant.
-REVOKE EXECUTE ON FUNCTION protect_admin_only_user_fields() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION prevent_self_admin_removal() FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION assign_rotary_id() FROM PUBLIC;
+-- role's function privileges. Must revoke from PUBLIC *and* anon/authenticated
+-- explicitly: CREATE FUNCTION grants EXECUTE to PUBLIC by default (which
+-- anon/authenticated normally only inherit through), but this project also
+-- carries an ALTER DEFAULT PRIVILEGES rule that grants EXECUTE directly to
+-- anon/authenticated on every newly created function (Supabase's standard
+-- default, so new functions are auto-exposed as PostgREST RPC endpoints) --
+-- a separate, direct grant that "REVOKE ... FROM PUBLIC" alone does not
+-- remove. This was learned the hard way: an earlier PUBLIC-only revoke on
+-- assign_rotary_id() silently stopped applying once the function was
+-- recreated, because the direct anon/authenticated grant came back each time.
+REVOKE EXECUTE ON FUNCTION protect_admin_only_user_fields() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION prevent_self_admin_removal() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION assign_rotary_id() FROM PUBLIC, anon, authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 3. ROW LEVEL SECURITY
@@ -516,6 +613,85 @@ DROP POLICY IF EXISTS "Allow admin full access to gallery_photos" ON gallery_pho
 CREATE POLICY "Allow admin full access to gallery_photos" ON gallery_photos
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+-- 3.12 chat_messages — members-only (no anon/public access at all, unlike
+-- the tables above). Read/post requires is_linked_member() (or is_admin())
+-- on top of the `authenticated` role, so a bare Supabase Auth session with
+-- no roster link can't participate. A member can delete only their own
+-- message, an admin can delete any (moderation).
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read chat messages" ON chat_messages;
+CREATE POLICY "Members can read chat messages" ON chat_messages
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can send chat messages" ON chat_messages;
+CREATE POLICY "Members can send chat messages" ON chat_messages
+  FOR INSERT TO authenticated WITH CHECK (sender_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own chat messages, admins any" ON chat_messages;
+CREATE POLICY "Members can delete own chat messages, admins any" ON chat_messages
+  FOR DELETE TO authenticated USING (sender_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON chat_messages FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON chat_messages TO authenticated;
+
+-- 3.13 chat_message_reactions — a member reacts/un-reacts only as
+-- themselves; no admin override needed (spec only asks for admin message
+-- moderation, not reaction moderation).
+ALTER TABLE chat_message_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can read chat reactions" ON chat_message_reactions
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can add own chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can add own chat reactions" ON chat_message_reactions
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can remove own chat reactions" ON chat_message_reactions;
+CREATE POLICY "Members can remove own chat reactions" ON chat_message_reactions
+  FOR DELETE TO authenticated USING (user_id = auth.uid());
+
+REVOKE ALL PRIVILEGES ON chat_message_reactions FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON chat_message_reactions TO authenticated;
+
+-- 3.14 timeline_posts — members-only feed; posts publish instantly (no
+-- approval queue, unlike submissions). Own-post delete, admin delete-any.
+ALTER TABLE timeline_posts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read timeline posts" ON timeline_posts;
+CREATE POLICY "Members can read timeline posts" ON timeline_posts
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can create timeline posts" ON timeline_posts;
+CREATE POLICY "Members can create timeline posts" ON timeline_posts
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own timeline posts, admins any" ON timeline_posts;
+CREATE POLICY "Members can delete own timeline posts, admins any" ON timeline_posts
+  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON timeline_posts FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON timeline_posts TO authenticated;
+
+-- 3.15 timeline_comments — own-comment delete, admin delete-any.
+ALTER TABLE timeline_comments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members can read timeline comments" ON timeline_comments;
+CREATE POLICY "Members can read timeline comments" ON timeline_comments
+  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
+
+DROP POLICY IF EXISTS "Members can create timeline comments" ON timeline_comments;
+CREATE POLICY "Members can create timeline comments" ON timeline_comments
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
+
+DROP POLICY IF EXISTS "Members can delete own timeline comments, admins any" ON timeline_comments;
+CREATE POLICY "Members can delete own timeline comments, admins any" ON timeline_comments
+  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
+
+REVOKE ALL PRIVILEGES ON timeline_comments FROM public, anon, authenticated;
+GRANT SELECT, INSERT, DELETE ON timeline_comments TO authenticated;
+
 -- -----------------------------------------------------------------------------
 -- 4. SEED INITIAL ADMIN USER
 -- -----------------------------------------------------------------------------
@@ -536,6 +712,10 @@ alter publication supabase_realtime add table event_rsvps;
 alter publication supabase_realtime add table project_applications;
 alter publication supabase_realtime add table submissions;
 alter publication supabase_realtime add table gallery_photos;
+alter publication supabase_realtime add table chat_messages;
+alter publication supabase_realtime add table chat_message_reactions;
+alter publication supabase_realtime add table timeline_posts;
+alter publication supabase_realtime add table timeline_comments;
 
 -- -----------------------------------------------------------------------------
 -- 6. STORAGE — member-uploads bucket
