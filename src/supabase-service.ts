@@ -1569,7 +1569,10 @@ CREATE TABLE IF NOT EXISTS gallery_photos (
 -- (role, committee, attendance/contribution figures, tasks, classification,
 -- Paul Harris status, joined date, auth_user_id, rotary_id, PIN lockout
 -- state) if a non-admin updates their own users row. A member may still
--- change name/bio/avatarurl.
+-- change name/bio/avatarurl. Must also let a service_role caller through
+-- (no auth.uid() of its own) -- the member-accounts/member-login Edge
+-- Functions update these exact columns using the service_role key, and
+-- without this check the trigger silently reverted their updates too.
 CREATE OR REPLACE FUNCTION protect_admin_only_user_fields()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -1577,7 +1580,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NOT is_admin() THEN
+  IF NOT is_admin() AND auth.role() IS DISTINCT FROM 'service_role' THEN
     NEW.role := OLD.role;
     NEW.committee := OLD.committee;
     NEW.attendancerate := OLD.attendancerate;
