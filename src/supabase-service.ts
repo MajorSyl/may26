@@ -1078,26 +1078,43 @@ export const revokeSupabaseMemberAccount = async (uid: string): Promise<void> =>
 // supabase/functions/member-login/index.ts) and adopts the returned session
 // locally. Throws with the function's user-facing error message on failure
 // (invalid credentials, lockout, etc.) so the caller can show it directly.
+//
+// Wrapped in a hard timeout: setSession()/getUser() reaching out to
+// Supabase Auth can, in rare cases, neither resolve nor reject (observed
+// in practice with a stale/corrupted stored session) -- without a
+// timeout, the caller's own loading state would then hang forever with
+// no error shown, rather than surfacing a message the member can act on.
+const LOGIN_TIMEOUT_MS = 15000;
+
 export const loginWithRotaryIdAndPin = async (rotaryId: string, pin: string): Promise<UserProfile> => {
   if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
-  const { data, error } = await supabase.functions.invoke('member-login', {
-    body: { rotaryId, pin }
+
+  const doLogin = async (): Promise<UserProfile> => {
+    const { data, error } = await supabase.functions.invoke('member-login', {
+      body: { rotaryId, pin }
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    const { error: sessionErr } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token
+    });
+    if (sessionErr) throw sessionErr;
+
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) throw new Error('Login failed.');
+
+    const profile = await getSupabaseUserByAuthId(userData.user.id);
+    if (!profile) throw new Error('Your account is not yet linked to a member profile. Please contact a club officer.');
+    return profile;
+  };
+
+  const timeout = new Promise<UserProfile>((_, reject) => {
+    setTimeout(() => reject(new Error('Login timed out. Please try again.')), LOGIN_TIMEOUT_MS);
   });
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
 
-  const { error: sessionErr } = await supabase.auth.setSession({
-    access_token: data.access_token,
-    refresh_token: data.refresh_token
-  });
-  if (sessionErr) throw sessionErr;
-
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) throw new Error('Login failed.');
-
-  const profile = await getSupabaseUserByAuthId(userData.user.id);
-  if (!profile) throw new Error('Your account is not yet linked to a member profile. Please contact a club officer.');
-  return profile;
+  return Promise.race([doLogin(), timeout]);
 };
 
 // 4.8 Newsletter Subscription

@@ -150,6 +150,36 @@ export const submitDbApplication = async (app: ProjectApplication): Promise<Proj
 // keep tripping this on every subsequent load.
 const SESSION_CHECK_TIMEOUT_MS = 8000;
 
+// Races a promise against a timeout, resolving to `fallback()` instead of
+// hanging forever if the promise neither resolves nor rejects in time.
+// A plain try/catch/finally does NOT protect against this case -- if the
+// awaited promise never settles, the finally block never runs either, so
+// anything gating on it (like a loading spinner) is stuck permanently.
+// This is what actually happened in onAuthStateChange below: it had
+// try/catch/finally already, but that only handles a thrown error, not a
+// hung one.
+const withTimeout = <T>(promise: Promise<T>, ms: number, fallback: () => T): Promise<T> => {
+  return new Promise<T>((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(fallback());
+    }, ms);
+    promise.then((value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    }).catch(() => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(fallback());
+    });
+  });
+};
+
 export const subscribeToAuth = (
   onStateChange: (user: UserProfile | null) => void,
   setLoading: (loading: boolean) => void
@@ -198,7 +228,10 @@ export const subscribeToAuth = (
       setLoading(true);
       try {
         if (session) {
-          const profile = await getSupabaseUserByAuthId(session.user.id);
+          const profile = await withTimeout(getSupabaseUserByAuthId(session.user.id), SESSION_CHECK_TIMEOUT_MS, () => {
+            console.error('Profile lookup timed out during auth state change.');
+            return null;
+          });
           onStateChange(profile);
         } else {
           onStateChange(null);
