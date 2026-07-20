@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Lock, Unlock, Database, Trash2, Edit, Plus, Search, Check, X, 
-  Calendar, MapPin, Users, Mail, AlertTriangle, ShieldCheck, 
-  RefreshCw, Filter, Sparkles, Info, Eye, FileText, Globe,
+  Lock, Unlock, Database, Trash2, Edit, Plus, Search, Check, X,
+  Calendar, MapPin, Users, Mail, AlertTriangle, ShieldCheck,
+  RefreshCw, Filter, Info, Eye, FileText, Globe,
   UploadCloud, Image, Link,
-  ArrowUp, ArrowDown, EyeOff, Layout, Palette, Sliders, Settings
+  ArrowUp, ArrowDown, EyeOff, Layout, Palette, Sliders, Settings, Zap
 } from 'lucide-react';
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, Submission } from '../types';
 import { INITIAL_MEMBER_DIRECTORY } from '../data';
@@ -782,7 +782,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
             )}
           </div>
           <h1 className="text-3xl font-black font-display text-slate-800 tracking-tight flex items-center gap-2">
-            Rotary Website CMS <Sparkles className="h-5 w-5 text-rotary-gold" />
+            Rotary Website CMS <Settings className="h-5 w-5 text-rotary-gold" />
           </h1>
           <p className="text-xs text-slate-400">
             Welcome to your visual admin content manager. Update live projects, schedule board meetings, review club inquiries, and manage member statistics.
@@ -1009,7 +1009,7 @@ export default function AdminDashboard({ onStateRefresh }: AdminDashboardProps) 
           ) : (
             <div className="flex items-center gap-2 select-none self-stretch shrink-0">
               <span className="text-[10px] bg-rotary-gold/25 text-amber-800 border border-rotary-gold/40 px-3 py-1.5 rounded-xl font-bold font-display uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                <Sparkles className="h-3 w-3 text-amber-600" />
+                <Zap className="h-3 w-3 text-amber-600" />
                 Live visual WordPress-Style Editor
               </span>
             </div>

@@ -13,7 +13,7 @@ import {
   Heart, 
   Check, 
   Send,
-  Sparkles,
+  FileText,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -207,7 +207,7 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
         <div className="lg:col-span-8 space-y-6">
           <div className="bg-white border border-slate-200 rounded-3.5xl p-6 sm:p-10 space-y-6 shadow-sm">
             <h2 className="text-xl font-bold font-display text-slate-850 tracking-tight border-b border-slate-100 pb-3 flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-rotary-gold" />
+              <FileText className="w-5 h-5 text-rotary-gold" />
               Detailed Operations Report
             </h2>
 

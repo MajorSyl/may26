@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Search, Sparkles, Filter, Grid, RefreshCw } from 'lucide-react';
+import { Shield, Search, Users, Filter, Grid, RefreshCw } from 'lucide-react';
 import SafeImage from './SafeImage';
 import { FULL_MEMBER_LIST } from '../member-data';
 
@@ -49,7 +49,7 @@ export default function VerbatimMembersGrid() {
             </p>
           </div>
           <div className="bg-white border border-slate-200 rounded-2xl px-4 py-2 flex items-center gap-2 text-xs font-semibold text-slate-600 shadow-3xs shrink-0 self-start sm:self-auto">
-            <Sparkles className="w-4 h-4 text-rotary-gold" />
+            <Users className="w-4 h-4 text-rotary-gold" />
             <span>Count: <strong className="text-rotary-azure font-extrabold">{VERBATIM_MEMBER_LIST.length} Members</strong></span>
           </div>
         </div>

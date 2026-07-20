@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Award, Shuffle, Calendar, Heart } from 'lucide-react';
+import { Star, Award, Shuffle, Calendar, Heart } from 'lucide-react';
 import { FULL_MEMBER_LIST } from '../member-data';
 
 export default function MemberSpotlight() {
@@ -39,7 +39,7 @@ export default function MemberSpotlight() {
       <div className="max-w-4xl mx-auto relative z-10">
         <div className="text-center space-y-4 mb-10">
           <span className="inline-flex items-center gap-1.5 bg-rotary-gold/15 text-rotary-gold-dark border border-rotary-gold/25 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest font-display">
-            <Sparkles className="h-3.5 w-3.5 text-rotary-gold-dark" />
+            <Star className="h-3.5 w-3.5 text-rotary-gold-dark" />
             Spotlight On Service
           </span>
           <h2 className="text-3xl font-extrabold font-display tracking-tight text-slate-900">
