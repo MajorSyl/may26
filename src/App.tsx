@@ -344,7 +344,7 @@ function MainApp() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Phone className="h-3 w-3 text-rotary-gold" />
-                      <span>076827035</span>
+                      <span>000000000 <span className="text-slate-400 italic">(placeholder)</span></span>
                     </div>
                   </div>
                 </div>
