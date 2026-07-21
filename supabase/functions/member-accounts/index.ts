@@ -30,10 +30,12 @@ function isValidPin(pin: unknown): pin is string {
 // (creating a login, resetting a PIN, deleting a user's auth account) that
 // require the service_role key. That key is only ever read here,
 // server-side, from an Edge Function secret -- it is never sent to or
-// reachable from the browser. Every request is re-verified as belonging to
-// an admin (via the `admins` table) before any privileged action runs,
-// independent of verify_jwt (which only confirms the request carries *some*
-// valid session).
+// reachable from the browser. Every action except self_delete is
+// re-verified as belonging to an admin (via the `admins` table) before it
+// runs, independent of verify_jwt (which only confirms the request carries
+// *some* valid session). self_delete is intentionally available to any
+// authenticated member and only ever acts on the caller's own row (looked
+// up by their verified auth id, never a client-supplied uid).
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -58,6 +60,56 @@ Deno.serve(async (req: Request) => {
     // Privileged client for the admin check and the actual admin actions.
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+    const body = await req.json().catch(() => ({}));
+    const action = body?.action;
+
+    // Self-service account deletion (App Store guideline 5.1.1(v): apps
+    // that support account creation must also support in-app account
+    // deletion). Any authenticated member may delete their own account, so
+    // this runs before the admin-only gate below. It clears the
+    // self-entered profile fields (bio, avatar, contact info) and deletes
+    // the auth account; the roster identity itself (name, role, committee)
+    // is a club-administered record kept independent of app access.
+    // Deleting the auth account automatically clears auth_user_id (ON
+    // DELETE SET NULL) and cascades away all of this member's chat
+    // messages, reactions, timeline posts and comments (ON DELETE CASCADE
+    // on sender_id/author_id -- see schema.sql).
+    if (action === "self_delete") {
+      const { data: rosterRow, error: rosterErr } = await adminClient
+        .from("users")
+        .select("uid, auth_user_id")
+        .eq("auth_user_id", callerId)
+        .maybeSingle();
+
+      if (rosterErr || !rosterRow) {
+        return json({ error: "No linked account found for this session" }, 404);
+      }
+
+      await adminClient.from("users").update({ bio: null, avatarurl: null }).eq("uid", rosterRow.uid);
+      await adminClient.from("member_contact_info").delete().eq("uid", rosterRow.uid);
+
+      // Remove any photos this member uploaded to the shared storage
+      // bucket (submissions and timeline posts are stored under
+      // `<authUserId>/submissions/...` and `<authUserId>/timeline/...` --
+      // see Dashboard.tsx / MemberTimeline.tsx). Best-effort: a failure
+      // here shouldn't block the account deletion itself.
+      for (const folder of ["submissions", "timeline"]) {
+        const { data: files } = await adminClient.storage.from("member-uploads").list(`${callerId}/${folder}`);
+        if (files && files.length > 0) {
+          const paths = files.map((f) => `${callerId}/${folder}/${f.name}`);
+          await adminClient.storage.from("member-uploads").remove(paths);
+        }
+      }
+
+      const { error: delErr } = await adminClient.auth.admin.deleteUser(callerId);
+      if (delErr) {
+        return json({ error: "Failed to delete account: " + delErr.message }, 500);
+      }
+
+      return json({ success: true });
+    }
+
+    // Every action below requires the caller to be an admin.
     const { data: adminRow } = await adminClient
       .from("admins")
       .select("user_id")
@@ -67,9 +119,6 @@ Deno.serve(async (req: Request) => {
     if (!adminRow) {
       return json({ error: "Forbidden: admin access required" }, 403);
     }
-
-    const body = await req.json().catch(() => ({}));
-    const action = body?.action;
 
     // Creates a login for a roster member who doesn't have one yet, using
     // their existing Rotary ID and an admin-provided (or admin-generated)

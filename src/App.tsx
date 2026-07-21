@@ -11,6 +11,7 @@ import AdminDashboard from './components/AdminDashboard';
 import MembersDirectory from './components/MembersDirectory';
 import ClubGallery from './components/ClubGallery';
 import Contact from './components/Contact';
+import PrivacyPolicy from './components/PrivacyPolicy';
 
 import { UserProfile, ContactInquiry } from './types';
 import { subscribeToAuth, logOutUser } from './db-router';
@@ -172,18 +173,21 @@ function MainApp() {
         return <Contact />;
       case 'dashboard':
         return (
-          <Dashboard 
-            user={user} 
-            onLoginSuccess={(usr) => setUser(usr)} 
+          <Dashboard
+            user={user}
+            onLoginSuccess={(usr) => setUser(usr)}
             onStateRefresh={() => setRefreshKey(prev => prev + 1)}
+            onLogout={handleLogout}
           />
         );
       case 'admin':
         return (
-          <AdminDashboard 
-            onStateRefresh={() => setRefreshKey(prev => prev + 1)} 
+          <AdminDashboard
+            onStateRefresh={() => setRefreshKey(prev => prev + 1)}
           />
         );
+      case 'privacy':
+        return <PrivacyPolicy />;
       default:
         return <Home onLearnMore={(tabId) => setActiveTab(tabId)} />;
     }
@@ -427,9 +431,15 @@ function MainApp() {
             </a>
           </div>
 
-          <p className="text-[10px] text-slate-400 text-center sm:text-right select-none">
-            © {new Date().getFullYear()} {t('rightsReserved')}
-          </p>
+          <div className="flex items-center gap-4 text-[10px] text-slate-400 text-center sm:text-right">
+            <button
+              onClick={() => setActiveTab('privacy')}
+              className="hover:text-white transition-colors cursor-pointer underline-offset-2 hover:underline"
+            >
+              Privacy Policy
+            </button>
+            <span className="select-none">© {new Date().getFullYear()} {t('rightsReserved')}</span>
+          </div>
         </div>
         
         {/* Safe spacing pad for mobile touch bars */}

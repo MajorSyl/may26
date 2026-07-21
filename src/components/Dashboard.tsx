@@ -12,7 +12,8 @@ import {
   updateOwnProfile,
   updateOwnContactInfo,
   getMyDbSubmissions,
-  submitDbSubmission
+  submitDbSubmission,
+  deleteOwnAccount
 } from '../db-router';
 import { seedSupabaseTables, GET_SUPABASE_SQL_SCHEMA, isSupabaseConfigured, supabase } from '../supabase-service';
 import ChatRoom from './ChatRoom';
@@ -44,16 +45,18 @@ import {
   Briefcase,
   Upload,
   X,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 
 interface DashboardProps {
   user: UserProfile | null;
   onLoginSuccess: (user: UserProfile) => void;
   onStateRefresh: () => void;
+  onLogout: () => void;
 }
 
-export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: DashboardProps) {
+export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogout }: DashboardProps) {
   const [loginRotaryId, setLoginRotaryId] = useState('');
   const [loginPin, setLoginPin] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -75,6 +78,12 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
   const [editContactEmail, setEditContactEmail] = useState(user?.email || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
   const [profileSaveError, setProfileSaveError] = useState('');
+
+  // Delete My Account (self-serve, App Store guideline 5.1.1(v))
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Community (Club Chat / Member Timeline) state
   const [communityTab, setCommunityTab] = useState<'chat' | 'timeline'>('chat');
@@ -313,6 +322,19 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
     } catch (err: any) {
       console.error(err);
       setProfileSaveError(err?.message || 'Could not save your profile.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+    setDeleteLoading(true);
+    try {
+      await deleteOwnAccount();
+      onLogout();
+    } catch (err: any) {
+      console.error(err);
+      setDeleteError(err?.message || 'Could not delete your account. Please try again.');
+      setDeleteLoading(false);
     }
   };
 
@@ -655,6 +677,64 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh }: Dash
           </button>
         </form>
       )}
+
+      {/* My Account / Danger Zone */}
+      <section className="bg-white border border-rose-200 p-6 rounded-3xl shadow-sm space-y-3">
+        <h3 className="font-bold text-rose-700 text-sm uppercase tracking-wider font-display flex items-center gap-2">
+          <Trash2 className="h-4 w-4" />
+          Delete My Account
+        </h3>
+        {!showDeleteConfirm ? (
+          <>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">
+              Permanently delete your login, bio, contact info, chat messages, and timeline posts. This cannot be undone. See our{' '}
+              <span className="font-semibold text-slate-600">Privacy Policy</span> in the site footer for exactly what is and isn't removed.
+            </p>
+            <button
+              id="open-delete-account-btn"
+              onClick={() => { setShowDeleteConfirm(true); setDeleteError(''); setDeleteConfirmText(''); }}
+              className="px-4 py-2.5 text-xs font-bold font-display uppercase border border-rose-200 hover:bg-rose-50 text-rose-600 rounded-xl transition-all shadow-xs"
+            >
+              Delete My Account
+            </button>
+          </>
+        ) : (
+          <div className="space-y-3 max-w-sm">
+            {deleteError && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl text-xs">{deleteError}</div>
+            )}
+            <p className="text-xs text-rose-700 font-semibold leading-relaxed">
+              This is permanent and cannot be undone. Type DELETE below to confirm.
+            </p>
+            <input
+              id="delete-account-confirm-field"
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="w-full bg-slate-50 border border-rose-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-rose-400 focus:border-rose-400 font-medium text-slate-700"
+            />
+            <div className="flex gap-2">
+              <button
+                id="confirm-delete-account-btn"
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'DELETE' || deleteLoading}
+                className="px-4 py-2.5 text-xs font-bold font-display uppercase bg-rose-600 hover:bg-rose-700 text-white rounded-xl transition-all shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deleteLoading ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+              <button
+                id="cancel-delete-account-btn"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2.5 text-xs font-bold font-display uppercase border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl transition-all shadow-xs"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* 3. VISUAL PERFORMANCE GRID: ATTENDANCE TARGETS & CONTRIBUTIONS */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8">

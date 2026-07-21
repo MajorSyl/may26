@@ -1078,6 +1078,19 @@ export const revokeSupabaseMemberAccount = async (uid: string): Promise<void> =>
   if (data?.error) throw new Error(data.error);
 };
 
+// Self-service account deletion: unlike revokeSupabaseMemberAccount above,
+// this takes no uid -- the Edge Function derives the caller's own roster
+// row from their verified auth session, so it can never be pointed at
+// someone else's account.
+export const deleteOwnSupabaseAccount = async (): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { data, error } = await supabase.functions.invoke('member-accounts', {
+    body: { action: 'self_delete' }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+};
+
 // Calls the public/unauthenticated member-login Edge Function (Rotary ID +
 // PIN, with per-Rotary-ID lockout enforced server-side -- see
 // supabase/functions/member-login/index.ts) and adopts the returned session

@@ -27,6 +27,7 @@ import {
   createLoginSupabaseMember,
   resetSupabasePin,
   revokeSupabaseMemberAccount,
+  deleteOwnSupabaseAccount,
   loginWithRotaryIdAndPin,
   getSupabaseChatMessages,
   sendSupabaseChatMessage,
@@ -310,6 +311,17 @@ export const setOwnPin = async (pin: string): Promise<void> => {
   if (!isSupabaseConfigured || !supabase) return;
   const { error } = await supabase.auth.updateUser({ password: pin });
   if (error) throw error;
+};
+
+// Deletes the signed-in member's own account (login + self-entered profile
+// data). In local/demo mode there's no real backend account to delete, so
+// this just clears the simulated session.
+export const deleteOwnAccount = async (): Promise<void> => {
+  if (isSupabaseConfigured && supabase) {
+    await deleteOwnSupabaseAccount();
+  } else {
+    safeStorage.removeItem('rcfs_auth_session');
+  }
 };
 
 // -------------------------------------------------------------
