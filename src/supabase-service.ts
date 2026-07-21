@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto, ChatMessage, TimelinePost, TimelineComment } from './types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from './data';
 import { safeStorage } from './lib/safe-storage';
+import { capacitorPreferencesStorage, isNativeApp } from './lib/capacitor-storage';
 
 // Read configuration from Vite environment
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
@@ -9,9 +10,13 @@ const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey && supabaseUrl !== 'undefined' && supabaseAnonKey !== 'undefined');
 
-// Real Supabase Client Instance (if variables exist)
+// Real Supabase Client Instance (if variables exist). Inside the Capacitor
+// app shell, session storage is backed by native Preferences instead of
+// WebView localStorage (see lib/capacitor-storage.ts); in the web build,
+// isNativeApp() is always false and this is byte-for-byte the same client
+// creation as before.
 export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
+  ? createClient(supabaseUrl!, supabaseAnonKey!, isNativeApp() ? { auth: { storage: capacitorPreferencesStorage } } : undefined)
   : null;
 
 // LocalStorage Persistence helper for Simulator
