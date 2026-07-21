@@ -14,7 +14,7 @@ export const translations = {
     getInvolved: 'Get Involved',
     events: 'Meetings & Events',
     contact: 'Contact',
-    portal: 'Portal',
+    portal: 'Sign In',
     logout: 'Log Out',
     
     // Header & Brand
@@ -69,7 +69,7 @@ export const translations = {
     getInvolved: 'Kam Join Wi',
     events: 'Miting & Program dɛn',
     contact: 'Tɔk to Wi',
-    portal: 'Pot_al',
+    portal: 'Sain In',
     logout: 'Kɔmɔt na di Portal',
     
     // Header & Brand

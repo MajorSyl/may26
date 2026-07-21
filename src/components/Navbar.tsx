@@ -35,7 +35,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
     { id: 'get-involved', label: 'Get Involved', icon: Heart },
     { id: 'events', label: 'Meetings & Events', icon: Calendar },
     { id: 'contact', label: 'Contact', icon: Mail },
-    { id: 'dashboard', label: 'Portal', icon: LayoutDashboard, isDash: true }
+    { id: 'dashboard', label: 'Sign In', icon: LayoutDashboard, isDash: true }
   ];
 
   return (
