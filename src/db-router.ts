@@ -1,32 +1,20 @@
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, NewsletterSubscriber, Submission, GalleryPhoto, ChatMessage, TimelinePost } from './types';
 import {
   getSupabaseProjects,
-  saveSupabaseProject,
   getSupabaseEvents,
-  saveSupabaseEvent,
   submitSupabaseInquiry,
-  upsertSupabaseUser,
   isSupabaseConfigured,
   getSupabaseUsers,
   supabase,
   getSupabaseUserByAuthId,
   updateSupabaseOwnProfile,
   updateSupabaseOwnContactInfo,
-  getSupabaseRSVPs,
   submitSupabaseRSVP,
-  getSupabaseApplications,
   submitSupabaseApplication,
   submitSupabaseNewsletterSignup,
-  getSupabaseSubmissions,
   getMySupabaseSubmissions,
   submitSupabaseSubmission,
-  reviewSupabaseSubmission,
   getSupabaseGalleryPhotos,
-  promoteSupabaseAdmin,
-  demoteSupabaseAdmin,
-  createLoginSupabaseMember,
-  resetSupabasePin,
-  revokeSupabaseMemberAccount,
   deleteOwnSupabaseAccount,
   loginWithRotaryIdAndPin,
   getSupabaseChatMessages,
@@ -64,10 +52,6 @@ export const getActiveDbDriver = (): DbDriver => {
   return 'supabase';
 };
 
-export const setActiveDbDriver = (driver: DbDriver) => {
-  // No-op (retained for backward compatibility)
-};
-
 // -------------------------------------------------------------
 // UNIFIED ARCHITECTURAL WRAPPERS (Always Supabase / Sandbox)
 // -------------------------------------------------------------
@@ -76,16 +60,8 @@ export const getDbProjects = async (): Promise<Project[]> => {
   return getSupabaseProjects();
 };
 
-export const saveDbProject = async (project: Project): Promise<Project> => {
-  return saveSupabaseProject(project);
-};
-
 export const getDbEvents = async (): Promise<ClubEvent[]> => {
   return getSupabaseEvents();
-};
-
-export const saveDbEvent = async (event: ClubEvent): Promise<ClubEvent> => {
-  return saveSupabaseEvent(event);
 };
 
 export const submitDbInquiry = async (inquiry: ContactInquiry): Promise<ContactInquiry> => {
@@ -96,32 +72,16 @@ export const subscribeToNewsletter = async (email: string): Promise<NewsletterSu
   return submitSupabaseNewsletterSignup(email);
 };
 
-export const updateDbProfile = async (profile: UserProfile): Promise<UserProfile> => {
-  return upsertSupabaseUser(profile);
-};
-
 export const getDbUsers = async (): Promise<UserProfile[]> => {
   return getSupabaseUsers();
 };
 
-export const isDriverSimulated = (driver: DbDriver): boolean => {
-  return !isSupabaseConfigured;
-};
-
 // RSVPs
-export const getDbRSVPs = async (): Promise<EventRSVP[]> => {
-  return getSupabaseRSVPs();
-};
-
 export const submitDbRSVP = async (rsvp: EventRSVP): Promise<EventRSVP> => {
   return submitSupabaseRSVP(rsvp);
 };
 
 // Applications
-export const getDbApplications = async (): Promise<ProjectApplication[]> => {
-  return getSupabaseApplications();
-};
-
 export const submitDbApplication = async (app: ProjectApplication): Promise<ProjectApplication> => {
   return submitSupabaseApplication(app);
 };
@@ -274,9 +234,10 @@ export const logOutUser = async () => {
 
 // Rotary ID + 6-digit PIN sign-in only -- there is no self-registration
 // path and no email surface. Members receive their Rotary ID + an initial
-// PIN from an admin (see createLoginSupabaseMember below), which links
-// their auth account to an existing roster row before they ever sign in
-// here. Real Rotary-ID-first lookup and per-ID lockout is enforced by the
+// PIN from an admin (see createLoginSupabaseMember in supabase-service.ts,
+// called directly by AdminDashboard.tsx), which links their auth account
+// to an existing roster row before they ever sign in here. Real
+// Rotary-ID-first lookup and per-ID lockout is enforced by the
 // member-login Edge Function (see loginWithRotaryIdAndPin); this wrapper
 // just falls back to a local simulator when Supabase isn't configured.
 export const logInMember = async (rotaryId: string, pin: string): Promise<UserProfile> => {
@@ -346,10 +307,6 @@ export const updateOwnContactInfo = async (
 // SUBMISSIONS
 // -------------------------------------------------------------
 
-export const getDbSubmissions = async (): Promise<Submission[]> => {
-  return getSupabaseSubmissions();
-};
-
 export const getMyDbSubmissions = async (authUserId: string): Promise<Submission[]> => {
   return getMySupabaseSubmissions(authUserId);
 };
@@ -366,15 +323,6 @@ export const submitDbSubmission = async (input: {
   return submitSupabaseSubmission(input);
 };
 
-export const reviewDbSubmission = async (
-  submissionId: string,
-  decision: 'approved' | 'rejected',
-  reviewerId: string,
-  rejectReason?: string
-): Promise<void> => {
-  return reviewSupabaseSubmission(submissionId, decision, reviewerId, rejectReason);
-};
-
 // -------------------------------------------------------------
 // CLUB GALLERY
 // -------------------------------------------------------------
@@ -384,35 +332,11 @@ export const getDbGalleryPhotos = async (): Promise<GalleryPhoto[]> => {
 };
 
 // -------------------------------------------------------------
-// ADMIN MANAGEMENT
-// -------------------------------------------------------------
-
-export const promoteToAdmin = async (authUserId: string): Promise<void> => {
-  return promoteSupabaseAdmin(authUserId);
-};
-
-export const demoteFromAdmin = async (authUserId: string): Promise<void> => {
-  return demoteSupabaseAdmin(authUserId);
-};
-
-export const createMemberLogin = async (uid: string, pin: string): Promise<string> => {
-  return createLoginSupabaseMember(uid, pin);
-};
-
-export const resetMemberPin = async (uid: string, pin: string): Promise<void> => {
-  return resetSupabasePin(uid, pin);
-};
-
-export const revokeMemberAccount = async (uid: string): Promise<void> => {
-  return revokeSupabaseMemberAccount(uid);
-};
-
-// -------------------------------------------------------------
 // GROUP CHAT & MEMBER TIMELINE
 // -------------------------------------------------------------
 // Members-only, live-Supabase features -- there is no local sandbox
 // simulation of Realtime, so these simply no-op/return-empty when Supabase
-// isn't configured (isDriverSimulated) and the UI shows that state directly.
+// isn't configured and the UI shows that state directly.
 
 export const getDbChatMessages = async (): Promise<ChatMessage[]> => {
   return getSupabaseChatMessages();

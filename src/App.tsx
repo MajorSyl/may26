@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import About from './components/About';
-import WhatIsRotary from './components/WhatIsRotary';
 import Gallery from './components/Gallery';
 import Events from './components/Events';
 import GetInvolved from './components/GetInvolved';
-import Dashboard from './components/Dashboard';
-import AdminDashboard from './components/AdminDashboard';
 import MembersDirectory from './components/MembersDirectory';
 import ClubGallery from './components/ClubGallery';
 import Contact from './components/Contact';
 import PrivacyPolicy from './components/PrivacyPolicy';
+
+// Code-split: neither is needed for the public-visitor path (home, about,
+// events, etc.), and AdminDashboard in particular is by far the largest
+// component in the app (~3,300 lines) but only ever used by one person.
+// Splitting these out of the main bundle means a first-time visitor never
+// downloads either unless they actually navigate to /dashboard or /admin.
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 
 import { UserProfile, ContactInquiry } from './types';
 import { subscribeToAuth, logOutUser } from './db-router';
@@ -219,7 +224,13 @@ function MainApp() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.25 }}
             >
-              {renderTabContent()}
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                  <div className="w-12 h-12 border-4 border-rotary-azure border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              }>
+                {renderTabContent()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         )}

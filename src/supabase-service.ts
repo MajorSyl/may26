@@ -304,54 +304,55 @@ export const saveSupabaseEvent = async (event: ClubEvent): Promise<ClubEvent> =>
   }
 };
 
+// Maps a raw `users` row -- fetched with an embedded `member_contact_info(*)`
+// select -- into a UserProfile. PostgREST returns a to-one embed as a single
+// object when the FK column is also the child table's primary key (true here:
+// member_contact_info.uid is both), but this normalizes defensively in case
+// it ever comes back as an array, since that detail isn't worth re-breaking
+// login over.
+const mapUserRow = (data: any): UserProfile => {
+  const rawContact = data.member_contact_info;
+  const contactInfo = Array.isArray(rawContact) ? rawContact[0] : rawContact;
+
+  return {
+    uid: data.uid,
+    name: data.name,
+    email: contactInfo?.email || '',
+    role: data.role,
+    attendanceRate: data.attendanceRate !== undefined ? data.attendanceRate : data.attendancerate,
+    contributionGoals: data.contributionGoals !== undefined ? data.contributionGoals : data.contributiongoals,
+    contributedAmount: data.contributedAmount !== undefined ? data.contributedAmount : data.contributedamount,
+    committee: data.committee,
+    tasks: data.tasks || [],
+    classification: data.classification || '',
+    isPaulHarrisFellow: data.ispaulharrisfellow !== undefined ? data.ispaulharrisfellow : false,
+    paulHarrisLevel: data.paulharrislevel || 'None',
+    phone: contactInfo?.phone || '',
+    joinedDate: data.joineddate || '',
+    birthday: contactInfo?.birthday || '',
+    avatarUrl: data.avatarurl || '',
+    bio: data.bio || '',
+    authUserId: data.auth_user_id || undefined,
+    rotaryId: data.rotary_id || undefined
+  } as UserProfile;
+};
+
 // 3. Profiles Operations
 export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> => {
   if (isSupabaseConfigured && supabase) {
     try {
-      // Direct query on users (now safe and public with no sensitive columns)
+      // Single request: embeds member_contact_info via its FK to users,
+      // instead of two sequential round trips (was the original design --
+      // see git history if the embed ever needs reverting).
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('*, member_contact_info(*)')
         .eq('uid', uid)
         .maybeSingle();
 
       if (error) throw error;
       if (!data) return null;
-
-      // Try to query member_contact_info for sensitive fields (only returns data if authorized / admin)
-      let contactInfo: any = null;
-      try {
-        const { data: contactData } = await supabase
-          .from('member_contact_info')
-          .select('*')
-          .eq('uid', uid)
-          .maybeSingle();
-        contactInfo = contactData;
-      } catch (cErr) {
-        console.warn('Could not read member contact info (non-admin access or table missing):', cErr);
-      }
-      
-      return {
-        uid: data.uid,
-        name: data.name,
-        email: contactInfo?.email || '',
-        role: data.role,
-        attendanceRate: data.attendanceRate !== undefined ? data.attendanceRate : data.attendancerate,
-        contributionGoals: data.contributionGoals !== undefined ? data.contributionGoals : data.contributiongoals,
-        contributedAmount: data.contributedAmount !== undefined ? data.contributedAmount : data.contributedamount,
-        committee: data.committee,
-        tasks: data.tasks || [],
-        classification: data.classification || '',
-        isPaulHarrisFellow: data.ispaulharrisfellow !== undefined ? data.ispaulharrisfellow : false,
-        paulHarrisLevel: data.paulharrislevel || 'None',
-        phone: contactInfo?.phone || '',
-        joinedDate: data.joineddate || '',
-        birthday: contactInfo?.birthday || '',
-        avatarUrl: data.avatarurl || '',
-        bio: data.bio || '',
-        authUserId: data.auth_user_id || undefined,
-        rotaryId: data.rotary_id || undefined
-      } as UserProfile;
+      return mapUserRow(data);
     } catch (err) {
       console.error('Supabase query error (UserProfile):', err);
       return null;
@@ -368,17 +369,22 @@ export const getSupabaseUser = async (uid: string): Promise<UserProfile | null> 
 // no row is linked yet and on any query error -- callers must not treat
 // null as "safe to fabricate a placeholder profile", since accounts are
 // admin-created/invite-only and every real member already has a roster row.
+//
+// This is on the hot path for every page load and login (see subscribeToAuth
+// in db-router.ts), so it's a single embedded query rather than "look up uid,
+// then fetch the full profile" -- was 3 sequential round trips (uid lookup +
+// full user row + contact info), now 1.
 export const getSupabaseUserByAuthId = async (authUserId: string): Promise<UserProfile | null> => {
   if (isSupabaseConfigured && supabase) {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('uid')
+        .select('*, member_contact_info(*)')
         .eq('auth_user_id', authUserId)
         .maybeSingle();
 
       if (error || !data) return null;
-      return getSupabaseUser(data.uid);
+      return mapUserRow(data);
     } catch (err) {
       console.error('Supabase query error (UserProfile by auth id):', err);
       return null;
@@ -568,54 +574,16 @@ export const getSupabaseUsers = async (): Promise<UserProfile[]> => {
   let list: UserProfile[] = [];
   if (isSupabaseConfigured && supabase) {
     try {
-      // Query users table (now public with no sensitive columns)
+      // Single request: embeds member_contact_info via its FK to users,
+      // instead of fetching both tables separately and merging in JS.
       const { data: usersData, error: userError } = await supabase
         .from('users')
-        .select('*')
+        .select('*, member_contact_info(*)')
         .order('name', { ascending: true });
 
       if (userError) throw userError;
-
       if (usersData) {
-        // Try to query member_contact_info (only returns rows if role is authorized / admin)
-        let contactsMap = new Map<string, any>();
-        try {
-          const { data: contactsData } = await supabase
-            .from('member_contact_info')
-            .select('*');
-          if (contactsData) {
-            contactsData.forEach((c: any) => {
-              contactsMap.set(c.uid, c);
-            });
-          }
-        } catch (cErr) {
-          console.warn('Could not read member_contact_info (this is expected for non-admins):', cErr);
-        }
-
-        list = usersData.map((d: any) => {
-          const contact = contactsMap.get(d.uid);
-          return {
-            uid: d.uid,
-            name: d.name,
-            email: contact?.email || '',
-            role: d.role,
-            attendanceRate: d.attendanceRate !== undefined ? d.attendanceRate : (d.attendancerate ?? undefined),
-            contributionGoals: d.contributionGoals !== undefined ? d.contributionGoals : (d.contributiongoals ?? undefined),
-            contributedAmount: d.contributedAmount !== undefined ? d.contributedAmount : (d.contributedamount ?? undefined),
-            committee: d.committee,
-            tasks: d.tasks || [],
-            classification: d.classification || '',
-            isPaulHarrisFellow: d.isPaulHarrisFellow !== undefined ? d.isPaulHarrisFellow : (d.ispaulharrisfellow !== undefined ? d.ispaulharrisfellow : false),
-            paulHarrisLevel: d.paulHarrisLevel !== undefined ? d.paulHarrisLevel : (d.paulharrislevel || 'None'),
-            phone: contact?.phone || '',
-            joinedDate: d.joinedDate !== undefined ? d.joinedDate : (d.joineddate || ''),
-            birthday: contact?.birthday || '',
-            avatarUrl: d.avatarUrl !== undefined ? d.avatarUrl : (d.avatarurl || ''),
-            bio: d.bio || '',
-            authUserId: d.auth_user_id || undefined,
-            rotaryId: d.rotary_id || undefined
-          };
-        }) as UserProfile[];
+        list = usersData.map(mapUserRow);
       }
     } catch (err) {
       console.error('Supabase query error (all Users):', err);
@@ -1354,710 +1322,3 @@ export const subscribeToTimelineRealtime = (handlers: {
   return () => { client.removeChannel(channel); };
 };
 
-// 5. Seed Database Script
-export const seedSupabaseTables = async (): Promise<{ success: boolean; message: string; seededCount: number }> => {
-  if (!isSupabaseConfigured || !supabase) {
-    return { success: false, message: 'Supabase URL/Anon key are missing.', seededCount: 0 };
-  }
-
-  let count = 0;
-  try {
-    // Seed projects
-    for (const p of INITIAL_PROJECTS) {
-      const { error } = await supabase
-        .from('projects')
-        .upsert({
-          id: p.id,
-          title: p.title,
-          category: p.category,
-          description: p.description,
-          year: p.year,
-          impact: p.impact || '',
-          status: p.status,
-          imageurl: p.imageUrl || '' // Use lowercase field name to match PG
-        });
-      if (error) throw error;
-      count++;
-    }
-
-    // Seed events
-    for (const ev of INITIAL_EVENTS) {
-      const { error } = await supabase
-        .from('events')
-        .upsert({
-          id: ev.id,
-          title: ev.title,
-          date: ev.date,
-          time: ev.time,
-          location: ev.location,
-          speaker: ev.speaker || null, // Ensure is always present (even as null) to satisfy PostgREST batch constraints
-          description: ev.description || '',
-          type: ev.type
-        });
-      if (error) throw error;
-      count++;
-    }
-
-    return { 
-      success: true, 
-      message: 'Successfully seeded default Rotary Sunset projects and events into your live Supabase database!',
-      seededCount: count 
-    };
-  } catch (err: any) {
-    console.error('Error seeding Supabase data:', err);
-    return { 
-      success: false, 
-      message: `Failed during seed: ${err.message || String(err)}. Make sure tables exist in your Supabase schema!`, 
-      seededCount: count 
-    };
-  }
-};
-
-// 6. SQL Schema Script code Block (for presentation inside instructions)
-export const GET_SUPABASE_SQL_SCHEMA = () => `
--- Copy and run this script in your Supabase SQL Editor:
--- (kept in sync with supabase/schema.sql — see that file for full comments)
-
--- 1. Create Admins Table
-CREATE TABLE IF NOT EXISTS admins (
-  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
-);
-
--- 2. Create is_admin() helper function
-CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.admins WHERE user_id = auth.uid()
-  );
-END;
-$$;
-
--- 2.1 Create is_linked_member() helper function -- true only for a Supabase
--- Auth session linked to an actual roster row. Used by chat/timeline
--- policies as a second layer on top of the 'authenticated' role check,
--- since Supabase Auth's public signup toggle (a project-level setting this
--- app's code can't enforce) could otherwise let a non-member "authenticated"
--- session read/post there.
-CREATE OR REPLACE FUNCTION is_linked_member()
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.users WHERE auth_user_id = auth.uid()
-  );
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION is_linked_member() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION is_linked_member() TO authenticated;
-
--- 3. Create Projects Table
-CREATE TABLE IF NOT EXISTS projects (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  category TEXT NOT NULL,
-  description TEXT NOT NULL,
-  year INTEGER NOT NULL,
-  impact TEXT,
-  status TEXT NOT NULL CHECK (status IN ('Completed', 'Active', 'Planning')),
-  imageUrl TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 4. Create Events Table
-CREATE TABLE IF NOT EXISTS events (
-  id TEXT PRIMARY KEY,
-  title TEXT NOT NULL,
-  date TEXT NOT NULL,
-  time TEXT NOT NULL,
-  location TEXT NOT NULL,
-  speaker TEXT,
-  description TEXT,
-  type TEXT NOT NULL CHECK (type IN ('Weekly Meeting', 'Service Project', 'Social', 'Fundraiser')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 5. Create Users Table (public roster; auth_user_id links a row to a
--- Supabase Auth account so that member can self-edit name/bio/avatarurl).
--- rotary_id is the member-facing login identifier (e.g. RCFS-001),
--- auto-assigned by the assign_rotary_id trigger below -- never set it
--- manually. The PIN itself is never stored here; it *is* the Supabase Auth
--- password on auth_user_id, so Supabase's own bcrypt hashing covers it.
--- failed_pin_attempts / pin_locked_until back the per-Rotary-ID login
--- lockout (see the REVOKE SELECT below that keeps these unreadable by
--- anyone but the service role).
-CREATE TABLE IF NOT EXISTS users (
-  uid TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('Rotarian', 'Club Officer', 'Guest', 'President')),
-  attendancerate INTEGER,
-  contributiongoals INTEGER,
-  contributedamount INTEGER,
-  committee TEXT,
-  tasks TEXT[],
-  classification TEXT,
-  ispaulharrisfellow BOOLEAN DEFAULT false,
-  paulharrislevel TEXT,
-  joineddate TEXT,
-  avatarurl TEXT,
-  bio TEXT,
-  auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
-  rotary_id TEXT UNIQUE,
-  failed_pin_attempts INTEGER NOT NULL DEFAULT 0,
-  pin_locked_until TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
-ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS rotary_id TEXT UNIQUE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS failed_pin_attempts INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_locked_until TIMESTAMP WITH TIME ZONE;
-
--- 6. Create Member Contact Info Table (Relocated sensitive data)
-CREATE TABLE IF NOT EXISTS member_contact_info (
-  uid TEXT PRIMARY KEY REFERENCES users(uid) ON DELETE CASCADE,
-  email TEXT,
-  phone TEXT,
-  birthday TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 7. Create Inquiries Table
-CREATE TABLE IF NOT EXISTS inquiries (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  subject TEXT,
-  message TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('Membership Inquiry', 'Donation Inquiry', 'General Contact')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 8. Create Event RSVPs Table (Relocated guest mutations)
-CREATE TABLE IF NOT EXISTS event_rsvps (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_id TEXT REFERENCES events(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 9. Create Project Applications Table (Relocated volunteer mutations)
-CREATE TABLE IF NOT EXISTS project_applications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id TEXT REFERENCES projects(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  statement TEXT NOT NULL,
-  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 10. Create Newsletter Subscribers Table
-CREATE TABLE IF NOT EXISTS newsletter_subscribers (
-  id TEXT PRIMARY KEY,
-  email TEXT NOT NULL UNIQUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 11. Create Submissions Table (member-submitted projects/photos awaiting
--- admin approval; never publicly readable — see RLS policies below)
-CREATE TABLE IF NOT EXISTS submissions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  submitter_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL CHECK (kind IN ('project', 'photo')),
-  title TEXT NOT NULL,
-  description TEXT,
-  category TEXT,
-  year INTEGER,
-  image_url TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  reject_reason TEXT,
-  reviewed_by UUID REFERENCES auth.users(id),
-  reviewed_at TIMESTAMP WITH TIME ZONE,
-  published_id TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 12. Create Gallery Photos Table (the Club Gallery's backing table;
--- public read, admin-only write)
-CREATE TABLE IF NOT EXISTS gallery_photos (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  description TEXT,
-  category TEXT NOT NULL CHECK (category IN ('meetings', 'anniversary', 'outreach', 'rotaract')),
-  image_url TEXT NOT NULL,
-  taken_date TEXT,
-  location TEXT,
-  submission_id UUID REFERENCES submissions(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 13. Trigger function: silently reverts admin-only roster columns
--- (role, committee, attendance/contribution figures, tasks, classification,
--- Paul Harris status, joined date, auth_user_id, rotary_id, PIN lockout
--- state) if a non-admin updates their own users row. A member may still
--- change name/bio/avatarurl. Must also let a service_role caller through
--- (no auth.uid() of its own) -- the member-accounts/member-login Edge
--- Functions update these exact columns using the service_role key, and
--- without this check the trigger silently reverted their updates too.
-CREATE OR REPLACE FUNCTION protect_admin_only_user_fields()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() AND auth.role() IS DISTINCT FROM 'service_role' THEN
-    NEW.role := OLD.role;
-    NEW.committee := OLD.committee;
-    NEW.attendancerate := OLD.attendancerate;
-    NEW.contributiongoals := OLD.contributiongoals;
-    NEW.contributedamount := OLD.contributedamount;
-    NEW.tasks := OLD.tasks;
-    NEW.classification := OLD.classification;
-    NEW.ispaulharrisfellow := OLD.ispaulharrisfellow;
-    NEW.paulharrislevel := OLD.paulharrislevel;
-    NEW.joineddate := OLD.joineddate;
-    NEW.auth_user_id := OLD.auth_user_id;
-    NEW.rotary_id := OLD.rotary_id;
-    NEW.failed_pin_attempts := OLD.failed_pin_attempts;
-    NEW.pin_locked_until := OLD.pin_locked_until;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- 14. Trigger function: assigns the next sequential RCFS-NNN Rotary ID on
--- insert whenever the caller doesn't supply one, so every path that creates
--- a users row (the roster seed button, an admin adding a member one at a
--- time, or any future path) gets a Rotary ID without the client having to
--- compute it. Simple MAX+1 rather than a real sequence: this table only
--- ever gets inserted into by a single admin at a time (sequential seed loop
--- or a form submission), so the tiny race window is an acceptable tradeoff
--- against the complexity of a dedicated sequence.
-CREATE OR REPLACE FUNCTION assign_rotary_id()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  next_num INTEGER;
-BEGIN
-  IF NEW.rotary_id IS NULL THEN
-    SELECT COALESCE(MAX(SUBSTRING(rotary_id FROM 6)::int), 0) + 1
-    INTO next_num
-    FROM users
-    WHERE rotary_id ~ '^RCFS-\d+$';
-
-    NEW.rotary_id := 'RCFS-' || LPAD(next_num::text, 3, '0');
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- 15. Trigger function: blocks an admin from deleting their own admins row
-CREATE OR REPLACE FUNCTION prevent_self_admin_removal()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF OLD.user_id = auth.uid() THEN
-    RAISE EXCEPTION 'Admins cannot remove their own admin privileges.';
-  END IF;
-  RETURN OLD;
-END;
-$$;
-
--- All three trigger functions above only fire as triggers; they are not
--- meant to be called directly as an RPC endpoint. Revoking EXECUTE doesn't
--- affect trigger firing. Must revoke from PUBLIC *and* anon/authenticated
--- explicitly — this project carries an ALTER DEFAULT PRIVILEGES rule that
--- grants EXECUTE directly to anon/authenticated on every newly created
--- function (Supabase's standard default for PostgREST RPC exposure), which
--- a PUBLIC-only revoke does not remove.
-REVOKE EXECUTE ON FUNCTION protect_admin_only_user_fields() FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION prevent_self_admin_removal() FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION assign_rotary_id() FROM PUBLIC, anon, authenticated;
-
--- 16. Create Chat Messages Table (single shared real-time room for all
--- logged-in members; sender_name is a denormalized snapshot for Realtime)
-CREATE TABLE IF NOT EXISTS chat_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  sender_name TEXT NOT NULL,
-  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 2000),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
--- 17. Create Chat Message Reactions Table (one row per message/member/emoji)
-CREATE TABLE IF NOT EXISTS chat_message_reactions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  message_id UUID NOT NULL REFERENCES chat_messages(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  emoji TEXT NOT NULL CHECK (char_length(emoji) <= 8),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
-  UNIQUE (message_id, user_id, emoji)
-);
-
--- 18. Create Timeline Posts Table (member feed; publishes instantly, no
--- approval step, unlike submissions)
-CREATE TABLE IF NOT EXISTS timeline_posts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  author_name TEXT NOT NULL,
-  author_avatar_url TEXT,
-  content TEXT,
-  image_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL,
-  CHECK (
-    (content IS NOT NULL AND char_length(btrim(content)) > 0 AND char_length(content) <= 5000)
-    OR image_url IS NOT NULL
-  )
-);
-
--- 19. Create Timeline Comments Table
-CREATE TABLE IF NOT EXISTS timeline_comments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  post_id UUID NOT NULL REFERENCES timeline_posts(id) ON DELETE CASCADE,
-  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  author_name TEXT NOT NULL,
-  content TEXT NOT NULL CHECK (char_length(btrim(content)) > 0 AND char_length(content) <= 1000),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_chat_message_reactions_message_id ON chat_message_reactions(message_id);
-CREATE INDEX IF NOT EXISTS idx_timeline_comments_post_id ON timeline_comments(post_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
-CREATE INDEX IF NOT EXISTS idx_timeline_posts_created_at ON timeline_posts(created_at);
-
--- Widen Realtime DELETE payloads for these two child tables so the client
--- gets message_id/post_id, not just the deleted row's own primary key.
-ALTER TABLE chat_message_reactions REPLICA IDENTITY FULL;
-ALTER TABLE timeline_comments REPLICA IDENTITY FULL;
-
--- ==========================================
--- ROW LEVEL SECURITY (RLS) POLICIES
--- ==========================================
-
--- Enable Row Level Security (RLS) on all tables
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
-ALTER TABLE member_contact_info ENABLE ROW LEVEL SECURITY;
-ALTER TABLE event_rsvps ENABLE ROW LEVEL SECURITY;
-ALTER TABLE project_applications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-
--- 1. Policies for 'admins' Table
--- No public SELECT policy exists on 'admins', making it completely private.
--- Only the SECURITY DEFINER is_admin() function can query it, and admins can manage it.
-CREATE POLICY "Allow admin read and write on admins" ON admins
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
-DROP TRIGGER IF EXISTS trg_prevent_self_admin_removal ON admins;
-CREATE TRIGGER trg_prevent_self_admin_removal
-  BEFORE DELETE ON admins
-  FOR EACH ROW EXECUTE FUNCTION prevent_self_admin_removal();
-
--- 2. Policies for 'projects' Table
-DROP POLICY IF EXISTS "Allow anyone to read projects" ON projects;
-DROP POLICY IF EXISTS "Allow admin full access to projects" ON projects;
-
-CREATE POLICY "Allow anyone to read projects" ON projects
-  FOR SELECT TO public USING (true);
-
-CREATE POLICY "Allow admin full access to projects" ON projects
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 3. Policies for 'events' Table
-DROP POLICY IF EXISTS "Allow anyone to read events" ON events;
-DROP POLICY IF EXISTS "Allow admin full access to events" ON events;
-
-CREATE POLICY "Allow anyone to read events" ON events
-  FOR SELECT TO public USING (true);
-
-CREATE POLICY "Allow admin full access to events" ON events
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 4. Policies for 'users' Table
-DROP POLICY IF EXISTS "Allow anyone to select on users" ON users;
-DROP POLICY IF EXISTS "Allow admin full access to users" ON users;
-
-CREATE POLICY "Allow anyone to select on users" ON users
-  FOR SELECT TO public USING (true);
-
-CREATE POLICY "Allow admin full access to users" ON users
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
-DROP POLICY IF EXISTS "Allow self update on users" ON users;
-CREATE POLICY "Allow self update on users" ON users
-  FOR UPDATE TO authenticated
-  USING (auth_user_id = auth.uid())
-  WITH CHECK (auth_user_id = auth.uid());
-
-DROP TRIGGER IF EXISTS trg_protect_admin_only_user_fields ON users;
-CREATE TRIGGER trg_protect_admin_only_user_fields
-  BEFORE UPDATE ON users
-  FOR EACH ROW EXECUTE FUNCTION protect_admin_only_user_fields();
-
-DROP TRIGGER IF EXISTS trg_assign_rotary_id ON users;
-CREATE TRIGGER trg_assign_rotary_id
-  BEFORE INSERT ON users
-  FOR EACH ROW EXECUTE FUNCTION assign_rotary_id();
-
--- Table-level privileges (a prerequisite to RLS — without these grants no
--- policy above, including the admin one, can ever write against real Supabase)
-REVOKE ALL PRIVILEGES ON users FROM public, anon, authenticated;
-GRANT SELECT ON users TO public, anon, authenticated;
-GRANT INSERT, UPDATE, DELETE ON users TO authenticated;
-
--- Lockout state must never be readable by anyone but the service role (used
--- by the member-login Edge Function) and admins via direct table access --
--- exposing the attempt counter/lockout time to a caller trying to brute
--- force a PIN would leak useful timing/state information.
-REVOKE SELECT (failed_pin_attempts, pin_locked_until) ON users FROM public, anon, authenticated;
-
--- 5. Policies for 'member_contact_info' Table (admin full access; a member
--- can read/write only their own row, matched via users.auth_user_id)
-CREATE POLICY "Allow admin select on member_contact_info" ON member_contact_info
-  FOR SELECT TO authenticated USING (is_admin());
-
-CREATE POLICY "Allow admin write on member_contact_info" ON member_contact_info
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
-DROP POLICY IF EXISTS "Allow self select on member_contact_info" ON member_contact_info;
-CREATE POLICY "Allow self select on member_contact_info" ON member_contact_info
-  FOR SELECT TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
-  ));
-
-DROP POLICY IF EXISTS "Allow self insert on member_contact_info" ON member_contact_info;
-CREATE POLICY "Allow self insert on member_contact_info" ON member_contact_info
-  FOR INSERT TO authenticated
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
-  ));
-
-DROP POLICY IF EXISTS "Allow self update on member_contact_info" ON member_contact_info;
-CREATE POLICY "Allow self update on member_contact_info" ON member_contact_info
-  FOR UPDATE TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
-  ))
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM users u WHERE u.uid = member_contact_info.uid AND u.auth_user_id = auth.uid()
-  ));
-
--- 6. Policies for 'inquiries' Table
-DROP POLICY IF EXISTS "Allow anyone to insert inquiries" ON inquiries;
-DROP POLICY IF EXISTS "Allow admin full access to inquiries" ON inquiries;
-
-CREATE POLICY "Allow anyone to insert inquiries" ON inquiries
-  FOR INSERT TO public WITH CHECK (true);
-
-CREATE POLICY "Allow admin full access to inquiries" ON inquiries
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 7. Policies for 'event_rsvps' Table
-CREATE POLICY "Allow public insert to event_rsvps" ON event_rsvps
-  FOR INSERT TO public WITH CHECK (true);
-
-CREATE POLICY "Allow admin full access to event_rsvps" ON event_rsvps
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 8. Policies for 'project_applications' Table
-CREATE POLICY "Allow public insert to project_applications" ON project_applications
-  FOR INSERT TO public WITH CHECK (true);
-
-CREATE POLICY "Allow admin full access to project_applications" ON project_applications
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 9. Policies for 'newsletter_subscribers' Table
-CREATE POLICY "Allow anyone to insert newsletter_subscribers" ON newsletter_subscribers
-  FOR INSERT TO public WITH CHECK (true);
-
-CREATE POLICY "Allow admin full access to newsletter_subscribers" ON newsletter_subscribers
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 10. Policies for 'submissions' Table (no public policy exists at all —
--- visitors never see pending/rejected content, or another member's rows).
--- A member may insert/select/update only their own rows, and only update
--- while status is still 'pending'. Admins have full access.
-DROP POLICY IF EXISTS "Allow members to insert own pending submissions" ON submissions;
-CREATE POLICY "Allow members to insert own pending submissions" ON submissions
-  FOR INSERT TO authenticated
-  WITH CHECK (submitter_id = auth.uid() AND status = 'pending');
-
-DROP POLICY IF EXISTS "Allow members to select own submissions" ON submissions;
-CREATE POLICY "Allow members to select own submissions" ON submissions
-  FOR SELECT TO authenticated
-  USING (submitter_id = auth.uid());
-
-DROP POLICY IF EXISTS "Allow members to update own pending submissions" ON submissions;
-CREATE POLICY "Allow members to update own pending submissions" ON submissions
-  FOR UPDATE TO authenticated
-  USING (submitter_id = auth.uid() AND status = 'pending')
-  WITH CHECK (submitter_id = auth.uid() AND status = 'pending');
-
-DROP POLICY IF EXISTS "Allow admin full access to submissions" ON submissions;
-CREATE POLICY "Allow admin full access to submissions" ON submissions
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 11. Policies for 'gallery_photos' Table (public read, admin-only write)
-ALTER TABLE gallery_photos ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow anyone to read gallery_photos" ON gallery_photos;
-CREATE POLICY "Allow anyone to read gallery_photos" ON gallery_photos
-  FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS "Allow admin full access to gallery_photos" ON gallery_photos;
-CREATE POLICY "Allow admin full access to gallery_photos" ON gallery_photos
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
-
--- 12. Policies for 'chat_messages' Table (members-only, no anon/public
--- access; read/post requires is_linked_member() or is_admin() on top of
--- the authenticated role; own-message delete, admin delete-any)
-ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Members can read chat messages" ON chat_messages;
-CREATE POLICY "Members can read chat messages" ON chat_messages
-  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
-
-DROP POLICY IF EXISTS "Members can send chat messages" ON chat_messages;
-CREATE POLICY "Members can send chat messages" ON chat_messages
-  FOR INSERT TO authenticated WITH CHECK (sender_id = auth.uid() AND (is_linked_member() OR is_admin()));
-
-DROP POLICY IF EXISTS "Members can delete own chat messages, admins any" ON chat_messages;
-CREATE POLICY "Members can delete own chat messages, admins any" ON chat_messages
-  FOR DELETE TO authenticated USING (sender_id = auth.uid() OR is_admin());
-
-REVOKE ALL PRIVILEGES ON chat_messages FROM public, anon, authenticated;
-GRANT SELECT, INSERT, DELETE ON chat_messages TO authenticated;
-
--- 13. Policies for 'chat_message_reactions' Table
-ALTER TABLE chat_message_reactions ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Members can read chat reactions" ON chat_message_reactions;
-CREATE POLICY "Members can read chat reactions" ON chat_message_reactions
-  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
-
-DROP POLICY IF EXISTS "Members can add own chat reactions" ON chat_message_reactions;
-CREATE POLICY "Members can add own chat reactions" ON chat_message_reactions
-  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() AND (is_linked_member() OR is_admin()));
-
-DROP POLICY IF EXISTS "Members can remove own chat reactions" ON chat_message_reactions;
-CREATE POLICY "Members can remove own chat reactions" ON chat_message_reactions
-  FOR DELETE TO authenticated USING (user_id = auth.uid());
-
-REVOKE ALL PRIVILEGES ON chat_message_reactions FROM public, anon, authenticated;
-GRANT SELECT, INSERT, DELETE ON chat_message_reactions TO authenticated;
-
--- 14. Policies for 'timeline_posts' Table (members-only feed; own-post
--- delete, admin delete-any)
-ALTER TABLE timeline_posts ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Members can read timeline posts" ON timeline_posts;
-CREATE POLICY "Members can read timeline posts" ON timeline_posts
-  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
-
-DROP POLICY IF EXISTS "Members can create timeline posts" ON timeline_posts;
-CREATE POLICY "Members can create timeline posts" ON timeline_posts
-  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
-
-DROP POLICY IF EXISTS "Members can delete own timeline posts, admins any" ON timeline_posts;
-CREATE POLICY "Members can delete own timeline posts, admins any" ON timeline_posts
-  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
-
-REVOKE ALL PRIVILEGES ON timeline_posts FROM public, anon, authenticated;
-GRANT SELECT, INSERT, DELETE ON timeline_posts TO authenticated;
-
--- 15. Policies for 'timeline_comments' Table
-ALTER TABLE timeline_comments ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Members can read timeline comments" ON timeline_comments;
-CREATE POLICY "Members can read timeline comments" ON timeline_comments
-  FOR SELECT TO authenticated USING (is_linked_member() OR is_admin());
-
-DROP POLICY IF EXISTS "Members can create timeline comments" ON timeline_comments;
-CREATE POLICY "Members can create timeline comments" ON timeline_comments
-  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND (is_linked_member() OR is_admin()));
-
-DROP POLICY IF EXISTS "Members can delete own timeline comments, admins any" ON timeline_comments;
-CREATE POLICY "Members can delete own timeline comments, admins any" ON timeline_comments
-  FOR DELETE TO authenticated USING (author_id = auth.uid() OR is_admin());
-
-REVOKE ALL PRIVILEGES ON timeline_comments FROM public, anon, authenticated;
-GRANT SELECT, INSERT, DELETE ON timeline_comments TO authenticated;
-
--- ==========================================
--- SEED INITIAL ADMIN USER
--- ==========================================
--- Insert the admin account 'bigsyl19@gmail.com' dynamically into the admins table
--- (Will work automatically once the user signs up/in via Supabase Auth)
-INSERT INTO admins (user_id)
-SELECT id FROM auth.users WHERE email = 'bigsyl19@gmail.com'
-ON CONFLICT DO NOTHING;
-
--- Enable Realtime for automatic updates
-alter publication supabase_realtime add table projects;
-alter publication supabase_realtime add table events;
-alter publication supabase_realtime add table event_rsvps;
-alter publication supabase_realtime add table project_applications;
-alter publication supabase_realtime add table submissions;
-alter publication supabase_realtime add table gallery_photos;
-alter publication supabase_realtime add table chat_messages;
-alter publication supabase_realtime add table chat_message_reactions;
-alter publication supabase_realtime add table timeline_posts;
-alter publication supabase_realtime add table timeline_comments;
-
--- ==========================================
--- STORAGE — member-uploads bucket
--- ==========================================
--- Bucket is public=true so object URLs render without any RLS check; no
--- SELECT policy is added (that would only enable authenticated file
--- listing, which isn't needed). A member may only write inside
--- member-uploads/<their auth uid>/...
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('member-uploads', 'member-uploads', true)
-ON CONFLICT (id) DO NOTHING;
-
-DROP POLICY IF EXISTS "Allow public read on member-uploads" ON storage.objects;
-
-DROP POLICY IF EXISTS "Allow members to upload to their own folder" ON storage.objects;
-CREATE POLICY "Allow members to upload to their own folder" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-DROP POLICY IF EXISTS "Allow members to update their own files" ON storage.objects;
-CREATE POLICY "Allow members to update their own files" ON storage.objects
-  FOR UPDATE TO authenticated
-  USING (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text)
-  WITH CHECK (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-DROP POLICY IF EXISTS "Allow members to delete their own files" ON storage.objects;
-CREATE POLICY "Allow members to delete their own files" ON storage.objects
-  FOR DELETE TO authenticated
-  USING (bucket_id = 'member-uploads' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-DROP POLICY IF EXISTS "Allow admin full access to member-uploads" ON storage.objects;
-CREATE POLICY "Allow admin full access to member-uploads" ON storage.objects
-  FOR ALL TO authenticated
-  USING (bucket_id = 'member-uploads' AND is_admin())
-  WITH CHECK (bucket_id = 'member-uploads' AND is_admin());
-`;
