@@ -2,6 +2,7 @@ import React, { useState, useEffect, Suspense, lazy } from 'react';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
 import About from './components/About';
+import WhatIsRotary from './components/WhatIsRotary';
 import Gallery from './components/Gallery';
 import Events from './components/Events';
 import GetInvolved from './components/GetInvolved';
@@ -164,6 +165,8 @@ function MainApp() {
         return <Home onLearnMore={(tabId) => setActiveTab(tabId)} />;
       case 'about':
         return <About />;
+      case 'what-is-rotary':
+        return <WhatIsRotary />;
       case 'members':
         return <MembersDirectory />;
       case 'club-gallery':

@@ -10,9 +10,10 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-const tabTranslationKeys: Record<string, 'home' | 'about' | 'members' | 'clubGallery' | 'impact' | 'getInvolved' | 'events' | 'contact' | 'portal'> = {
+const tabTranslationKeys: Record<string, 'home' | 'about' | 'whatIsRotary' | 'members' | 'clubGallery' | 'impact' | 'getInvolved' | 'events' | 'contact' | 'portal'> = {
   'home': 'home',
   'about': 'about',
+  'what-is-rotary': 'whatIsRotary',
   'members': 'members',
   'club-gallery': 'clubGallery',
   'impact': 'impact',
@@ -29,6 +30,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }: Navb
   const tabs = [
     { id: 'home', label: 'Home', icon: Compass },
     { id: 'about', label: 'About Us', icon: Users },
+    { id: 'what-is-rotary', label: 'What is Rotary', icon: Sun },
     { id: 'members', label: 'Members Directory', icon: Users },
     { id: 'club-gallery', label: 'Club Gallery', icon: Image },
     { id: 'impact', label: 'Our Impact', icon: BookOpen },

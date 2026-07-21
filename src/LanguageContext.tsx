@@ -8,6 +8,7 @@ export const translations = {
     // Navigation / Tabs
     home: 'Home',
     about: 'About Us',
+    whatIsRotary: 'What is Rotary',
     members: 'Members Directory',
     clubGallery: 'Club Gallery',
     impact: 'Our Impact',
@@ -63,6 +64,7 @@ export const translations = {
     // Navigation / Tabs
     home: 'Om',
     about: 'Bɔt Wi',
+    whatIsRotary: 'Wetin Na Rotari',
     members: 'Di Mɛmba Dɛn',
     clubGallery: 'Wi Pikchɔ Dɛn',
     impact: 'Wi Wɔk Dɛn',
