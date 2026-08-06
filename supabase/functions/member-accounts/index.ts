@@ -109,10 +109,13 @@ Deno.serve(async (req: Request) => {
       return json({ success: true });
     }
 
-    // Every action below requires the caller to be an admin.
+    // Every action below requires the caller to hold some admins-table row
+    // (either tier). create_login/reset_pin are deliberately available to
+    // both 'admin' and 'reviewer' -- reviewers manage member logins as part
+    // of their scope. revoke is admin-only (checked below).
     const { data: adminRow } = await adminClient
       .from("admins")
-      .select("user_id")
+      .select("user_id, role")
       .eq("user_id", callerId)
       .maybeSingle();
 
@@ -198,6 +201,12 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "revoke") {
+      // Admin-only: a reviewer can create/reset logins but must not be able
+      // to remove one.
+      if (adminRow.role !== "admin") {
+        return json({ error: "Forbidden: admin access required" }, 403);
+      }
+
       const { uid } = body;
       if (!uid) {
         return json({ error: "uid is required" }, 400);

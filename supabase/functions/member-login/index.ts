@@ -32,6 +32,19 @@ function deriveEmail(rotaryId: string): string {
   return `${rotaryId.toLowerCase()}@members.rcfs.internal`;
 }
 
+// Fire-and-forget insert into login_events (admin-read-only via RLS; only
+// this service_role client can write it -- see supabase/schema.sql 3.16).
+// Callers always wrap this in EdgeRuntime.waitUntil alongside the existing
+// failed_pin_attempts bookkeeping, so it never adds latency to the response.
+function logLoginEvent(
+  adminClient: ReturnType<typeof createClient>,
+  eventType: "success" | "failed" | "locked",
+  userId: string | null,
+  rotaryId: string
+) {
+  return adminClient.from("login_events").insert({ user_id: userId, rotary_id: rotaryId, event_type: eventType });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -57,10 +70,12 @@ Deno.serve(async (req: Request) => {
     // Same generic error whether the Rotary ID doesn't exist or has no
     // linked login yet -- don't let a caller distinguish the two.
     if (lookupErr || !member || !member.auth_user_id) {
+      EdgeRuntime.waitUntil(logLoginEvent(adminClient, "failed", null, rotaryId));
       return json({ error: GENERIC_ERROR }, 401);
     }
 
     if (member.pin_locked_until && new Date(member.pin_locked_until).getTime() > Date.now()) {
+      EdgeRuntime.waitUntil(logLoginEvent(adminClient, "locked", member.auth_user_id, rotaryId));
       const minutesLeft = Math.ceil((new Date(member.pin_locked_until).getTime() - Date.now()) / 60000);
       return json({ error: `Too many attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? '' : 's'}.` }, 429);
     }
@@ -82,6 +97,9 @@ Deno.serve(async (req: Request) => {
       // their error, and waitUntil keeps it running after the response is
       // sent instead of adding a full round trip to every failed attempt.
       EdgeRuntime.waitUntil(adminClient.from("users").update(update).eq("uid", member.uid));
+      EdgeRuntime.waitUntil(
+        logLoginEvent(adminClient, attempts >= MAX_ATTEMPTS ? "locked" : "failed", member.auth_user_id, rotaryId)
+      );
 
       if (attempts >= MAX_ATTEMPTS) {
         return json({ error: `Too many attempts. Try again in ${LOCKOUT_MINUTES} minutes.` }, 429);
@@ -92,6 +110,7 @@ Deno.serve(async (req: Request) => {
     // Success: clear the lockout state in the background -- same reasoning,
     // the client already has its tokens and doesn't need to wait for this.
     EdgeRuntime.waitUntil(adminClient.from("users").update({ failed_pin_attempts: 0, pin_locked_until: null }).eq("uid", member.uid));
+    EdgeRuntime.waitUntil(logLoginEvent(adminClient, "success", member.auth_user_id, rotaryId));
 
     return json({
       success: true,

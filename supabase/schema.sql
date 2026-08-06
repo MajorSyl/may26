@@ -60,10 +60,18 @@
 -- 1. TABLES
 -- -----------------------------------------------------------------------------
 
--- 1.1 Admins — links a Supabase Auth user to admin privileges
+-- 1.1 Admins — links a Supabase Auth user to admin privileges. `role` splits
+-- this into two tiers: 'admin' (full control) and 'reviewer' (can approve/
+-- reject submissions and manage member logins, but cannot manage other
+-- admins or touch anything else admin-gated). Existing rows default to
+-- 'admin' so this is a no-op for accounts that predate the role column.
 CREATE TABLE IF NOT EXISTS admins (
-  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'reviewer'))
 );
+
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'admin'
+  CHECK (role IN ('admin', 'reviewer'));
 
 -- 1.2 Projects (also carries the single "settings_site_config" settings row)
 CREATE TABLE IF NOT EXISTS projects (
@@ -279,7 +287,23 @@ ALTER TABLE timeline_comments REPLICA IDENTITY FULL;
 
 -- is_admin() — SECURITY DEFINER so it can read `admins` even though that
 -- table has no public SELECT policy. Used by every admin-only RLS policy.
+-- Only the 'admin' role tier passes; a 'reviewer' does not.
 CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.admins WHERE user_id = auth.uid() AND role = 'admin'
+  );
+END;
+$$;
+
+-- is_reviewer_or_admin() — true for either admins.role tier. Used by
+-- review_submission() below and by the reviewer-facing UI checks.
+CREATE OR REPLACE FUNCTION is_reviewer_or_admin()
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -291,6 +315,9 @@ BEGIN
   );
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION is_reviewer_or_admin() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION is_reviewer_or_admin() TO authenticated;
 
 -- is_linked_member() — true only for a Supabase Auth session that's linked
 -- to an actual roster row. This app has no public self-signup path in its
@@ -613,6 +640,85 @@ DROP POLICY IF EXISTS "Allow admin full access to submissions" ON submissions;
 CREATE POLICY "Allow admin full access to submissions" ON submissions
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
+-- review_submission() — approving a submission needs write access to THREE
+-- tables (submissions, plus projects or gallery_photos for the publish
+-- step), but a reviewer only has RLS access to submissions. This RPC does
+-- the whole approve/reject flow atomically as the function owner
+-- (SECURITY DEFINER), checking is_reviewer_or_admin() inside the function
+-- body instead of granting reviewers blanket INSERT on projects/
+-- gallery_photos — scopes reviewer power to exactly "approve a legitimate
+-- pending submission." Mirrors reviewSupabaseSubmission's previous
+-- client-side logic in src/supabase-service.ts exactly (same publish-id
+-- scheme, same default category/year fallbacks).
+CREATE OR REPLACE FUNCTION review_submission(
+  p_submission_id UUID,
+  p_decision TEXT,
+  p_reviewer_id UUID,
+  p_reject_reason TEXT DEFAULT NULL
+)
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_submission RECORD;
+  v_published_id TEXT;
+BEGIN
+  IF NOT is_reviewer_or_admin() THEN
+    RAISE EXCEPTION 'Forbidden';
+  END IF;
+
+  IF p_decision NOT IN ('approved', 'rejected') THEN
+    RAISE EXCEPTION 'Invalid decision';
+  END IF;
+
+  SELECT * INTO v_submission FROM submissions WHERE id = p_submission_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Submission not found';
+  END IF;
+
+  IF p_decision = 'approved' THEN
+    IF v_submission.kind = 'project' THEN
+      v_published_id := 'proj_sub_' || p_submission_id::text;
+      INSERT INTO projects (id, title, category, description, year, status, imageUrl)
+        VALUES (
+          v_published_id,
+          v_submission.title,
+          COALESCE(v_submission.category, 'Community Economic Development'),
+          COALESCE(v_submission.description, ''),
+          COALESCE(v_submission.year, EXTRACT(YEAR FROM now())::int),
+          'Completed',
+          v_submission.image_url
+        );
+    ELSE
+      INSERT INTO gallery_photos (title, description, category, image_url, submission_id)
+        VALUES (
+          v_submission.title,
+          v_submission.description,
+          COALESCE(v_submission.category, 'outreach'),
+          v_submission.image_url,
+          p_submission_id
+        )
+        RETURNING id::text INTO v_published_id;
+    END IF;
+  END IF;
+
+  UPDATE submissions SET
+    status = p_decision,
+    reject_reason = CASE WHEN p_decision = 'rejected' THEN p_reject_reason ELSE NULL END,
+    reviewed_by = p_reviewer_id,
+    reviewed_at = now(),
+    published_id = v_published_id
+  WHERE id = p_submission_id;
+
+  RETURN v_published_id;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION review_submission(UUID, TEXT, UUID, TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION review_submission(UUID, TEXT, UUID, TEXT) TO authenticated;
+
 -- 3.11 gallery_photos — public read, admin-only write
 ALTER TABLE gallery_photos ENABLE ROW LEVEL SECURITY;
 
@@ -702,6 +808,31 @@ CREATE POLICY "Members can delete own timeline comments, admins any" ON timeline
 
 REVOKE ALL PRIVILEGES ON timeline_comments FROM public, anon, authenticated;
 GRANT SELECT, INSERT, DELETE ON timeline_comments TO authenticated;
+
+-- 3.16 login_events — admin-visible login activity log, written only by the
+-- member-login Edge Function's service_role client (mirrors the existing
+-- failed_pin_attempts bookkeeping pattern). No INSERT policy at all:
+-- service_role bypasses RLS entirely, and no other caller should ever write
+-- here. No IP/user-agent column — deliberately minimal, matching the app's
+-- existing minimal-PII posture (member_contact_info is already split out).
+CREATE TABLE IF NOT EXISTS login_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  rotary_id TEXT,
+  event_type TEXT NOT NULL CHECK (event_type IN ('success', 'failed', 'locked')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE login_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow admin read on login_events" ON login_events;
+CREATE POLICY "Allow admin read on login_events" ON login_events
+  FOR SELECT TO authenticated USING (is_admin());
+
+REVOKE ALL PRIVILEGES ON login_events FROM public, anon, authenticated;
+GRANT SELECT ON login_events TO authenticated;
+
+CREATE INDEX IF NOT EXISTS idx_login_events_created_at ON login_events(created_at);
 
 -- -----------------------------------------------------------------------------
 -- 4. SEED INITIAL ADMIN USER

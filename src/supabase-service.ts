@@ -899,6 +899,12 @@ export const submitSupabaseSubmission = async (input: {
 // live public tables (`projects` for kind='project', `gallery_photos` for
 // kind='photo') and stamps published_id; rejecting just records the reason.
 // reviewerId is the admin's own auth id (for reviewed_by).
+// Delegates the whole approve/reject flow to the review_submission() Postgres
+// RPC (SECURITY DEFINER) instead of doing the submissions-update + projects/
+// gallery_photos-insert as three separate client calls. Necessary because a
+// 'reviewer' admin has no direct RLS write access to projects/gallery_photos
+// — only the RPC's internal is_reviewer_or_admin() check does. See
+// supabase/schema.sql for the function body.
 export const reviewSupabaseSubmission = async (
   submissionId: string,
   decision: 'approved' | 'rejected',
@@ -909,56 +915,13 @@ export const reviewSupabaseSubmission = async (
     throw new Error('Submissions require a configured Supabase project.');
   }
 
-  const { data: submission, error: fetchErr } = await supabase
-    .from('submissions')
-    .select('*')
-    .eq('id', submissionId)
-    .single();
-  if (fetchErr || !submission) throw fetchErr || new Error('Submission not found');
-
-  let publishedId: string | null = null;
-
-  if (decision === 'approved') {
-    if (submission.kind === 'project') {
-      publishedId = 'proj_sub_' + submissionId;
-      const { error: pubErr } = await supabase.from('projects').insert({
-        id: publishedId,
-        title: submission.title,
-        category: submission.category || 'Community Economic Development',
-        description: submission.description || '',
-        year: submission.year || new Date().getFullYear(),
-        status: 'Completed',
-        imageUrl: submission.image_url || null
-      });
-      if (pubErr) throw pubErr;
-    } else {
-      const { data: photoRow, error: pubErr } = await supabase
-        .from('gallery_photos')
-        .insert({
-          title: submission.title,
-          description: submission.description || null,
-          category: (submission.category as string) || 'outreach',
-          image_url: submission.image_url,
-          submission_id: submissionId
-        })
-        .select('id')
-        .single();
-      if (pubErr) throw pubErr;
-      publishedId = photoRow.id;
-    }
-  }
-
-  const { error: updateErr } = await supabase
-    .from('submissions')
-    .update({
-      status: decision,
-      reject_reason: decision === 'rejected' ? (rejectReason || null) : null,
-      reviewed_by: reviewerId,
-      reviewed_at: new Date().toISOString(),
-      published_id: publishedId
-    })
-    .eq('id', submissionId);
-  if (updateErr) throw updateErr;
+  const { error } = await supabase.rpc('review_submission', {
+    p_submission_id: submissionId,
+    p_decision: decision,
+    p_reviewer_id: reviewerId,
+    p_reject_reason: decision === 'rejected' ? (rejectReason || null) : null
+  });
+  if (error) throw error;
 };
 
 // -------------------------------------------------------------
@@ -1003,9 +966,11 @@ export const getSupabaseAdminUserIds = async (): Promise<string[]> => {
   return (data || []).map((d: any) => d.user_id);
 };
 
+// New admins are promoted at the 'admin' tier by default; use
+// changeSupabaseAdminRole to demote a given row to 'reviewer' afterwards.
 export const promoteSupabaseAdmin = async (authUserId: string): Promise<void> => {
   if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
-  const { error } = await supabase.from('admins').insert({ user_id: authUserId });
+  const { error } = await supabase.from('admins').insert({ user_id: authUserId, role: 'admin' });
   if (error) throw error;
 };
 
@@ -1013,6 +978,68 @@ export const demoteSupabaseAdmin = async (authUserId: string): Promise<void> => 
   if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
   const { error } = await supabase.from('admins').delete().eq('user_id', authUserId);
   if (error) throw error;
+};
+
+export interface AdminRow {
+  userId: string;
+  role: 'admin' | 'reviewer';
+}
+
+// Full admins-table listing with role, for the Roles management UI. Only
+// readable by an existing admin (RLS), same as getSupabaseAdminUserIds.
+export const getSupabaseAdmins = async (): Promise<AdminRow[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase.from('admins').select('user_id, role');
+  if (error) {
+    console.error('Supabase query error (admins):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({ userId: d.user_id, role: d.role }));
+};
+
+// Changes an existing admin row's tier between 'admin' and 'reviewer'.
+// Promoting/demoting a brand-new user still goes through
+// promoteSupabaseAdmin/demoteSupabaseAdmin above; this only retiers an
+// existing row (e.g. an admin choosing to make someone a reviewer instead
+// of a full admin, or vice versa).
+export const changeSupabaseAdminRole = async (
+  authUserId: string,
+  role: 'admin' | 'reviewer'
+): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
+  const { error } = await supabase.from('admins').update({ role }).eq('user_id', authUserId);
+  if (error) throw error;
+};
+
+export interface LoginEvent {
+  id: string;
+  userId: string | null;
+  rotaryId: string | null;
+  eventType: 'success' | 'failed' | 'locked';
+  createdAt: string;
+}
+
+// Admin-only read of the login_events log written by the member-login Edge
+// Function (see supabase/functions/member-login/index.ts). Powers both the
+// analytics tab and (optionally) a per-member login history in Roles.
+export const getSupabaseLoginEvents = async (limit = 200): Promise<LoginEvent[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('login_events')
+    .select('id, user_id, rotary_id, event_type, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error('Supabase query error (login_events):', error);
+    return [];
+  }
+  return (data || []).map((d: any) => ({
+    id: d.id,
+    userId: d.user_id,
+    rotaryId: d.rotary_id,
+    eventType: d.event_type,
+    createdAt: d.created_at
+  }));
 };
 
 // All three call the member-accounts Edge Function, which alone holds the
