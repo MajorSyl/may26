@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Lock, AlertTriangle, RefreshCw, Check, Globe, Calendar, Users, Mail, Settings, ArrowLeft, ShieldCheck, BarChart3
+  Lock, AlertTriangle, RefreshCw, Check, Globe, Calendar, Users, Mail, Settings, ArrowLeft, ShieldCheck, BarChart3, Clock
 } from 'lucide-react';
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, Submission } from '../types';
 import {
@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { safeStorage } from '../lib/safe-storage';
 import DashboardShell, { SidebarItem } from './dashboard-shell/DashboardShell';
 import StatCard from './dashboard-shell/StatCard';
+import MiniCalendar from './dashboard-shell/MiniCalendar';
+import RecentActivityList, { ActivityItem } from './dashboard-shell/RecentActivityList';
 import ProjectsSection from './admin/ProjectsSection';
 import EventsSection from './admin/EventsSection';
 import MembersSection from './admin/MembersSection';
@@ -311,6 +313,18 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
 
+  const eventHighlightDates = events.map((ev) => ev.date);
+  const pendingSubmissionItems: ActivityItem[] = submissions
+    .filter((s) => s.status === 'pending')
+    .slice(0, 6)
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      subtitle: `${s.kind === 'project' ? 'Project' : 'Photo'} submission awaiting review`,
+      icon: Clock,
+      tone: 'warning'
+    }));
+
   return (
     <DashboardShell
       brandLabel="Admin Console"
@@ -327,6 +341,12 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
         icon: RefreshCw,
         onClick: fetchData
       }}
+      rightPanel={
+        <>
+          <MiniCalendar highlightDates={eventHighlightDates} />
+          <RecentActivityList title="Awaiting Review" items={pendingSubmissionItems} emptyLabel="No pending submissions." />
+        </>
+      }
     >
       {/* FEEDBACK TOAST / ALERT -- global, not tab-specific */}
       <AnimatePresence>

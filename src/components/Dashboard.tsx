@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, Submission } from '../types';
+import { UserProfile, Submission, ClubEvent } from '../types';
 import {
   getDbUsers,
   logInMember,
@@ -8,7 +8,8 @@ import {
   updateOwnContactInfo,
   getMyDbSubmissions,
   submitDbSubmission,
-  deleteOwnAccount
+  deleteOwnAccount,
+  getDbEvents
 } from '../db-router';
 import { supabase } from '../supabase-service';
 import ChatRoom from './ChatRoom';
@@ -144,6 +145,13 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
     if (user) {
       fetchMembersList();
     }
+  }, [user]);
+
+  // Upcoming meetings/events -- powers the sidebar mini-calendar dots.
+  const [upcomingEvents, setUpcomingEvents] = useState<ClubEvent[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    getDbEvents().then(setUpcomingEvents).catch((err) => console.error('Failed to load events:', err));
   }, [user]);
 
   const handleCustomLogin = async (e: React.FormEvent) => {
@@ -407,6 +415,8 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
     tone: sub.status === 'approved' ? 'success' : sub.status === 'rejected' ? 'danger' : 'warning'
   }));
 
+  const eventHighlightDates = upcomingEvents.map((ev) => ev.date);
+
   return (
     <DashboardShell
       brandLabel="Member Portal"
@@ -426,7 +436,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
       }}
       rightPanel={
         <>
-          <MiniCalendar />
+          <MiniCalendar highlightDates={eventHighlightDates} />
           <RecentActivityList title="My Recent Submissions" items={recentActivityItems} emptyLabel="No submissions yet." />
         </>
       }
