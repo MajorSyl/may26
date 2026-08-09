@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Lock, AlertTriangle, RefreshCw, Check, Globe, Calendar, Users, Mail, Settings, ArrowLeft, ShieldCheck
+  Lock, AlertTriangle, RefreshCw, Check, Globe, Calendar, Users, Mail, Settings, ArrowLeft, ShieldCheck, BarChart3
 } from 'lucide-react';
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, Submission } from '../types';
 import {
@@ -23,8 +23,9 @@ import InquiriesSection from './admin/InquiriesSection';
 import ApprovalsSection from './admin/ApprovalsSection';
 import SettingsSection from './admin/SettingsSection';
 import RolesSection from './admin/RolesSection';
+import AnalyticsSection from './admin/AnalyticsSection';
 
-type AdminTab = 'approvals' | 'projects' | 'events' | 'members' | 'inquiries' | 'settings' | 'roles';
+type AdminTab = 'approvals' | 'projects' | 'events' | 'members' | 'inquiries' | 'settings' | 'roles' | 'analytics';
 
 interface AdminDashboardProps {
   onStateRefresh?: () => void;
@@ -301,6 +302,7 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
     { id: 'members', label: isFullAdmin ? 'Members' : 'Member Logins', icon: Users, onClick: () => setActiveTab('members') },
     ...(isFullAdmin ? [
       { id: 'inquiries', label: 'Inquiries', icon: Mail, onClick: () => setActiveTab('inquiries') },
+      { id: 'analytics', label: 'Analytics', icon: BarChart3, onClick: () => setActiveTab('analytics') },
       { id: 'settings', label: 'Settings', icon: Settings, onClick: () => setActiveTab('settings') },
       { id: 'roles', label: 'Roles', icon: ShieldCheck, onClick: () => setActiveTab('roles') }
     ] as SidebarItem[] : [])
@@ -433,6 +435,7 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
           {activeTab === 'roles' && isFullAdmin && (
             <RolesSection members={members} currentAdminAuthId={currentAdminAuthId} onRefresh={handleRefresh} triggerToast={triggerToast} />
           )}
+          {activeTab === 'analytics' && isFullAdmin && <AnalyticsSection />}
         </>
       )}
     </DashboardShell>

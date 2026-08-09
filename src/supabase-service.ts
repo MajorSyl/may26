@@ -1061,6 +1061,72 @@ export const getSupabaseLoginEvents = async (limit = 200): Promise<LoginEvent[]>
   }));
 };
 
+export interface AnalyticsSnapshot {
+  memberCount: number;
+  membersWithLogin: number;
+  phfCount: number;
+  submissionsByStatus: { pending: number; approved: number; rejected: number };
+  submissionsLast30Days: number;
+  chatMessagesTotal: number;
+  chatMessagesLast7Days: number;
+  loginEventsByType: { success: number; failed: number; locked: number };
+  loginEventsLast7Days: number;
+}
+
+const EMPTY_ANALYTICS_SNAPSHOT: AnalyticsSnapshot = {
+  memberCount: 0,
+  membersWithLogin: 0,
+  phfCount: 0,
+  submissionsByStatus: { pending: 0, approved: 0, rejected: 0 },
+  submissionsLast30Days: 0,
+  chatMessagesTotal: 0,
+  chatMessagesLast7Days: 0,
+  loginEventsByType: { success: 0, failed: 0, locked: 0 },
+  loginEventsLast7Days: 0
+};
+
+const isWithinDays = (isoDate: string, days: number): boolean =>
+  Date.now() - new Date(isoDate).getTime() <= days * 24 * 60 * 60 * 1000;
+
+// Admin-only aggregate snapshot for the Analytics tab. All aggregation is
+// done client-side over the same small tables the rest of the admin panel
+// already queries (plus a lightweight created_at-only read on
+// chat_messages) -- no new Postgres view. Fine at this club's data volume;
+// a deliberate scaling limit, not an oversight, if the club ever needs
+// server-side rollups this is the function to replace.
+export const getSupabaseAnalyticsSnapshot = async (): Promise<AnalyticsSnapshot> => {
+  if (!isSupabaseConfigured || !supabase) return EMPTY_ANALYTICS_SNAPSHOT;
+
+  const [members, submissions, loginEvents, chatResult] = await Promise.all([
+    getSupabaseUsers(),
+    getSupabaseSubmissions(),
+    getSupabaseLoginEvents(500),
+    supabase.from('chat_messages').select('created_at')
+  ]);
+
+  const chatRows: { created_at: string }[] = chatResult.error ? [] : chatResult.data || [];
+
+  return {
+    memberCount: members.length,
+    membersWithLogin: members.filter((m) => !!m.authUserId).length,
+    phfCount: members.filter((m) => m.isPaulHarrisFellow).length,
+    submissionsByStatus: {
+      pending: submissions.filter((s) => s.status === 'pending').length,
+      approved: submissions.filter((s) => s.status === 'approved').length,
+      rejected: submissions.filter((s) => s.status === 'rejected').length
+    },
+    submissionsLast30Days: submissions.filter((s) => isWithinDays(s.createdAt, 30)).length,
+    chatMessagesTotal: chatRows.length,
+    chatMessagesLast7Days: chatRows.filter((r) => isWithinDays(r.created_at, 7)).length,
+    loginEventsByType: {
+      success: loginEvents.filter((e) => e.eventType === 'success').length,
+      failed: loginEvents.filter((e) => e.eventType === 'failed').length,
+      locked: loginEvents.filter((e) => e.eventType === 'locked').length
+    },
+    loginEventsLast7Days: loginEvents.filter((e) => isWithinDays(e.createdAt, 7)).length
+  };
+};
+
 // All three call the member-accounts Edge Function, which alone holds the
 // service_role key needed to create/reset/delete another user's auth
 // account. See supabase/functions/member-accounts/index.ts.
