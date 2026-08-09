@@ -13,6 +13,10 @@ import {
 import { supabase } from '../supabase-service';
 import ChatRoom from './ChatRoom';
 import MemberTimeline from './MemberTimeline';
+import DashboardShell, { SidebarItem } from './dashboard-shell/DashboardShell';
+import StatCard from './dashboard-shell/StatCard';
+import MiniCalendar from './dashboard-shell/MiniCalendar';
+import RecentActivityList, { ActivityItem } from './dashboard-shell/RecentActivityList';
 import {
   Users,
   Mail,
@@ -37,7 +41,9 @@ import {
   Upload,
   X,
   Clock,
-  Trash2
+  Trash2,
+  LayoutDashboard,
+  MessageCircle
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -45,9 +51,10 @@ interface DashboardProps {
   onLoginSuccess: (user: UserProfile) => void;
   onStateRefresh: () => void;
   onLogout: () => void;
+  onExitToSite: () => void;
 }
 
-export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogout }: DashboardProps) {
+export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogout, onExitToSite }: DashboardProps) {
   const [loginRotaryId, setLoginRotaryId] = useState('');
   const [loginPin, setLoginPin] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -78,6 +85,14 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
 
   // Community (Club Chat / Member Timeline) state
   const [communityTab, setCommunityTab] = useState<'chat' | 'timeline'>('chat');
+
+  // Sidebar section tracking -- the dashboard is a single scrolling page, so
+  // "navigation" just scrolls to and highlights the relevant anchor.
+  const [activeSection, setActiveSection] = useState('overview');
+  const scrollToSection = (sectionId: string, anchorId: string) => {
+    setActiveSection(sectionId);
+    document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // My Submissions state
   const [mySubmissions, setMySubmissions] = useState<Submission[]>([]);
@@ -374,8 +389,50 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
     return matchesSearch && matchesCommittee && matchesPhf;
   });
 
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? 'Good Morning' : currentHour < 18 ? 'Good Afternoon' : 'Good Evening';
+
+  const sidebarItems: SidebarItem[] = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard, onClick: () => scrollToSection('overview', 'dash-overview') },
+    { id: 'directory', label: 'Directory', icon: Users, onClick: () => scrollToSection('directory', 'member-directory-section') },
+    { id: 'submissions', label: 'My Submissions', icon: FolderPlus, onClick: () => scrollToSection('submissions', 'dash-submissions') },
+    { id: 'community', label: 'Community', icon: MessageCircle, onClick: () => scrollToSection('community', 'dash-community') }
+  ];
+
+  const recentActivityItems: ActivityItem[] = mySubmissions.slice(0, 6).map((sub) => ({
+    id: sub.id,
+    title: sub.title,
+    subtitle: `${sub.kind === 'project' ? 'Project' : 'Photo'} submission`,
+    icon: sub.status === 'approved' ? Check : sub.status === 'rejected' ? X : Clock,
+    tone: sub.status === 'approved' ? 'success' : sub.status === 'rejected' ? 'danger' : 'warning'
+  }));
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 pb-24">
+    <DashboardShell
+      brandLabel="Member Portal"
+      sidebarItems={sidebarItems}
+      activeItemId={activeSection}
+      userName={user.name}
+      userSubtitle={user.rotaryId}
+      userAvatarUrl={user.avatarUrl}
+      greetingTitle={`${greeting}, Rtn. ${user.name.split(' ')[0]}`}
+      greetingSubtitle={`${user.committee || 'General Fellowship'} • Rotary ID: ${user.rotaryId || '—'}`}
+      onExitToSite={onExitToSite}
+      onLogout={onLogout}
+      headerAction={{
+        label: 'New Submission',
+        icon: FolderPlus,
+        onClick: () => { scrollToSection('submissions', 'dash-submissions'); setShowSubmitForm(true); }
+      }}
+      rightPanel={
+        <>
+          <MiniCalendar />
+          <RecentActivityList title="My Recent Submissions" items={recentActivityItems} emptyLabel="No submissions yet." />
+        </>
+      }
+    >
+      <div className="space-y-8">
+      <div id="dash-overview" className="space-y-8">
       {/* 1. PERSONAL HEADER ZONE */}
       <section className="bg-white rounded-3xl border border-slate-150 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row gap-6 justify-between items-start md:items-center relative overflow-hidden">
         {/* Visual Rotary Azure strip */}
@@ -421,6 +478,14 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
           </button>
         </div>
       </section>
+
+      {/* Quick-glance stat tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Attendance" value={`${attRate}%`} icon={CheckSquare} color={meetsTarget ? 'emerald' : 'gold'} sublabel={meetsTarget ? 'Meeting target' : 'Below target'} />
+        <StatCard label="Contribution" value={`${goalPercentage}%`} icon={DollarSign} color="azure" sublabel={`$${recAmt} of $${goalAmt}`} />
+        <StatCard label="Submissions" value={mySubmissions.length} icon={FolderPlus} color="slate" sublabel={`${mySubmissions.filter(s => s.status === 'pending').length} pending`} />
+        <StatCard label="PHF Status" value={user.isPaulHarrisFellow ? (user.paulHarrisLevel || 'PHF') : '—'} icon={Award} color={user.isPaulHarrisFellow ? 'gold' : 'slate'} />
+      </div>
 
       {showChangePin && (
         <section className="bg-white border border-rotary-gold/30 p-6 rounded-3xl shadow-md space-y-3">
@@ -729,6 +794,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
           <p className="text-xs text-slate-400 italic">No active tasks are assigned. Enjoy Sunset fellowship circles!</p>
         )}
       </section>
+      </div>
 
       {/* 4.1 SECURE MEMBER DIRECTORY (EXCLUSIVE TO ACCESS-AUTHENTICATED MEMBERS) */}
       <section id="member-directory-section" className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm space-y-8">
@@ -955,6 +1021,7 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
       </section>
 
       {/* 5. MY SUBMISSIONS -- projects/photos I've submitted for admin approval */}
+      <div id="dash-submissions">
       <section className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -1125,8 +1192,10 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
           </div>
         )}
       </section>
+      </div>
 
       {/* 6. COMMUNITY -- live club chat + member timeline */}
+      <div id="dash-community">
       <section className="space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
           <button
@@ -1151,6 +1220,8 @@ export default function Dashboard({ user, onLoginSuccess, onStateRefresh, onLogo
 
         {communityTab === 'chat' ? <ChatRoom user={user} /> : <MemberTimeline user={user} />}
       </section>
-    </div>
+      </div>
+      </div>
+    </DashboardShell>
   );
 }

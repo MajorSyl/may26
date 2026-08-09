@@ -186,6 +186,7 @@ function MainApp() {
             onLoginSuccess={(usr) => setUser(usr)}
             onStateRefresh={() => setRefreshKey(prev => prev + 1)}
             onLogout={handleLogout}
+            onExitToSite={() => setActiveTab('home')}
           />
         );
       case 'admin':
@@ -203,13 +204,17 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-rotary-light flex flex-col justify-between">
-      {/* Dynamic Navbar */}
-      <Navbar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        user={user} 
-        onLogout={handleLogout} 
-      />
+      {/* Dynamic Navbar -- hidden once the member dashboard shell takes over
+          (it has its own header/nav); still shown on its pre-login screen
+          since that view has no chrome of its own to navigate back with. */}
+      {!(activeTab === 'dashboard' && user) && (
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Main Container Workspace */}
       <main className="flex-grow pt-4">
