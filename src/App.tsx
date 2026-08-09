@@ -193,6 +193,7 @@ function MainApp() {
         return (
           <AdminDashboard
             onStateRefresh={() => setRefreshKey(prev => prev + 1)}
+            onExitToSite={() => setActiveTab('home')}
           />
         );
       case 'privacy':
@@ -206,8 +207,10 @@ function MainApp() {
     <div className="min-h-screen bg-rotary-light flex flex-col justify-between">
       {/* Dynamic Navbar -- hidden once the member dashboard shell takes over
           (it has its own header/nav); still shown on its pre-login screen
-          since that view has no chrome of its own to navigate back with. */}
-      {!(activeTab === 'dashboard' && user) && (
+          since that view has no chrome of its own to navigate back with.
+          Also hidden for the admin dashboard, whose own login-gate screen
+          carries a "Back to site" link of its own regardless of auth state. */}
+      {!(activeTab === 'dashboard' && user) && activeTab !== 'admin' && (
         <Navbar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
