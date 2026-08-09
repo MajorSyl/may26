@@ -73,8 +73,11 @@ export interface SiteSettings {
   involvedBadge: string;
   involvedTitle: string;
   involvedSubtitle: string;
-  involvedContactEmail: string;
-  involvedContactPhone: string;
+
+  contactEmail: string;
+  contactPhone: string;
+  socialFacebookUrl: string;
+  socialInstagramUrl: string;
 
   homeLayout?: string;
   aboutLayout?: string;
@@ -124,8 +127,11 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   involvedBadge: "Take Action Today",
   involvedTitle: "Help Us Empower Freetown Communities",
   involvedSubtitle: "Whether you are a local professional looking to give back or an international partner ready to fund systemic change, there are multiple avenues to work with Freetown Sunset.",
-  involvedContactEmail: "placeholder@rcfsunset.org",
-  involvedContactPhone: "000000000",
+
+  contactEmail: "placeholder@rcfsunset.org",
+  contactPhone: "000000000",
+  socialFacebookUrl: "https://www.facebook.com/profile.php?id=100071187714639",
+  socialInstagramUrl: "https://www.instagram.com/rcfsunset",
 
   homeLayout: JSON.stringify(DEFAULT_HOME_LAYOUT),
   aboutLayout: JSON.stringify(DEFAULT_ABOUT_LAYOUT)

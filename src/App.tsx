@@ -22,10 +22,11 @@ const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
 import { UserProfile, ContactInquiry } from './types';
 import { subscribeToAuth, logOutUser } from './db-router';
 import { submitDbInquiry, subscribeToNewsletter } from './db-router';
-import { GENERAL_FAQS, SOCIAL_LINKS } from './data';
+import { GENERAL_FAQS } from './data';
 import { Mail, Phone, MapPin, Send, Check, Heart, Shield, RefreshCw, Facebook, Instagram } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LanguageProvider, useLanguage } from './LanguageContext';
+import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from './supabase-service';
 
 export default function App() {
   return (
@@ -44,6 +45,15 @@ function MainApp() {
 
   // Bottom FAQ section state
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Site-wide settings (contact info, social links) -- admin-editable via
+  // AdminDashboard's Settings section, falls back to defaults until fetched.
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
+  useEffect(() => {
+    let active = true;
+    getSiteSettings().then((res) => { if (active) setSiteSettings(res); });
+    return () => { active = false; };
+  }, [refreshKey]);
 
   // Footer Contact Form states
   const [contName, setContName] = useState('');
@@ -370,7 +380,11 @@ function MainApp() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Phone className="h-3 w-3 text-rotary-gold" />
-                      <span>000000000 <span className="text-slate-400 italic">(placeholder)</span></span>
+                      <span>{siteSettings.contactPhone}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Mail className="h-3 w-3 text-rotary-gold" />
+                      <span>{siteSettings.contactEmail}</span>
                     </div>
                   </div>
                 </div>
@@ -432,7 +446,7 @@ function MainApp() {
           {/* Social Media Links */}
           <div className="flex items-center gap-3">
             <a
-              href={SOCIAL_LINKS.facebook}
+              href={siteSettings.socialFacebookUrl}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Visit our Facebook page"
@@ -442,7 +456,7 @@ function MainApp() {
               <Facebook className="w-4 h-4" />
             </a>
             <a
-              href={SOCIAL_LINKS.instagram}
+              href={siteSettings.socialInstagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Visit our Instagram profile"

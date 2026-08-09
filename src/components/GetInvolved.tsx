@@ -193,6 +193,16 @@ export default function GetInvolved() {
           </div>
         )}
       </div>
+
+      {/* 3. DIRECT CONTACT ALTERNATIVE */}
+      <div className="max-w-3xl mx-auto text-center space-y-1.5">
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-display">Prefer to reach us directly?</p>
+        <p className="text-xs text-slate-500">
+          <a href={`mailto:${settings.contactEmail}`} className="text-rotary-azure font-semibold hover:underline">{settings.contactEmail}</a>
+          <span className="mx-2 text-slate-300">•</span>
+          <a href={`tel:${settings.contactPhone}`} className="text-rotary-azure font-semibold hover:underline">{settings.contactPhone}</a>
+        </p>
+      </div>
     </div>
   );
 }

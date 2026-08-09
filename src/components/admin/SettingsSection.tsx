@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Sliders, RefreshCw, Check, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
+import { FileText, Sliders, RefreshCw, Check, ArrowUp, ArrowDown, Eye, EyeOff, Mail, Phone, Facebook, Instagram } from 'lucide-react';
 import {
   getSiteSettings, updateSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS,
   PageBlock, DEFAULT_HOME_LAYOUT, DEFAULT_ABOUT_LAYOUT
@@ -11,13 +11,14 @@ interface SettingsSectionProps {
   triggerToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-const SETTINGS_SUBTABS: { id: 'copy' | 'design'; label: string; icon: string }[] = [
+const SETTINGS_SUBTABS: { id: 'copy' | 'design' | 'contact'; label: string; icon: string }[] = [
   { id: 'copy', label: 'Page Copy', icon: '📝' },
-  { id: 'design', label: 'Design & Layout', icon: '🎨' }
+  { id: 'design', label: 'Design & Layout', icon: '🎨' },
+  { id: 'contact', label: 'Contact & Social', icon: '📇' }
 ];
 
 export default function SettingsSection({ siteSettings, onRefresh, triggerToast }: SettingsSectionProps) {
-  const [settingsSubTab, setSettingsSubTab] = useState<'copy' | 'design'>('copy');
+  const [settingsSubTab, setSettingsSubTab] = useState<'copy' | 'design' | 'contact'>('copy');
   const [draft, setDraft] = useState<SiteSettings>(siteSettings || DEFAULT_SITE_SETTINGS);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -1010,6 +1011,90 @@ export default function SettingsSection({ siteSettings, onRefresh, triggerToast 
                 </button>
               </div>
 
+            </div>
+          )}
+
+          {/* CONTACT & SOCIAL PANEL */}
+          {settingsSubTab === 'contact' && (
+            <div className="bg-slate-50 p-6 select-text text-slate-800 space-y-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white border border-slate-200 p-4 rounded-2xl shadow-3xs">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5 font-display uppercase tracking-wider">
+                    <Mail className="h-4 w-4 text-rotary-azure" />
+                    Contact & Social Links
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">
+                    Shown site-wide: footer, Contact page, and Get Involved page
+                  </p>
+                </div>
+                <button
+                  id="submit-contact-settings-btn"
+                  onClick={handleSaveCopy}
+                  disabled={actionLoading}
+                  className="w-full md:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer focus:outline-none"
+                >
+                  {actionLoading ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4.5 w-4.5" />
+                  )}
+                  <span>Save Contact & Social changes</span>
+                </button>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-semibold text-slate-550">
+                <div className="space-y-1">
+                  <label className="text-slate-455 uppercase text-[9px] tracking-wider flex items-center gap-1 font-bold">
+                    <Mail className="h-3 w-3" /> Contact Email
+                  </label>
+                  <input
+                    id="settings-contact-email"
+                    type="email"
+                    value={draft.contactEmail || ''}
+                    onChange={(e) => setDraft(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-rotary-azure"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-455 uppercase text-[9px] tracking-wider flex items-center gap-1 font-bold">
+                    <Phone className="h-3 w-3" /> Contact Phone
+                  </label>
+                  <input
+                    id="settings-contact-phone"
+                    type="text"
+                    value={draft.contactPhone || ''}
+                    onChange={(e) => setDraft(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-rotary-azure"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-455 uppercase text-[9px] tracking-wider flex items-center gap-1 font-bold">
+                    <Facebook className="h-3 w-3" /> Facebook URL
+                  </label>
+                  <input
+                    id="settings-social-facebook"
+                    type="url"
+                    value={draft.socialFacebookUrl || ''}
+                    onChange={(e) => setDraft(prev => ({ ...prev, socialFacebookUrl: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-rotary-azure"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-455 uppercase text-[9px] tracking-wider flex items-center gap-1 font-bold">
+                    <Instagram className="h-3 w-3" /> Instagram URL
+                  </label>
+                  <input
+                    id="settings-social-instagram"
+                    type="url"
+                    value={draft.socialInstagramUrl || ''}
+                    onChange={(e) => setDraft(prev => ({ ...prev, socialInstagramUrl: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-800 font-medium focus:bg-white focus:outline-rotary-azure"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </>

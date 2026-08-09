@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2, ShieldAlert, Users, Calendar, Clock, Globe, Facebook, Instagram } from 'lucide-react';
 import { submitDbInquiry } from '../db-router';
 import { ContactInquiry } from '../types';
-import { SOCIAL_LINKS } from '../data';
+import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../supabase-service';
 
 export default function Contact() {
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
+  useEffect(() => {
+    let active = true;
+    getSiteSettings().then((res) => { if (active) setSettings(res); });
+    return () => { active = false; };
+  }, []);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
@@ -213,7 +220,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-none">Voice / WhatsApp</span>
-                  <p className="text-white font-extrabold font-mono mt-0.5 text-sm">000000000 <span className="text-slate-400 font-normal italic text-xs">(placeholder)</span></p>
+                  <p className="text-white font-extrabold font-mono mt-0.5 text-sm">{settings.contactPhone}</p>
                 </div>
               </div>
 
@@ -223,7 +230,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-450 leading-none">Administrative Email</span>
-                  <p className="text-white font-semibold font-mono mt-0.5">placeholder@rcfsunset.org <span className="text-slate-400 font-normal italic text-xs">(placeholder)</span></p>
+                  <p className="text-white font-semibold font-mono mt-0.5">{settings.contactEmail}</p>
                 </div>
               </div>
 
@@ -245,7 +252,7 @@ export default function Contact() {
 
             <div className="space-y-3">
               <a
-                href={SOCIAL_LINKS.facebook}
+                href={settings.socialFacebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Visit our Facebook page"
@@ -261,7 +268,7 @@ export default function Contact() {
               </a>
 
               <a
-                href={SOCIAL_LINKS.instagram}
+                href={settings.socialInstagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Visit our Instagram profile"
