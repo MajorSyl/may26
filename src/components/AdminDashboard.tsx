@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Lock, AlertTriangle, RefreshCw, Check, Globe, Calendar, Users, Mail, Settings, ArrowLeft
+  Lock, AlertTriangle, RefreshCw, Check, Globe, Calendar, Users, Mail, Settings, ArrowLeft, ShieldCheck
 } from 'lucide-react';
 import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, Submission } from '../types';
 import {
@@ -10,7 +10,7 @@ import {
   supabase, checkIsAdmin,
   getSupabaseRSVPs, getSupabaseApplications,
   getSupabaseSubmissions,
-  getSupabaseAdminUserIds
+  getSupabaseAdminUserIds, getSupabaseAdminRole
 } from '../supabase-service';
 import { motion, AnimatePresence } from 'motion/react';
 import { safeStorage } from '../lib/safe-storage';
@@ -22,8 +22,9 @@ import MembersSection from './admin/MembersSection';
 import InquiriesSection from './admin/InquiriesSection';
 import ApprovalsSection from './admin/ApprovalsSection';
 import SettingsSection from './admin/SettingsSection';
+import RolesSection from './admin/RolesSection';
 
-type AdminTab = 'approvals' | 'projects' | 'events' | 'members' | 'inquiries' | 'settings';
+type AdminTab = 'approvals' | 'projects' | 'events' | 'members' | 'inquiries' | 'settings' | 'roles';
 
 interface AdminDashboardProps {
   onStateRefresh?: () => void;
@@ -48,6 +49,7 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
   const [adminUserIds, setAdminUserIds] = useState<Set<string>>(new Set());
   const [currentAdminAuthId, setCurrentAdminAuthId] = useState<string | null>(null);
   const [currentAdminEmail, setCurrentAdminEmail] = useState<string | null>(null);
+  const [currentAdminRole, setCurrentAdminRole] = useState<'admin' | 'reviewer' | null>(null);
 
   const [activeTab, setActiveTab] = useState<AdminTab>('projects');
   const [revealedCredential, setRevealedCredential] = useState<{ name: string; rotaryId: string; pin: string } | null>(null);
@@ -69,8 +71,11 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
         if (sessionData?.session?.user) {
           const isAdmin = await checkIsAdmin(sessionData.session.user.id);
           if (isAdmin) {
+            const role = await getSupabaseAdminRole(sessionData.session.user.id);
             setCurrentAdminAuthId(sessionData.session.user.id);
             setCurrentAdminEmail(sessionData.session.user.email ?? null);
+            setCurrentAdminRole(role);
+            if (role === 'reviewer') setActiveTab('approvals');
             setIsAuthorized(true);
             fetchData();
             return;
@@ -145,8 +150,11 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
           await supabase.auth.signOut().catch(() => {});
           throw new Error('Access Denied: This account is not registered in the database admins table.');
         }
+        const role = await getSupabaseAdminRole(data.user.id);
         setCurrentAdminAuthId(data.user.id);
         setCurrentAdminEmail(data.user.email ?? null);
+        setCurrentAdminRole(role);
+        if (role === 'reviewer') setActiveTab('approvals');
         setIsAuthorized(true);
         setAuthError('');
         safeStorage.setItem('sunset_admin_authorized', 'true');
@@ -167,6 +175,7 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
     setIsAuthorized(false);
     safeStorage.removeItem('sunset_admin_authorized');
     setCurrentAdminEmail(null);
+    setCurrentAdminRole(null);
     if (supabase) {
       await supabase.auth.signOut().catch(() => {});
     }
@@ -276,13 +285,25 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
     );
   }
 
+  const isFullAdmin = currentAdminRole === 'admin';
+
+  // A reviewer only sees Approvals (their core job) and a login-management
+  // view of Members -- MembersSection itself hides roster-edit/promote/
+  // revoke controls when currentAdminRole !== 'admin'. Every other tab
+  // touches something reviewers aren't scoped for (projects, events,
+  // inquiries, settings, other admins' access).
   const sidebarItems: SidebarItem[] = [
     { id: 'approvals', label: 'Approvals', icon: Check, badge: submissions.filter(s => s.status === 'pending').length, onClick: () => setActiveTab('approvals') },
-    { id: 'projects', label: 'Projects', icon: Globe, onClick: () => setActiveTab('projects') },
-    { id: 'events', label: 'Events', icon: Calendar, onClick: () => setActiveTab('events') },
-    { id: 'members', label: 'Members', icon: Users, onClick: () => setActiveTab('members') },
-    { id: 'inquiries', label: 'Inquiries', icon: Mail, onClick: () => setActiveTab('inquiries') },
-    { id: 'settings', label: 'Settings', icon: Settings, onClick: () => setActiveTab('settings') }
+    ...(isFullAdmin ? [
+      { id: 'projects', label: 'Projects', icon: Globe, onClick: () => setActiveTab('projects') },
+      { id: 'events', label: 'Events', icon: Calendar, onClick: () => setActiveTab('events') }
+    ] as SidebarItem[] : []),
+    { id: 'members', label: isFullAdmin ? 'Members' : 'Member Logins', icon: Users, onClick: () => setActiveTab('members') },
+    ...(isFullAdmin ? [
+      { id: 'inquiries', label: 'Inquiries', icon: Mail, onClick: () => setActiveTab('inquiries') },
+      { id: 'settings', label: 'Settings', icon: Settings, onClick: () => setActiveTab('settings') },
+      { id: 'roles', label: 'Roles', icon: ShieldCheck, onClick: () => setActiveTab('roles') }
+    ] as SidebarItem[] : [])
   ];
 
   const currentHour = new Date().getHours();
@@ -294,9 +315,9 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
       sidebarItems={sidebarItems}
       activeItemId={activeTab}
       userName={currentAdminEmail || 'Admin'}
-      userSubtitle="Rotary Club of Freetown Sunset"
-      greetingTitle={`${greeting}, Admin`}
-      greetingSubtitle="Manage live projects, events, member records, and website content."
+      userSubtitle={isFullAdmin ? 'Rotary Club of Freetown Sunset' : 'Reviewer · Rotary Club of Freetown Sunset'}
+      greetingTitle={`${greeting}, ${isFullAdmin ? 'Admin' : 'Reviewer'}`}
+      greetingSubtitle={isFullAdmin ? 'Manage live projects, events, member records, and website content.' : 'Review member submissions and manage member logins.'}
       onExitToSite={onExitToSite}
       onLogout={handleDeauthorize}
       headerAction={{
@@ -377,10 +398,10 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
               triggerToast={triggerToast}
             />
           )}
-          {activeTab === 'projects' && (
+          {activeTab === 'projects' && isFullAdmin && (
             <ProjectsSection projects={projects} onRefresh={handleRefresh} triggerToast={triggerToast} />
           )}
-          {activeTab === 'events' && (
+          {activeTab === 'events' && isFullAdmin && (
             <EventsSection events={events} onRefresh={handleRefresh} triggerToast={triggerToast} />
           )}
           {activeTab === 'members' && (
@@ -392,9 +413,10 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
               currentAdminAuthId={currentAdminAuthId}
               revealedCredential={revealedCredential}
               setRevealedCredential={setRevealedCredential}
+              currentAdminRole={currentAdminRole}
             />
           )}
-          {activeTab === 'inquiries' && (
+          {activeTab === 'inquiries' && isFullAdmin && (
             <InquiriesSection
               inquiries={inquiries}
               rsvps={rsvps}
@@ -405,8 +427,11 @@ export default function AdminDashboard({ onStateRefresh, onExitToSite }: AdminDa
               triggerToast={triggerToast}
             />
           )}
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && isFullAdmin && (
             <SettingsSection siteSettings={siteSettings} onRefresh={handleRefresh} triggerToast={triggerToast} />
+          )}
+          {activeTab === 'roles' && isFullAdmin && (
+            <RolesSection members={members} currentAdminAuthId={currentAdminAuthId} onRefresh={handleRefresh} triggerToast={triggerToast} />
           )}
         </>
       )}

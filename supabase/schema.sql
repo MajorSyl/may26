@@ -474,10 +474,25 @@ ALTER TABLE project_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 
--- 3.1 admins — completely private; no public SELECT policy exists.
--- Only the SECURITY DEFINER is_admin() function can read it.
-CREATE POLICY "Allow admin read and write on admins" ON admins
-  FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+-- 3.1 admins — completely private; no public SELECT policy exists. Split
+-- into a read policy (both role tiers, via is_reviewer_or_admin() -- a
+-- reviewer must be able to see their own row, e.g. for the AdminDashboard
+-- login gate's checkIsAdmin() check) and write policies (admin tier only,
+-- so a reviewer can never promote/demote/re-tier anyone, including
+-- themselves).
+DROP POLICY IF EXISTS "Allow admin read and write on admins" ON admins;
+
+CREATE POLICY "Allow admin/reviewer read on admins" ON admins
+  FOR SELECT TO authenticated USING (is_reviewer_or_admin());
+
+CREATE POLICY "Allow admin write on admins" ON admins
+  FOR INSERT TO authenticated WITH CHECK (is_admin());
+
+CREATE POLICY "Allow admin update on admins" ON admins
+  FOR UPDATE TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+
+CREATE POLICY "Allow admin delete on admins" ON admins
+  FOR DELETE TO authenticated USING (is_admin());
 
 DROP TRIGGER IF EXISTS trg_prevent_self_admin_removal ON admins;
 CREATE TRIGGER trg_prevent_self_admin_removal

@@ -959,9 +959,10 @@ export const getSupabaseGalleryPhotos = async (): Promise<GalleryPhoto[]> => {
 // ADMIN MANAGEMENT (promote/demote; account create/revoke via Edge Function)
 // -------------------------------------------------------------
 
-// Set of auth user ids currently holding admin privileges. Only readable by
-// an admin (the `admins` table has no public/self-select policy), so this
-// naturally returns an empty set for a non-admin caller rather than erroring.
+// Set of auth user ids currently holding admin privileges (either tier).
+// Readable by any admins-table row (the `admins` table has no public
+// self-select policy), so this naturally returns an empty set for a
+// non-admin, non-reviewer caller rather than erroring.
 export const getSupabaseAdminUserIds = async (): Promise<string[]> => {
   if (!isSupabaseConfigured || !supabase) return [];
   const { data, error } = await supabase.from('admins').select('user_id');
@@ -972,11 +973,23 @@ export const getSupabaseAdminUserIds = async (): Promise<string[]> => {
   return (data || []).map((d: any) => d.user_id);
 };
 
-// New admins are promoted at the 'admin' tier by default; use
-// changeSupabaseAdminRole to demote a given row to 'reviewer' afterwards.
-export const promoteSupabaseAdmin = async (authUserId: string): Promise<void> => {
+// The caller's own admin tier, or null if they hold no admins-table row.
+// Used to gate admin-only vs reviewer-safe UI on the client (the real
+// enforcement is server-side: RLS on admin-gated tables and the role check
+// inside review_submission()/the member-accounts Edge Function).
+export const getSupabaseAdminRole = async (authUserId: string): Promise<'admin' | 'reviewer' | null> => {
+  if (!isSupabaseConfigured || !supabase) return null;
+  const { data, error } = await supabase.from('admins').select('role').eq('user_id', authUserId).maybeSingle();
+  if (error || !data) return null;
+  return data.role;
+};
+
+// New admins are promoted at the 'admin' tier by default; pass role:
+// 'reviewer' to grant the lower tier directly instead of promoting-then-
+// demoting via changeSupabaseAdminRole.
+export const promoteSupabaseAdmin = async (authUserId: string, role: 'admin' | 'reviewer' = 'admin'): Promise<void> => {
   if (!isSupabaseConfigured || !supabase) throw new Error('Requires a configured Supabase project.');
-  const { error } = await supabase.from('admins').insert({ user_id: authUserId, role: 'admin' });
+  const { error } = await supabase.from('admins').insert({ user_id: authUserId, role });
   if (error) throw error;
 };
 

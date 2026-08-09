@@ -17,6 +17,11 @@ interface MembersSectionProps {
   currentAdminAuthId: string | null;
   revealedCredential: { name: string; rotaryId: string; pin: string } | null;
   setRevealedCredential: (cred: { name: string; rotaryId: string; pin: string } | null) => void;
+  // 'reviewer' can only create/reset member logins here -- roster edit,
+  // promote/demote, and revoke are admin-only (also enforced server-side:
+  // RLS on `users`/`admins` and the member-accounts Edge Function's role
+  // check on the revoke action).
+  currentAdminRole: 'admin' | 'reviewer' | null;
 }
 
 export default function MembersSection({
@@ -25,8 +30,10 @@ export default function MembersSection({
   triggerToast,
   adminUserIds,
   currentAdminAuthId,
-  setRevealedCredential
+  setRevealedCredential,
+  currentAdminRole
 }: MembersSectionProps) {
+  const isFullAdmin = currentAdminRole === 'admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [actionLoading, setActionLoading] = useState(false);
@@ -259,7 +266,9 @@ export default function MembersSection({
     <div className="bg-white border border-slate-150 rounded-2xl shadow-xs overflow-hidden">
       {/* HEADER: SEARCH & TABS ROW */}
       <div className="bg-slate-50 border-b border-slate-150 px-4 py-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h2 className="text-sm font-black font-display text-slate-800 uppercase tracking-wider">👥 Members</h2>
+        <h2 className="text-sm font-black font-display text-slate-800 uppercase tracking-wider">
+          {isFullAdmin ? '👥 Members' : '🔑 Member Logins'}
+        </h2>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-48 xl:w-64">
@@ -274,29 +283,33 @@ export default function MembersSection({
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
           </div>
 
-          <div className="relative shrink-0 text-xs">
-            <select
-              id="admin-status-filter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-white border border-slate-350 rounded-xl px-2.5 py-1.5 font-semibold text-slate-600 focus:outline-none focus:ring-1 focus:ring-rotary-azure"
-            >
-              <option value="All">All statuses/types</option>
-              <option value="Rotarian">Rotarians</option>
-              <option value="Club Officer">Club Officers</option>
-              <option value="President">Presidents</option>
-              <option value="Guest">Guests</option>
-            </select>
-          </div>
+          {isFullAdmin && (
+            <div className="relative shrink-0 text-xs">
+              <select
+                id="admin-status-filter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-white border border-slate-350 rounded-xl px-2.5 py-1.5 font-semibold text-slate-600 focus:outline-none focus:ring-1 focus:ring-rotary-azure"
+              >
+                <option value="All">All statuses/types</option>
+                <option value="Rotarian">Rotarians</option>
+                <option value="Club Officer">Club Officers</option>
+                <option value="President">Presidents</option>
+                <option value="Guest">Guests</option>
+              </select>
+            </div>
+          )}
 
-          <button
-            id="admin-new-record-btn"
-            onClick={openNewRecordForm}
-            className="bg-rotary-azure hover:bg-rotary-azure-dark text-white p-1.5 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold leading-none shrink-0 border border-transparent shadow-xs hover:shadow-md"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">Publish New</span>
-          </button>
+          {isFullAdmin && (
+            <button
+              id="admin-new-record-btn"
+              onClick={openNewRecordForm}
+              className="bg-rotary-azure hover:bg-rotary-azure-dark text-white p-1.5 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-xs font-bold leading-none shrink-0 border border-transparent shadow-xs hover:shadow-md"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Publish New</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -590,6 +603,7 @@ export default function MembersSection({
                       <p className="text-xs font-bold text-slate-550 max-w-sm leading-relaxed">
                         No Rotarian members or registered club logs found in your active database.
                       </p>
+                      {isFullAdmin && (
                       <button
                         id="seed-members-btn"
                         type="button"
@@ -615,6 +629,7 @@ export default function MembersSection({
                         <Plus className="h-3.5 w-3.5" />
                         <span>Seed & Map Standard Chapter Roster ({INITIAL_MEMBER_DIRECTORY.length} Members)</span>
                       </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -682,6 +697,7 @@ export default function MembersSection({
                           <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                             Login Active
                           </span>
+                          {isFullAdmin && (
                           <div className="flex gap-1.5 flex-wrap">
                             {adminUserIds.has(m.authUserId) ? (
                               <button
@@ -705,6 +721,7 @@ export default function MembersSection({
                               Revoke
                             </button>
                           </div>
+                          )}
                           {adminUserIds.has(m.authUserId) && (
                             <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rotary-gold/10 text-rotary-gold-dark">Admin</span>
                           )}
@@ -747,22 +764,26 @@ export default function MembersSection({
                       )}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          id={`edit-mem-${m.uid}`}
-                          onClick={() => loadRecordForEdit(m)}
-                          className="p-1 px-2.5 border border-slate-200 text-slate-600 hover:text-rotary-azure hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-[10px] uppercase font-bold"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          id={`delete-mem-${m.uid}`}
-                          onClick={() => handleRecordDelete(m.uid, m.name)}
-                          className="p-1 px-2.5 border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer text-[10px] uppercase font-bold"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                      {isFullAdmin ? (
+                        <div className="flex justify-end gap-2">
+                          <button
+                            id={`edit-mem-${m.uid}`}
+                            onClick={() => loadRecordForEdit(m)}
+                            className="p-1 px-2.5 border border-slate-200 text-slate-600 hover:text-rotary-azure hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-[10px] uppercase font-bold"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            id={`delete-mem-${m.uid}`}
+                            onClick={() => handleRecordDelete(m.uid, m.name)}
+                            className="p-1 px-2.5 border border-rose-200 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer text-[10px] uppercase font-bold"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 text-[10px]">—</span>
+                      )}
                     </td>
                   </tr>
                 ))
