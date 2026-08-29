@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd mobile-rn && npm install && EXPO_OFFLINE=1 npx expo export --platform web",
+  "outputDirectory": "mobile-rn/dist",
+  "installCommand": "echo skip-root-install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
