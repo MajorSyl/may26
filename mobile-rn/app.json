@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Rotary Freetown Sunset",
+    "slug": "rcfs-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./src/assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f8f9fa"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.rcfsunset.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/adaptive-icon.png",
+        "backgroundColor": "#f8f9fa"
+      },
+      "package": "org.rcfsunset.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./src/assets/favicon.png"
+    }
+  }
+}

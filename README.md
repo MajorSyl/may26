@@ -1,31 +1,11 @@
-# Rotary Club of Freetown Sunset — Website
+# Rotary Club of Freetown Sunset
 
-The official website for the Rotary Club of Freetown Sunset, Sierra Leone (Rotary District 9101). Built with React, TypeScript, and Vite, backed by Supabase.
+The official app for the Rotary Club of Freetown Sunset, Sierra Leone (Rotary District 9101) — a React Native (Expo, TypeScript) project targeting iOS, Android, and web from one codebase, backed by Supabase.
 
-## Run Locally
+## The project
 
-**Prerequisites:** Node.js
+**[`mobile-rn/`](./mobile-rn) is the entire codebase.** There is no separate web app and no Capacitor wrapper — see `mobile-rn/README.md` for setup, run, and build instructions, and `mobile-rn/MIGRATION_NOTES.md` for what's in scope today versus still to come.
 
-1. Install dependencies:
-   ```
-   npm install
-   ```
-2. Copy `.env.example` to `.env` and fill in your Supabase project's URL and anon key (Project Settings → API in your Supabase dashboard). Without these, the app runs in a local-only simulated mode using browser storage.
-3. Run the app:
-   ```
-   npm run dev
-   ```
+## Database
 
-## Build
-
-```
-npm run build
-```
-
-## Database Setup
-
-`supabase/schema.sql` is the single source of truth for the database schema — tables, Row Level Security policies, and the admin helper function. Run it in your Supabase project's SQL Editor to provision everything the app needs.
-
-## Deployment
-
-The site is deployed on Vercel. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` as environment variables in your Vercel project settings.
+The Supabase schema, Row Level Security policies, and Edge Functions live in the Supabase project itself, managed directly (via the Supabase dashboard or CLI) rather than checked into this repository.
