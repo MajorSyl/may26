@@ -47,7 +47,7 @@ export default function MemberLoginScreen({ navigation }: Props) {
             <Shield size={26} color={colors.rotaryAzure} />
           </View>
           <Text className="text-xl font-extrabold text-slate-800">Member Portal</Text>
-          <Text className="text-[10px] uppercase tracking-widest text-slate-400">Rotary Club of Freetown Sunset</Text>
+          <Text className="text-[10px] uppercase tracking-widest text-slate-400">RCFS</Text>
         </View>
 
         {error ? (

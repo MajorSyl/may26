@@ -17,7 +17,7 @@ export default function MemberHomeScreen({ navigation }: Props) {
       <View className="items-center gap-3 py-6">
         <CheckCircle size={40} color={colors.emerald600} />
         <Text className="text-2xl font-extrabold text-slate-800 text-center">You're signed in</Text>
-        <Text className="text-xs text-slate-400 text-center">Rotary Club of Freetown Sunset -- Member Portal</Text>
+        <Text className="text-xs text-slate-400 text-center">RCFS -- Member Portal</Text>
       </View>
 
       <View className="gap-3">

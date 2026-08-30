@@ -37,7 +37,7 @@ export default function SocialFeedScreen() {
             <Pressable
               key={f}
               onPress={() => setFilter(f)}
-              className={`flex-1 flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl border ${
+              className={`flex-1 flex-row items-center justify-center gap-1.5 py-3 rounded-xl border ${
                 isSel ? 'bg-rotary-azure border-rotary-azure' : 'bg-slate-50 border-slate-200'
               }`}
             >

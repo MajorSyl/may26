@@ -129,7 +129,7 @@ export default function EventsScreen() {
                   <Pressable
                     key={ev.id}
                     onPress={() => setSelectedEventId(ev.id)}
-                    className={`px-3 py-2 rounded-xl border ${isSel ? 'bg-rotary-azure border-rotary-azure' : 'bg-slate-50 border-slate-200'}`}
+                    className={`px-3 py-3 rounded-xl border ${isSel ? 'bg-rotary-azure border-rotary-azure' : 'bg-slate-50 border-slate-200'}`}
                   >
                     <Text className={`text-[11px] font-bold ${isSel ? 'text-white' : 'text-slate-600'}`}>{ev.title}</Text>
                   </Pressable>

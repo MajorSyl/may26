@@ -50,7 +50,7 @@ export default function GalleryScreen({ navigation }: Props) {
               <Pressable
                 key={st}
                 onPress={() => setStatusFilter(st)}
-                className={`flex-1 py-2 rounded-lg items-center border ${isSel ? 'bg-rotary-dark border-rotary-dark' : 'bg-slate-50 border-slate-200'}`}
+                className={`flex-1 py-3 rounded-lg items-center border ${isSel ? 'bg-rotary-dark border-rotary-dark' : 'bg-slate-50 border-slate-200'}`}
               >
                 <Text className={`text-[10px] font-bold uppercase ${isSel ? 'text-white' : 'text-slate-500'}`}>{st}</Text>
               </Pressable>

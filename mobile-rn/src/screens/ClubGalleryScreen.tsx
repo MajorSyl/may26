@@ -56,7 +56,7 @@ export default function ClubGalleryScreen() {
             <Pressable
               key={cat.id}
               onPress={() => setActiveCategory(cat.id)}
-              className={`px-3.5 py-2 rounded-xl border ${isSel ? 'bg-rotary-gold border-rotary-gold' : 'bg-slate-50 border-slate-200'}`}
+              className={`px-3.5 py-3 rounded-xl border ${isSel ? 'bg-rotary-gold border-rotary-gold' : 'bg-slate-50 border-slate-200'}`}
             >
               <Text className={`text-[11px] font-bold uppercase ${isSel ? 'text-white' : 'text-slate-500'}`}>{cat.title}</Text>
             </Pressable>

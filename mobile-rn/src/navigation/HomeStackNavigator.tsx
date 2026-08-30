@@ -10,7 +10,7 @@ const Stack = createNativeStackNavigator<HomeStackParamList>();
 export default function HomeStackNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }}>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Rotary Freetown Sunset' }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'RCFS' }} />
       <Stack.Screen name="About" component={AboutScreen} options={{ title: 'About Us' }} />
     </Stack.Navigator>
   );

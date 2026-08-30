@@ -15,17 +15,33 @@ import { colors } from '../theme';
 // column of text stretched across a desktop window reads poorly. Grid
 // screens (Gallery, MembersDirectory, Events, ClubGallery) pass wide so
 // their multi-column layouts can use the full available width instead.
-export function ScreenScroll({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+//
+// `edgeToEdge`: an optional header (e.g. a hero image) rendered above the
+// padded content, genuinely full-bleed to the viewport edge. This exists
+// specifically so screens never need a negative-margin trick to cancel
+// the content padding -- that technique is fragile on RN Web (real mobile
+// browsers can render the negative margin as actual overflow past the
+// viewport edge, clipping the bled content instead of bleeding it).
+export function ScreenScroll({
+  children,
+  wide = false,
+  edgeToEdge
+}: {
+  children: React.ReactNode;
+  wide?: boolean;
+  edgeToEdge?: React.ReactNode;
+}) {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-rotary-light">
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName={wide ? 'w-full md:px-6 lg:px-10' : 'w-full md:max-w-3xl md:mx-auto lg:max-w-4xl'}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32, paddingTop: 16, paddingHorizontal: 16, gap: 24 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
+        {edgeToEdge}
+        <View
+          className={wide ? 'w-full md:px-6 lg:px-10' : 'w-full md:max-w-3xl md:mx-auto lg:max-w-4xl'}
+          style={{ paddingTop: 16, paddingHorizontal: 16, gap: 24 }}
+        >
+          {children}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -142,10 +158,13 @@ export function LinkRow({ icon: Icon, label, sublabel, onPress }: { icon: Lucide
   );
 }
 
+// w-11 h-11 (44x44) meets the common mobile touch-target minimum
+// (Apple HIG / WCAG 2.5.5) -- this was 36x36 before, too small for a
+// comfortable tap on the admin edit/delete/reorder buttons that use it.
 export function IconButton({ icon: Icon, onPress, color }: { icon: LucideIcon; onPress: () => void; color?: string }) {
   return (
-    <Pressable onPress={onPress} className="w-9 h-9 rounded-full items-center justify-center bg-slate-50 border border-slate-200">
-      <Icon size={15} color={color || colors.slate500} />
+    <Pressable onPress={onPress} className="w-11 h-11 rounded-full items-center justify-center bg-slate-50 border border-slate-200">
+      <Icon size={16} color={color || colors.slate500} />
     </Pressable>
   );
 }

@@ -12,6 +12,7 @@ import { ScreenScroll, Badge, Card } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
 import SocialFeedSection from '../components/SocialFeedSection';
+import DownloadAppSection from '../components/DownloadAppSection';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
@@ -50,37 +51,38 @@ export default function HomeScreen({ navigation }: Props) {
 
   const completedProjects = projects.filter((p) => p.status === 'Completed').slice(0, 3);
 
+  const hero = (
+    <View className="w-full bg-rotary-dark items-center justify-center">
+      <Image
+        source={require('../assets/hero-connect.jpg')}
+        resizeMode="contain"
+        style={{ width: '100%', height: 260 }}
+        accessibilityLabel="Rotary Club of Freetown Sunset - Kerefay Loko MCHP Community Well dedication"
+      />
+    </View>
+  );
+
   return (
-    <ScreenScroll>
-      {/* Hero */}
-      <View className="gap-5 -mx-4 -mt-4">
-        <View className="w-full bg-[#0A1128] items-center justify-center">
-          <Image
-            source={require('../assets/hero-connect.jpg')}
-            resizeMode="contain"
-            style={{ width: '100%', height: 260 }}
-            accessibilityLabel="Rotary Club of Freetown Sunset - Kerefay Loko MCHP Community Well dedication"
-          />
-        </View>
-        <View className="px-4 gap-4 items-center">
-          <Badge label="Welcome to Freetown Sunset" />
-          <Text className="text-3xl font-extrabold text-[#00246B] text-center leading-tight">
-            Fellowship, Integrity, and Direct Local Service
-          </Text>
-          <Text className="text-sm text-slate-600 text-center leading-relaxed">
-            Founded on Freetown's beautiful shores, the Rotary Club of Freetown Sunset (RCFS) gathers a diverse cohort of
-            passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we
-            combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
-          </Text>
-          <View className="flex-row flex-wrap gap-3 justify-center pt-1">
-            <Pressable onPress={() => navigation.navigate('About')} className="flex-row items-center gap-2 bg-rotary-azure px-4 py-2.5 rounded-xl">
-              <Text className="text-white text-xs font-bold uppercase tracking-wider">Read Our Core Values</Text>
-              <ArrowRight size={14} color={colors.white} />
-            </Pressable>
-            <Pressable onPress={() => goToTab('MoreTab', 'Contact')} className="bg-white border border-slate-300 px-4 py-2.5 rounded-xl">
-              <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Contact Our Officers</Text>
-            </Pressable>
-          </View>
+    <ScreenScroll edgeToEdge={hero}>
+      {/* Hero copy */}
+      <View className="gap-4 items-center">
+        <Badge label="Welcome to Freetown Sunset" />
+        <Text className="text-3xl font-extrabold text-rotary-dark text-center leading-tight">
+          Fellowship, Integrity, and Direct Local Service
+        </Text>
+        <Text className="text-sm text-slate-600 text-center leading-relaxed">
+          Founded on Freetown's beautiful shores, the Rotary Club of Freetown Sunset (RCFS) gathers a diverse cohort of
+          passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we
+          combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
+        </Text>
+        <View className="flex-row flex-wrap gap-3 justify-center pt-1">
+          <Pressable onPress={() => navigation.navigate('About')} className="flex-row items-center gap-2 bg-rotary-azure px-4 py-2.5 rounded-xl">
+            <Text className="text-white text-xs font-bold uppercase tracking-wider">Read Our Core Values</Text>
+            <ArrowRight size={14} color={colors.white} />
+          </Pressable>
+          <Pressable onPress={() => goToTab('MoreTab', 'Contact')} className="bg-white border border-slate-300 px-4 py-2.5 rounded-xl">
+            <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Contact Our Officers</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -183,6 +185,8 @@ export default function HomeScreen({ navigation }: Props) {
       <MemberSpotlight />
 
       <SocialFeedSection onViewAll={() => goToTab('MoreTab', 'SocialFeed')} />
+
+      <DownloadAppSection />
 
       {/* Announcements */}
       <View className="gap-4">

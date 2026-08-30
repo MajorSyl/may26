@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd mobile-rn && npm install && EXPO_OFFLINE=1 npx expo export --platform web",
+  "buildCommand": "cd mobile-rn && npm install && EXPO_OFFLINE=1 npx expo export --platform web && node scripts/inject-web-meta.js",
   "outputDirectory": "mobile-rn/dist",
   "installCommand": "echo skip-root-install",
   "rewrites": [
