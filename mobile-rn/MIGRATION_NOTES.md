@@ -48,3 +48,20 @@ These should all work as written (they call the exact same endpoints and tables 
 - `npx expo export --platform web` — a full production bundle built successfully (2,464 modules).
 - The exported web build was served locally and driven with a headless browser: Home renders with real content and the hero image intact (not cropped), all 5 bottom tabs navigate correctly, the Members Directory renders live roster data, and the Member Sign In screen opens correctly as a modal from the More menu — zero console errors throughout.
 - iOS/Android-specific behavior (native modules, SecureStore, camera/gallery pickers if added later) was **not** verified, since this sandbox has no simulator or device. Please do a first run on both platforms before shipping.
+
+## Later addition: responsive layouts, super admin dashboard, self-serve member dashboard
+
+Built end-to-end (schema, RLS, storage, Edge Function, and UI) in a later session. Summary:
+
+- **Responsive layouts**: `useBreakpoint()` + `ResponsiveTabBar` swap bottom tabs for a persistent left side rail at tablet/desktop widths (mobile bottom-tab behavior is untouched). Gallery/ClubGallery/Events/MembersDirectory get responsive multi-column grids. Text-first screens are capped/centered at wide widths via `ScreenScroll`.
+- **Super Admin**: Pending Members approval, a generalized Page Content CMS (`content_blocks` table) for Home/About/WhatIsRotary/GetInvolved/Contact, direct Gallery CRUD, an Analytics traffic chart + top-pages/top-locations (hand-rolled SVG bars, no new charting dependency), and a searchable Visitor Log.
+- **New Member Dashboard**: a second, parallel member system (email/password + Google OAuth, admin-approval workflow) living alongside the existing Rotary-ID+PIN Member Portal, which is untouched. New `profiles` table with a `membership_status` enum (pending/approved/rejected/guest), RLS, and a trigger that blocks a member from self-approving. Profile photos go through a new `avatars` Storage bucket (own-path-only write, public read).
+- **Visitor analytics**: a new `log-page-view` Edge Function resolves city/country server-side from the request IP (ipapi.co free tier, no key) and writes to a new `page_views` table; `logPageView()` is wired into every in-scope public screen.
+
+All of the above Supabase-side work (tables, RLS, the trigger, the storage bucket + policies, the Edge Function) was applied directly against the live project and is real/live now — that part didn't depend on this sandbox reaching Supabase, since the Supabase MCP connection is a separate channel from the app's own network path.
+
+**What's verified**: `npx tsc --noEmit` clean across the whole project (including this addition), a full production web export builds with zero errors, and a headless-browser pass at mobile/tablet/desktop viewports shows zero console/page errors and confirms the responsive side rail renders correctly at each breakpoint.
+
+**What's not verified** (same sandbox network block as before, now also blocking Supabase directly, not just expo.dev/Vercel): an actual sign-up → pending → admin-approve round trip, Google OAuth end-to-end (also needs Google Cloud Console credentials that only the account owner can create), avatar photo upload landing in Storage, a CMS-added section actually appearing on its public page, and a real page view producing a geolocated row via the Edge Function. These should all work as written (the RLS policies and column names were checked directly against the live schema, not guessed), but please do one real pass of each before considering this done.
+
+**Deliberately out of scope**: provisioning a brand-new Rotary-ID+PIN member login from the admin dashboard (still requires the `member-accounts` Edge Function interactively, unrelated to this new system) and any drag-to-reorder UI for CMS blocks (up/down buttons instead, functional but not fancy).
