@@ -44,7 +44,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          eas build --profile preview --platform android --non-interactive --json --no-wait=false > build-result.json
+          eas build --profile preview --platform android --non-interactive --json > build-result.json
           cat build-result.json
           BUILD_URL=$(node -e "const r=require('./build-result.json'); const b=Array.isArray(r)?r[0]:r; console.log(b.artifacts.buildUrl)")
           echo "build_url=$BUILD_URL" >> "$GITHUB_OUTPUT"
