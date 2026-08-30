@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronRight, LucideIcon } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { ChevronRight, Image as ImageIcon, LucideIcon } from 'lucide-react-native';
+import { uploadSiteImage } from '../lib/storage';
 import { colors } from '../theme';
 
 // Shared building blocks used across every ported screen, so each screen
@@ -145,6 +147,68 @@ export function IconButton({ icon: Icon, onPress, color }: { icon: LucideIcon; o
     <Pressable onPress={onPress} className="w-9 h-9 rounded-full items-center justify-center bg-slate-50 border border-slate-200">
       <Icon size={15} color={color || colors.slate500} />
     </Pressable>
+  );
+}
+
+// Admin-only direct photo upload for site content (Page Content sections,
+// Projects, Gallery) -- uploads straight to the `site-images` Storage
+// bucket instead of requiring an admin to paste a URL. Plain <Image>, not
+// SafeImage: this shows a real just-uploaded https Storage URL, not an
+// unverified external/stock link, so SafeImage's placeholder-first policy
+// doesn't apply here.
+export function ImagePickerField({
+  label,
+  imageUrl,
+  onChange,
+  folder
+}: {
+  label: string;
+  imageUrl: string;
+  onChange: (url: string) => void;
+  folder: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handlePick = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError('Photo library access is needed to upload a photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.75 });
+    if (result.canceled || !result.assets?.[0]) return;
+    setUploading(true);
+    setError('');
+    try {
+      const asset = result.assets[0];
+      const url = await uploadSiteImage(asset.uri, folder, asset.mimeType || 'image/jpeg');
+      onChange(url);
+    } catch (err: any) {
+      setError(err?.message || 'Could not upload photo.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <View className="gap-2">
+      <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</Text>
+      {imageUrl ? (
+        <View className="w-full h-40 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+          <Image source={{ uri: imageUrl }} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
+        </View>
+      ) : null}
+      <Pressable
+        onPress={handlePick}
+        disabled={uploading}
+        className="flex-row items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-slate-300 bg-slate-50"
+      >
+        {uploading ? <ActivityIndicator size="small" color={colors.rotaryAzure} /> : <ImageIcon size={16} color={colors.slate500} />}
+        <Text className="text-xs font-bold text-slate-600">{uploading ? 'Uploading...' : imageUrl ? 'Change Photo' : 'Upload Photo'}</Text>
+      </Pressable>
+      {error ? <Text className="text-[10px] text-rose-600">{error}</Text> : null}
+    </View>
   );
 }
 

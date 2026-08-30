@@ -6,7 +6,7 @@ import { RootStackParamList } from '../navigation/types';
 import { GalleryPhoto } from '../types';
 import { getGalleryPhotos } from '../lib/service';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton } from '../components/ui';
+import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminGallery'>;
@@ -106,7 +106,7 @@ export default function AdminGalleryScreen({}: Props) {
           </View>
           <TextField label="Title" value={form.title} onChangeText={(v) => setForm({ ...form, title: v })} />
           <TextField label="Description" value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} multiline />
-          <TextField label="Image URL" value={form.imageUrl} onChangeText={(v) => setForm({ ...form, imageUrl: v })} placeholder="https://..." autoCapitalize="none" />
+          <ImagePickerField label="Photo" imageUrl={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} folder="gallery" />
           <TextField label="Location" value={form.location} onChangeText={(v) => setForm({ ...form, location: v })} />
           <View className="flex-row flex-wrap gap-2">
             {CATEGORIES.map((c) => {

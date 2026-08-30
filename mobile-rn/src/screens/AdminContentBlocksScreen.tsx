@@ -11,7 +11,7 @@ import {
   adminUpdateContentBlock,
   adminDeleteContentBlock
 } from '../lib/cms';
-import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton } from '../components/ui';
+import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminContentBlocks'>;
@@ -165,7 +165,7 @@ export default function AdminContentBlocksScreen({}: Props) {
           </View>
           <TextField label="Title" value={form.title} onChangeText={(v) => setForm({ ...form, title: v })} placeholder="Section title" />
           <TextField label="Body" value={form.body} onChangeText={(v) => setForm({ ...form, body: v })} placeholder="Section copy" multiline />
-          <TextField label="Image URL" value={form.imageUrl} onChangeText={(v) => setForm({ ...form, imageUrl: v })} placeholder="https://... (optional)" autoCapitalize="none" />
+          <ImagePickerField label="Photo (optional)" imageUrl={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} folder={`content/${page}`} />
           <PrimaryButton label="Save" onPress={handleSave} loading={saving} disabled={!form.title && !form.body} />
         </Card>
       )}

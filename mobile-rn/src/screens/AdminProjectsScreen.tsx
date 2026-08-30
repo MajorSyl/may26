@@ -5,7 +5,7 @@ import { X, Pencil, Trash2, AlertTriangle } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { Project } from '../types';
 import { getProjects, adminCreateProject, adminUpdateProject, adminDeleteProject } from '../lib/service';
-import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton } from '../components/ui';
+import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminProjects'>;
@@ -125,7 +125,7 @@ export default function AdminProjectsScreen({}: Props) {
           <TextField label="Description" value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} placeholder="Overview" multiline />
           <TextField label="Year" value={form.year} onChangeText={(v) => setForm({ ...form, year: v.replace(/\D/g, '').slice(0, 4) })} keyboardType="number-pad" />
           <TextField label="Impact" value={form.impact} onChangeText={(v) => setForm({ ...form, impact: v })} placeholder="e.g. 500+ beneficiaries" />
-          <TextField label="Image URL" value={form.imageUrl} onChangeText={(v) => setForm({ ...form, imageUrl: v })} placeholder="https://..." autoCapitalize="none" />
+          <ImagePickerField label="Project Photo" imageUrl={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} folder="projects" />
           <View className="flex-row gap-2">
             {(['Planning', 'Active', 'Completed'] as const).map((s) => {
               const isSel = form.status === s;

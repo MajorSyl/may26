@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { Phone, Mail, MapPin, Clock, Globe, Facebook, Instagram, CheckCircle2, ShieldAlert } from 'lucide-react-native';
 import { ContactInquiry } from '../types';
 import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
@@ -157,6 +157,11 @@ export default function ContactScreen() {
         <View className="gap-4">
           {blocks.map((b) => (
             <Card key={b.id} className="gap-2">
+              {b.imageUrl ? (
+                <View className="w-full h-40 rounded-xl overflow-hidden -mt-1 mb-1">
+                  <Image source={{ uri: b.imageUrl }} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
+                </View>
+              ) : null}
               {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
               {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
             </Card>
