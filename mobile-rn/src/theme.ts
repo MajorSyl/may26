@@ -1,12 +1,11 @@
-// Same brand tokens as the web app's src/index.css @theme block, exported
-// as plain values for places NativeWind className strings aren't practical
-// (e.g. icon color props, StyleSheet.create).
+// Fintech-style palette: deep navy for headers/primary accents, bright
+// blue for CTAs/active states, light gray app background, white cards.
 export const colors = {
-  rotaryAzure: '#0284c7',
-  rotaryAzureDark: '#0369a1',
+  rotaryAzure: '#2E86F5',
+  rotaryAzureDark: '#1D6FE0',
   rotaryGold: '#F7A81B',
-  rotaryDark: '#0f172a',
-  rotaryLight: '#f8f9fa',
+  rotaryDark: '#0F1E4D',
+  rotaryLight: '#F3F4F6',
   slate50: '#f8fafc',
   slate100: '#f1f5f9',
   slate200: '#e2e8f0',

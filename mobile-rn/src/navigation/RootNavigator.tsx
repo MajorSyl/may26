@@ -27,7 +27,15 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Tabs" component={TabNavigator} />
-      <Stack.Group screenOptions={{ presentation: 'modal', headerShown: true, headerTintColor: colors.rotaryAzure }}>
+      <Stack.Group
+        screenOptions={{
+          presentation: 'modal',
+          headerShown: true,
+          headerStyle: { backgroundColor: colors.rotaryDark },
+          headerTintColor: colors.white,
+          headerTitleStyle: { fontWeight: '700' }
+        }}
+      >
         <Stack.Screen name="MemberLogin" component={MemberLoginScreen} options={{ title: 'Member Sign In' }} />
         <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: 'Admin Sign In' }} />
       </Stack.Group>

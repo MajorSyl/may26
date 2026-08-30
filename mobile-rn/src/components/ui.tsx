@@ -43,7 +43,7 @@ export function ScreenTitle({ title, subtitle }: { title: string; subtitle?: str
 }
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <View className={`bg-white rounded-3xl border border-slate-200 p-5 shadow-sm ${className}`}>{children}</View>;
+  return <View className={`bg-white rounded-2xl border border-slate-100 p-5 shadow-md ${className}`}>{children}</View>;
 }
 
 export function PrimaryButton({

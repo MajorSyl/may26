@@ -5,12 +5,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Same brand tokens as the web app's src/index.css @theme block.
-        'rotary-azure': '#0284c7',
-        'rotary-azure-dark': '#0369a1',
+        // Fintech-style palette: deep navy + bright blue accent (see src/theme.ts).
+        'rotary-azure': '#2E86F5',
+        'rotary-azure-dark': '#1D6FE0',
         'rotary-gold': '#F7A81B',
-        'rotary-dark': '#0f172a',
-        'rotary-light': '#f8f9fa'
+        'rotary-dark': '#0F1E4D',
+        'rotary-light': '#F3F4F6'
       }
     }
   },
