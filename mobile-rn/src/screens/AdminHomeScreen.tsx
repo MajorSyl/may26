@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ShieldCheck, FolderKanban, CalendarDays, Users, Mail, ClipboardCheck, Settings, KeyRound, BarChart3, UserCheck, LayoutTemplate, Image as ImageIcon, ListChecks } from 'lucide-react-native';
+import { ShieldCheck, FolderKanban, CalendarDays, Users, Mail, ClipboardCheck, Settings, KeyRound, BarChart3, UserCheck, LayoutTemplate, Image as ImageIcon, ListChecks, Instagram } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { logOut } from '../lib/service';
 import { ScreenScroll, PrimaryButton, LinkRow } from '../components/ui';
@@ -34,6 +34,7 @@ export default function AdminHomeScreen({ navigation }: Props) {
         <LinkRow icon={UserCheck} label="Pending Members" sublabel="Approve or reject new member sign-ups" onPress={() => navigation.navigate('AdminPendingMembers')} />
         <LinkRow icon={BarChart3} label="Analytics" sublabel="Traffic charts and club activity" onPress={() => navigation.navigate('AdminAnalytics')} />
         <LinkRow icon={ListChecks} label="Visitor Log" sublabel="Searchable page-view log" onPress={() => navigation.navigate('AdminVisitorLog')} />
+        <LinkRow icon={Instagram} label="Social Feed" sublabel="Instagram/Facebook credentials, sync & token status" onPress={() => navigation.navigate('AdminSocialFeed')} />
       </View>
 
       <View className="pt-2">

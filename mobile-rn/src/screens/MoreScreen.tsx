@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Image as ImageIcon, Heart, Mail, LayoutDashboard, ShieldCheck, ChevronRight, Sun, Shield, UserPlus } from 'lucide-react-native';
+import { Image as ImageIcon, Heart, Mail, LayoutDashboard, ShieldCheck, ChevronRight, Sun, Shield, UserPlus, Instagram } from 'lucide-react-native';
 import { MoreStackParamList, TabParamList } from '../navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
@@ -40,6 +40,7 @@ export default function MoreScreen({ navigation }: Props) {
       <Text className="text-2xl font-extrabold text-rotary-dark mb-2">More</Text>
 
       <MenuRow icon={ImageIcon} label="Club Gallery" onPress={() => navigation.navigate('ClubGallery')} />
+      <MenuRow icon={Instagram} label="Social Feed" onPress={() => navigation.navigate('SocialFeed')} />
       <MenuRow icon={Heart} label="Get Involved" onPress={() => navigation.navigate('GetInvolved')} />
       <MenuRow icon={Mail} label="Contact" onPress={() => navigation.navigate('Contact')} />
       <MenuRow icon={Sun} label="What is Rotary" onPress={() => navigation.navigate('WhatIsRotary')} />

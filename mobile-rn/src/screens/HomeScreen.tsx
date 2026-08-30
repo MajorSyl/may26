@@ -11,6 +11,7 @@ import MemberSpotlight from '../components/MemberSpotlight';
 import { ScreenScroll, Badge, Card } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
+import SocialFeedSection from '../components/SocialFeedSection';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
@@ -180,6 +181,8 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <MemberSpotlight />
+
+      <SocialFeedSection onViewAll={() => goToTab('MoreTab', 'SocialFeed')} />
 
       {/* Announcements */}
       <View className="gap-4">

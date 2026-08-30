@@ -25,6 +25,7 @@ export type MoreStackParamList = {
   Contact: undefined;
   WhatIsRotary: undefined;
   PrivacyPolicy: undefined;
+  SocialFeed: undefined;
 };
 
 export type TabParamList = {
@@ -59,4 +60,5 @@ export type RootStackParamList = {
   AdminContentBlocks: undefined;
   AdminGallery: undefined;
   AdminVisitorLog: undefined;
+  AdminSocialFeed: undefined;
 };
