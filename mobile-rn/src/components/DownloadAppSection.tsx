@@ -8,7 +8,11 @@ import { colors } from '../theme';
 // set, rather than ever being a dead link.
 const APP_STORE_URL: string | null = null; // e.g. 'https://apps.apple.com/app/id0000000000'
 const PLAY_STORE_URL: string | null = null; // e.g. 'https://play.google.com/store/apps/details?id=org.rcfsunset.mobile'
-const APK_DOWNLOAD_URL: string | null = null; // a successful EAS build's artifact URL, once one exists
+// Set once the first successful build publishes -- eas-build.yml re-hosts
+// each Android build as a GitHub Release asset at this exact, permanent
+// URL (tag `android-latest`, updated in place on every build, so this
+// value never has to change again): https://github.com/MajorSyl/may26/releases/download/android-latest/rcfs.apk
+const APK_DOWNLOAD_URL: string | null = null;
 
 function StoreBadge({
   icon: Icon,

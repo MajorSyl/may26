@@ -7,6 +7,9 @@ on:
     paths:
       - 'mobile-rn/**'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,6 +40,35 @@ jobs:
       # here until iOS credentials are set up once via `eas credentials`
       # (interactive) with an actual Apple Developer account.
       - name: Build (Android, internal distribution)
+        id: eas_build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas build --profile preview --platform android --non-interactive
+        run: |
+          eas build --profile preview --platform android --non-interactive --json --no-wait=false > build-result.json
+          cat build-result.json
+          BUILD_URL=$(node -e "const r=require('./build-result.json'); const b=Array.isArray(r)?r[0]:r; console.log(b.artifacts.buildUrl)")
+          echo "build_url=$BUILD_URL" >> "$GITHUB_OUTPUT"
+
+      # EAS's own artifact URL is a signed CDN link that isn't guaranteed to
+      # stay valid indefinitely -- download it into the runner and re-host
+      # it as a GitHub Release asset instead, which is a permanent, public,
+      # no-login-required URL (unlike a GitHub Actions artifact, which
+      # requires a GitHub login and expires after 90 days).
+      - name: Download APK from EAS
+        run: curl -L --fail -o rcfs.apk "${{ steps.eas_build.outputs.build_url }}"
+
+      # Publishes to a single stable tag (android-latest) rather than a new
+      # tag per build, so the download link embedded in the app/website
+      # never has to change -- each successful build just replaces the
+      # asset behind the same permanent URL.
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: "RCFS Android Preview (build #${{ github.run_number }})"
+          body: |
+            Automatically published by the EAS Preview Build workflow.
+            Always available at the same URL -- this release is updated in place on every successful build, not created fresh each time.
+          files: mobile-rn/rcfs.apk
+          make_latest: true
+          token: ${{ secrets.GITHUB_TOKEN }}
