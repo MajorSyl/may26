@@ -10,7 +10,7 @@ import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminProjects'>;
 
-const BLANK = { title: '', category: '', description: '', year: String(new Date().getFullYear()), impact: '', status: 'Active' as Project['status'], imageUrl: '', locationName: '' };
+const BLANK = { title: '', category: '', description: '', year: String(new Date().getFullYear()), impact: '', status: 'Active' as Project['status'], imageUrl: '' };
 
 export default function AdminProjectsScreen({}: Props) {
   const [items, setItems] = useState<Project[]>([]);
@@ -48,8 +48,7 @@ export default function AdminProjectsScreen({}: Props) {
       year: String(p.year),
       impact: p.impact || '',
       status: p.status,
-      imageUrl: p.imageUrl || '',
-      locationName: p.locationName || ''
+      imageUrl: p.imageUrl || ''
     });
     setEditingId(p.id);
   };
@@ -66,8 +65,7 @@ export default function AdminProjectsScreen({}: Props) {
         year: parseInt(form.year, 10) || new Date().getFullYear(),
         impact: form.impact,
         status: form.status,
-        imageUrl: form.imageUrl,
-        locationName: form.locationName
+        imageUrl: form.imageUrl
       };
       if (editingId === 'new') {
         await adminCreateProject(payload);
@@ -127,7 +125,6 @@ export default function AdminProjectsScreen({}: Props) {
           <TextField label="Description" value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} placeholder="Overview" multiline />
           <TextField label="Year" value={form.year} onChangeText={(v) => setForm({ ...form, year: v.replace(/\D/g, '').slice(0, 4) })} keyboardType="number-pad" />
           <TextField label="Impact" value={form.impact} onChangeText={(v) => setForm({ ...form, impact: v })} placeholder="e.g. 500+ beneficiaries" />
-          <TextField label="Location" value={form.locationName} onChangeText={(v) => setForm({ ...form, locationName: v })} placeholder="e.g. Freetown District" />
           <TextField label="Image URL" value={form.imageUrl} onChangeText={(v) => setForm({ ...form, imageUrl: v })} placeholder="https://..." autoCapitalize="none" />
           <View className="flex-row gap-2">
             {(['Planning', 'Active', 'Completed'] as const).map((s) => {

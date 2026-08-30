@@ -186,7 +186,8 @@ export const getUsers = async (): Promise<UserProfile[]> => {
         joinedDate: d.joineddate,
         avatarUrl: d.avatarurl,
         bio: d.bio,
-        rotaryId: d.rotary_id
+        rotaryId: d.rotary_id,
+        authUserId: d.auth_user_id
       }));
     } catch (err) {
       console.error('Supabase query error (users), falling back:', err);
@@ -449,17 +450,35 @@ function mapSubmissionRow(d: any): Submission {
 // Admin: Projects CRUD
 // -----------------------------------------------------------------------
 
+// Only these columns actually exist on the live `projects` table -- built
+// explicitly rather than spreading the input object, since Project also
+// carries fields (locationName, budget, teamLeads, etc.) that don't exist
+// as columns and would otherwise get sent straight into a failing insert.
 export const adminCreateProject = async (input: Omit<Project, 'id'>): Promise<void> => {
   const db = requireSupabase();
-  const { error } = await db.from('projects').insert({ id: randomId('proj'), ...input, imageurl: input.imageUrl });
+  const { error } = await db.from('projects').insert({
+    id: randomId('proj'),
+    title: input.title,
+    category: input.category,
+    description: input.description,
+    year: input.year,
+    impact: input.impact || null,
+    status: input.status,
+    imageurl: input.imageUrl || null
+  });
   if (error) throw error;
 };
 
 export const adminUpdateProject = async (id: string, patch: Partial<Project>): Promise<void> => {
   const db = requireSupabase();
-  const { imageUrl, ...rest } = patch;
-  const payload: any = { ...rest };
-  if (imageUrl !== undefined) payload.imageurl = imageUrl;
+  const payload: any = {};
+  if (patch.title !== undefined) payload.title = patch.title;
+  if (patch.category !== undefined) payload.category = patch.category;
+  if (patch.description !== undefined) payload.description = patch.description;
+  if (patch.year !== undefined) payload.year = patch.year;
+  if (patch.impact !== undefined) payload.impact = patch.impact;
+  if (patch.status !== undefined) payload.status = patch.status;
+  if (patch.imageUrl !== undefined) payload.imageurl = patch.imageUrl;
   const { error } = await db.from('projects').update(payload).eq('id', id);
   if (error) throw error;
 };
