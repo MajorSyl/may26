@@ -31,7 +31,12 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas init --non-interactive --force
 
-      - name: Build (Android + iOS, internal distribution)
+      # iOS builds need real Apple Developer Program credentials (a paid
+      # account + Apple ID), which EAS can't generate non-interactively the
+      # way it auto-generates an Android keystore. Building Android only
+      # here until iOS credentials are set up once via `eas credentials`
+      # (interactive) with an actual Apple Developer account.
+      - name: Build (Android, internal distribution)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas build --profile preview --platform all --non-interactive
+        run: eas build --profile preview --platform android --non-interactive
