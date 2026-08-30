@@ -1,9 +1,18 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { getLocalData, setLocalData } from './localStore';
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, GalleryPhoto } from '../types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, GalleryPhoto, Submission } from '../types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from '../data';
 
 export { isSupabaseConfigured };
+
+export function randomId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function requireSupabase() {
+  if (!isSupabaseConfigured || !supabase) throw new Error('This action requires a configured Supabase project.');
+  return supabase;
+}
 
 // Talks directly to this app's Supabase project: its tables, RLS policies,
 // and Edge Functions. Only covers the read/write operations the in-scope
@@ -323,4 +332,374 @@ export const logOut = async (): Promise<void> => {
   if (isSupabaseConfigured && supabase) {
     await supabase.auth.signOut();
   }
+};
+
+// -----------------------------------------------------------------------
+// Member portal: own profile, own contact info, own submissions.
+// RLS enforces "own" -- a member can only ever touch rows tied to their
+// auth.uid(), the queries below don't need to filter defensively.
+// -----------------------------------------------------------------------
+
+export interface MemberContactInfo {
+  uid: string;
+  email?: string;
+  phone?: string;
+  birthday?: string;
+}
+
+async function currentAuthUser() {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+  return user;
+}
+
+export const getMyProfile = async (): Promise<UserProfile> => {
+  const db = requireSupabase();
+  const user = await currentAuthUser();
+  const { data, error } = await db.from('users').select('*').eq('auth_user_id', user.id).single();
+  if (error || !data) throw new Error('Could not load your profile.');
+  return {
+    uid: data.uid,
+    name: data.name,
+    role: data.role,
+    committee: data.committee,
+    classification: data.classification,
+    isPaulHarrisFellow: data.ispaulharrisfellow,
+    paulHarrisLevel: data.paulharrislevel,
+    avatarUrl: data.avatarurl,
+    bio: data.bio,
+    rotaryId: data.rotary_id,
+    authUserId: data.auth_user_id
+  };
+};
+
+export const updateMyProfile = async (uid: string, patch: { bio?: string; classification?: string; committee?: string }): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('users').update(patch).eq('uid', uid);
+  if (error) throw error;
+};
+
+export const getMyContactInfo = async (uid: string): Promise<MemberContactInfo | null> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('member_contact_info').select('*').eq('uid', uid).maybeSingle();
+  if (error) throw error;
+  return data;
+};
+
+export const saveMyContactInfo = async (info: MemberContactInfo): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('member_contact_info').upsert(info);
+  if (error) throw error;
+};
+
+export const getMySubmissions = async (): Promise<Submission[]> => {
+  const db = requireSupabase();
+  const user = await currentAuthUser();
+  const { data, error } = await db.from('submissions').select('*').eq('submitter_id', user.id).order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(mapSubmissionRow);
+};
+
+export const createSubmission = async (input: {
+  kind: 'project' | 'photo';
+  title: string;
+  description?: string;
+  category?: string;
+  year?: number;
+  imageUrl?: string;
+}): Promise<void> => {
+  const db = requireSupabase();
+  const user = await currentAuthUser();
+  const { error } = await db.from('submissions').insert({
+    submitter_id: user.id,
+    kind: input.kind,
+    title: input.title,
+    description: input.description || null,
+    category: input.category || null,
+    year: input.year || null,
+    image_url: input.imageUrl || null,
+    status: 'pending'
+  });
+  if (error) throw error;
+};
+
+function mapSubmissionRow(d: any): Submission {
+  return {
+    id: d.id,
+    submitterId: d.submitter_id,
+    kind: d.kind,
+    title: d.title,
+    description: d.description,
+    category: d.category,
+    year: d.year,
+    imageUrl: d.image_url,
+    status: d.status,
+    rejectReason: d.reject_reason,
+    reviewedBy: d.reviewed_by,
+    reviewedAt: d.reviewed_at,
+    publishedId: d.published_id,
+    createdAt: d.created_at
+  };
+}
+
+// -----------------------------------------------------------------------
+// Admin: Projects CRUD
+// -----------------------------------------------------------------------
+
+export const adminCreateProject = async (input: Omit<Project, 'id'>): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('projects').insert({ id: randomId('proj'), ...input, imageurl: input.imageUrl });
+  if (error) throw error;
+};
+
+export const adminUpdateProject = async (id: string, patch: Partial<Project>): Promise<void> => {
+  const db = requireSupabase();
+  const { imageUrl, ...rest } = patch;
+  const payload: any = { ...rest };
+  if (imageUrl !== undefined) payload.imageurl = imageUrl;
+  const { error } = await db.from('projects').update(payload).eq('id', id);
+  if (error) throw error;
+};
+
+export const adminDeleteProject = async (id: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('projects').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// -----------------------------------------------------------------------
+// Admin: Events CRUD
+// -----------------------------------------------------------------------
+
+export const adminCreateEvent = async (input: Omit<ClubEvent, 'id'>): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('events').insert({ id: randomId('evt'), ...input });
+  if (error) throw error;
+};
+
+export const adminUpdateEvent = async (id: string, patch: Partial<ClubEvent>): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('events').update(patch).eq('id', id);
+  if (error) throw error;
+};
+
+export const adminDeleteEvent = async (id: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('events').delete().eq('id', id);
+  if (error) throw error;
+};
+
+// -----------------------------------------------------------------------
+// Admin: Members (edit/delete existing profiles -- provisioning a brand
+// new member login goes through the member-accounts Edge Function, which
+// is out of scope for this pass; see MIGRATION_NOTES.md)
+// -----------------------------------------------------------------------
+
+export const adminUpdateMember = async (uid: string, patch: Partial<UserProfile>): Promise<void> => {
+  const db = requireSupabase();
+  const payload: any = {};
+  if (patch.name !== undefined) payload.name = patch.name;
+  if (patch.role !== undefined) payload.role = patch.role;
+  if (patch.committee !== undefined) payload.committee = patch.committee;
+  if (patch.classification !== undefined) payload.classification = patch.classification;
+  if (patch.bio !== undefined) payload.bio = patch.bio;
+  if (patch.isPaulHarrisFellow !== undefined) payload.ispaulharrisfellow = patch.isPaulHarrisFellow;
+  if (patch.paulHarrisLevel !== undefined) payload.paulharrislevel = patch.paulHarrisLevel;
+  const { error } = await db.from('users').update(payload).eq('uid', uid);
+  if (error) throw error;
+};
+
+export const adminDeleteMember = async (uid: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('users').delete().eq('uid', uid);
+  if (error) throw error;
+};
+
+// -----------------------------------------------------------------------
+// Admin: Inquiries + Project Applications + RSVPs (read + clear)
+// -----------------------------------------------------------------------
+
+export const adminListInquiries = async (): Promise<ContactInquiry[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('inquiries').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as ContactInquiry[];
+};
+
+export const adminDeleteInquiry = async (id: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('inquiries').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const adminListApplications = async (): Promise<ProjectApplication[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('project_applications').select('*').order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as ProjectApplication[];
+};
+
+export const adminListRsvps = async (): Promise<EventRSVP[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('event_rsvps').select('*').order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as EventRSVP[];
+};
+
+// -----------------------------------------------------------------------
+// Admin: Approvals (member-submitted projects/photos awaiting review)
+// -----------------------------------------------------------------------
+
+export const adminListSubmissions = async (status?: 'pending' | 'approved' | 'rejected'): Promise<Submission[]> => {
+  const db = requireSupabase();
+  let query = db.from('submissions').select('*').order('created_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(mapSubmissionRow);
+};
+
+const GALLERY_CATEGORIES = ['meetings', 'anniversary', 'outreach', 'rotaract'];
+
+export const adminApproveSubmission = async (sub: Submission): Promise<void> => {
+  const db = requireSupabase();
+  const user = await currentAuthUser();
+  let publishedId: string;
+
+  if (sub.kind === 'project') {
+    publishedId = randomId('proj');
+    const { error: insertErr } = await db.from('projects').insert({
+      id: publishedId,
+      title: sub.title,
+      category: sub.category || 'Community',
+      description: sub.description || '',
+      year: sub.year || new Date().getFullYear(),
+      status: 'Active',
+      imageurl: sub.imageUrl || null
+    });
+    if (insertErr) throw insertErr;
+  } else {
+    const category = GALLERY_CATEGORIES.includes(sub.category || '') ? sub.category! : 'meetings';
+    const { data, error: insertErr } = await db
+      .from('gallery_photos')
+      .insert({
+        title: sub.title,
+        description: sub.description || null,
+        category,
+        image_url: sub.imageUrl || '',
+        submission_id: sub.id
+      })
+      .select('id')
+      .single();
+    if (insertErr) throw insertErr;
+    publishedId = data.id;
+  }
+
+  const { error } = await db
+    .from('submissions')
+    .update({ status: 'approved', published_id: publishedId, reviewed_by: user.id, reviewed_at: new Date().toISOString() })
+    .eq('id', sub.id);
+  if (error) throw error;
+};
+
+export const adminRejectSubmission = async (id: string, reason: string): Promise<void> => {
+  const db = requireSupabase();
+  const user = await currentAuthUser();
+  const { error } = await db
+    .from('submissions')
+    .update({ status: 'rejected', reject_reason: reason, reviewed_by: user.id, reviewed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+};
+
+// -----------------------------------------------------------------------
+// Admin: Site settings (write side of getSiteSettings above)
+// -----------------------------------------------------------------------
+
+export const saveSiteSettings = async (settings: SiteSettings): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('projects').upsert({
+    id: 'settings_site_config',
+    title: 'Site Settings',
+    category: 'internal',
+    description: JSON.stringify(settings),
+    year: new Date().getFullYear(),
+    status: 'Completed'
+  });
+  if (error) throw error;
+};
+
+// -----------------------------------------------------------------------
+// Admin: Roles (the `admins` table -- who has admin/reviewer access)
+// -----------------------------------------------------------------------
+
+export interface AdminRow {
+  userId: string;
+  role: string;
+  memberName?: string;
+  memberUid?: string;
+}
+
+export const adminListAdmins = async (): Promise<AdminRow[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('admins').select('*');
+  if (error) throw error;
+  const users = await getUsers();
+  return (data || []).map((d: any) => {
+    const match = users.find((u) => u.authUserId === d.user_id);
+    return { userId: d.user_id, role: d.role, memberName: match?.name, memberUid: match?.uid };
+  });
+};
+
+export const adminAddAdmin = async (authUserId: string, role: 'admin' | 'reviewer' = 'admin'): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('admins').insert({ user_id: authUserId, role });
+  if (error) throw error;
+};
+
+export const adminRemoveAdmin = async (authUserId: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('admins').delete().eq('user_id', authUserId);
+  if (error) throw error;
+};
+
+// -----------------------------------------------------------------------
+// Admin: Analytics (simple counts, no realtime)
+// -----------------------------------------------------------------------
+
+export interface AnalyticsSnapshot {
+  members: number;
+  projects: number;
+  events: number;
+  inquiries: number;
+  applications: number;
+  rsvps: number;
+  pendingSubmissions: number;
+  admins: number;
+}
+
+async function countRows(table: string, filter?: (q: any) => any): Promise<number> {
+  const db = requireSupabase();
+  let query = db.from(table).select('*', { count: 'exact', head: true });
+  if (filter) query = filter(query);
+  const { count, error } = await query;
+  if (error) throw error;
+  return count || 0;
+}
+
+export const adminGetAnalytics = async (): Promise<AnalyticsSnapshot> => {
+  const [members, projects, events, inquiries, applications, rsvps, pendingSubmissions, admins] = await Promise.all([
+    countRows('users'),
+    countRows('projects', (q) => q.neq('id', 'settings_site_config')),
+    countRows('events'),
+    countRows('inquiries'),
+    countRows('project_applications'),
+    countRows('event_rsvps'),
+    countRows('submissions', (q) => q.eq('status', 'pending')),
+    countRows('admins')
+  ]);
+  return { members, projects, events, inquiries, applications, rsvps, pendingSubmissions, admins };
 };

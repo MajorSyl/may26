@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronRight, LucideIcon } from 'lucide-react-native';
 import { colors } from '../theme';
 
 // Shared building blocks used across every ported screen, so each screen
@@ -115,6 +116,29 @@ export function TextField({
         style={multiline ? { textAlignVertical: 'top' } : undefined}
       />
     </View>
+  );
+}
+
+export function LinkRow({ icon: Icon, label, sublabel, onPress }: { icon: LucideIcon; label: string; sublabel?: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} className="bg-white rounded-2xl border border-slate-200 p-4 flex-row items-center gap-3">
+      <View className="w-10 h-10 rounded-xl bg-rotary-azure/10 items-center justify-center">
+        <Icon size={18} color={colors.rotaryAzure} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-sm font-bold text-slate-800">{label}</Text>
+        {sublabel ? <Text className="text-[11px] text-slate-400 mt-0.5">{sublabel}</Text> : null}
+      </View>
+      <ChevronRight size={18} color={colors.slate400} />
+    </Pressable>
+  );
+}
+
+export function IconButton({ icon: Icon, onPress, color }: { icon: LucideIcon; onPress: () => void; color?: string }) {
+  return (
+    <Pressable onPress={onPress} className="w-9 h-9 rounded-full items-center justify-center bg-slate-50 border border-slate-200">
+      <Icon size={15} color={color || colors.slate500} />
+    </Pressable>
   );
 }
 

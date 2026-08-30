@@ -1,4 +1,5 @@
 import 'react-native-url-polyfill/auto';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { createClient } from '@supabase/supabase-js';
@@ -55,10 +56,16 @@ const SecureStoreAdapter = {
   }
 };
 
+// expo-secure-store has no real web implementation (there's no OS keychain
+// in a browser) -- its web shim throws ("getValueWithKeyAsync is not a
+// function") the moment the Supabase client tries to read a persisted
+// session. AsyncStorage backs onto localStorage on web and works fine
+// there; SecureStore is only meaningfully more secure on iOS/Android, so
+// that's where it's worth the chunking complexity.
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        storage: SecureStoreAdapter,
+        storage: Platform.OS === 'web' ? AsyncStorage : SecureStoreAdapter,
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false
