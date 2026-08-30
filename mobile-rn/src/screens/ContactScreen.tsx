@@ -4,6 +4,8 @@ import { Phone, Mail, MapPin, Clock, Globe, Facebook, Instagram, CheckCircle2, S
 import { ContactInquiry } from '../types';
 import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
+import { logPageView } from '../lib/analytics';
+import { ContentBlock, getContentBlocks } from '../lib/cms';
 import { colors } from '../theme';
 
 function randomId(prefix: string): string {
@@ -18,10 +20,13 @@ export default function ContactScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
     let active = true;
+    logPageView('contact');
     getSiteSettings().then((s) => active && setSettings(s));
+    getContentBlocks('contact').then((b) => active && setBlocks(b));
     return () => {
       active = false;
     };
@@ -147,6 +152,17 @@ export default function ContactScreen() {
           <Text className="text-xs font-semibold text-slate-700 flex-1">@rcfsunset</Text>
         </View>
       </Card>
+
+      {blocks.length > 0 && (
+        <View className="gap-4">
+          {blocks.map((b) => (
+            <Card key={b.id} className="gap-2">
+              {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
+              {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
+            </Card>
+          ))}
+        </View>
+      )}
     </ScreenScroll>
   );
 }

@@ -5,6 +5,7 @@ import { GalleryPhoto } from '../types';
 import { getGalleryPhotos } from '../lib/service';
 import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
 import SafeImage from '../components/SafeImage';
+import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
 const CATEGORY_LABELS: Record<GalleryPhoto['category'], string> = {
@@ -29,6 +30,7 @@ export default function ClubGalleryScreen() {
   const [selected, setSelected] = useState<GalleryPhoto | null>(null);
 
   useEffect(() => {
+    logPageView('club_gallery');
     getGalleryPhotos()
       .then(setPhotos)
       .finally(() => setLoading(false));
@@ -37,8 +39,8 @@ export default function ClubGalleryScreen() {
   const filtered = activeCategory === 'all' ? photos : photos.filter((p) => p.category === activeCategory);
 
   return (
-    <ScreenScroll>
-      <View className="gap-2">
+    <ScreenScroll wide>
+      <View className="gap-2 md:max-w-3xl">
         <Badge label="Historical Archives" tone="gold" />
         <Text className="text-3xl font-extrabold text-rotary-dark">Club Archives & Memoirs</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
@@ -67,9 +69,13 @@ export default function ClubGalleryScreen() {
       ) : filtered.length === 0 ? (
         <EmptyBlock label={photos.length === 0 ? 'No photos have been added to the gallery yet.' : 'No photos found in this category.'} />
       ) : (
-        <View className="gap-4">
+        <View className="gap-4 md:flex-row md:flex-wrap">
           {filtered.map((photo) => (
-            <Pressable key={photo.id} onPress={() => setSelected(photo)} className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
+            <Pressable
+              key={photo.id}
+              onPress={() => setSelected(photo)}
+              className="bg-white border border-slate-200 rounded-3xl overflow-hidden md:w-[31%]"
+            >
               <View className="w-full h-40">
                 <SafeImage src={photo.imageUrl} alt={photo.title} />
               </View>

@@ -8,12 +8,18 @@ import { colors } from '../theme';
 // file stays focused on its own content instead of re-declaring the same
 // badge/button/card markup. Uses NativeWind className throughout.
 
-export function ScreenScroll({ children }: { children: React.ReactNode }) {
+// `wide`: text-first screens (About, Contact, forms, ...) cap and center
+// their content at tablet/desktop widths for readability -- a full-bleed
+// column of text stretched across a desktop window reads poorly. Grid
+// screens (Gallery, MembersDirectory, Events, ClubGallery) pass wide so
+// their multi-column layouts can use the full available width instead.
+export function ScreenScroll({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-rotary-light">
       <ScrollView
         className="flex-1"
+        contentContainerClassName={wide ? 'w-full md:px-6 lg:px-10' : 'w-full md:max-w-3xl md:mx-auto lg:max-w-4xl'}
         contentContainerStyle={{ paddingBottom: insets.bottom + 32, paddingTop: 16, paddingHorizontal: 16, gap: 24 }}
         keyboardShouldPersistTaps="handled"
       >

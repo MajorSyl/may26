@@ -6,6 +6,7 @@ import MemberLoginScreen from '../screens/MemberLoginScreen';
 import MemberHomeScreen from '../screens/MemberHomeScreen';
 import MemberProfileScreen from '../screens/MemberProfileScreen';
 import MemberSubmissionsScreen from '../screens/MemberSubmissionsScreen';
+import MemberAccountScreen from '../screens/MemberAccountScreen';
 import AdminLoginScreen from '../screens/AdminLoginScreen';
 import AdminHomeScreen from '../screens/AdminHomeScreen';
 import AdminProjectsScreen from '../screens/AdminProjectsScreen';
@@ -16,6 +17,10 @@ import AdminApprovalsScreen from '../screens/AdminApprovalsScreen';
 import AdminSettingsScreen from '../screens/AdminSettingsScreen';
 import AdminRolesScreen from '../screens/AdminRolesScreen';
 import AdminAnalyticsScreen from '../screens/AdminAnalyticsScreen';
+import AdminPendingMembersScreen from '../screens/AdminPendingMembersScreen';
+import AdminContentBlocksScreen from '../screens/AdminContentBlocksScreen';
+import AdminGalleryScreen from '../screens/AdminGalleryScreen';
+import AdminVisitorLogScreen from '../screens/AdminVisitorLogScreen';
 import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,6 +48,7 @@ export default function RootNavigator() {
         <Stack.Screen name="MemberHome" component={MemberHomeScreen} options={{ title: 'Member Portal' }} />
         <Stack.Screen name="MemberProfile" component={MemberProfileScreen} options={{ title: 'My Profile' }} />
         <Stack.Screen name="MemberSubmissions" component={MemberSubmissionsScreen} options={{ title: 'My Submissions' }} />
+        <Stack.Screen name="MemberAccount" component={MemberAccountScreen} options={{ title: 'Member Dashboard' }} />
         <Stack.Screen name="AdminHome" component={AdminHomeScreen} options={{ title: 'Admin' }} />
         <Stack.Screen name="AdminProjects" component={AdminProjectsScreen} options={{ title: 'Projects' }} />
         <Stack.Screen name="AdminEvents" component={AdminEventsScreen} options={{ title: 'Events' }} />
@@ -52,6 +58,10 @@ export default function RootNavigator() {
         <Stack.Screen name="AdminSettings" component={AdminSettingsScreen} options={{ title: 'Settings' }} />
         <Stack.Screen name="AdminRoles" component={AdminRolesScreen} options={{ title: 'Roles' }} />
         <Stack.Screen name="AdminAnalytics" component={AdminAnalyticsScreen} options={{ title: 'Analytics' }} />
+        <Stack.Screen name="AdminPendingMembers" component={AdminPendingMembersScreen} options={{ title: 'Pending Members' }} />
+        <Stack.Screen name="AdminContentBlocks" component={AdminContentBlocksScreen} options={{ title: 'Page Content' }} />
+        <Stack.Screen name="AdminGallery" component={AdminGalleryScreen} options={{ title: 'Gallery' }} />
+        <Stack.Screen name="AdminVisitorLog" component={AdminVisitorLogScreen} options={{ title: 'Visitor Log' }} />
       </Stack.Group>
     </Stack.Navigator>
   );

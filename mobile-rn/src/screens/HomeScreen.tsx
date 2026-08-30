@@ -8,7 +8,9 @@ import { getProjects } from '../lib/service';
 import { Project } from '../types';
 import SafeImage from '../components/SafeImage';
 import MemberSpotlight from '../components/MemberSpotlight';
-import { ScreenScroll, Badge } from '../components/ui';
+import { ScreenScroll, Badge, Card } from '../components/ui';
+import { logPageView } from '../lib/analytics';
+import { ContentBlock, getContentBlocks } from '../lib/cms';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
@@ -22,11 +24,14 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: Props) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
     let active = true;
+    logPageView('home');
     getSiteSettings().then((s) => active && setSettings(s));
     getProjects().then((p) => active && setProjects(p));
+    getContentBlocks('home').then((b) => active && setBlocks(b));
     return () => {
       active = false;
     };
@@ -206,6 +211,17 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         </View>
       </View>
+
+      {blocks.length > 0 && (
+        <View className="gap-4">
+          {blocks.map((b) => (
+            <Card key={b.id} className="gap-2">
+              {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
+              {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
+            </Card>
+          ))}
+        </View>
+      )}
     </ScreenScroll>
   );
 }

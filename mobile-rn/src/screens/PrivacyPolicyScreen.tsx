@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { Shield, Database, Users, Trash2, Mail, Lock } from 'lucide-react-native';
 import { ScreenScroll, Badge, Card } from '../components/ui';
+import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
 // Ported verbatim from the web app's PrivacyPolicy.tsx. Note: the "Delete
@@ -9,6 +10,10 @@ import { colors } from '../theme';
 // Dashboard, which is out of scope for this rebuild -- the copy is kept
 // as-is since it's still accurate for the web app members will also use.
 export default function PrivacyPolicyScreen() {
+  useEffect(() => {
+    logPageView('privacy_policy');
+  }, []);
+
   return (
     <ScreenScroll>
       <View className="gap-2">

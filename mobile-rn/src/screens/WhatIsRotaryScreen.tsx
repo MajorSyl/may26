@@ -1,13 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout, Award, BookMarked } from 'lucide-react-native';
 import { ROTARY_FOCUS_AREAS } from '../data';
-import { ScreenScroll, Badge } from '../components/ui';
+import { ScreenScroll, Badge, Card } from '../components/ui';
+import { logPageView } from '../lib/analytics';
+import { ContentBlock, getContentBlocks } from '../lib/cms';
 import { colors } from '../theme';
 
 const ICONS = [ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout];
 
 export default function WhatIsRotaryScreen() {
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+
+  useEffect(() => {
+    logPageView('what_is_rotary');
+    getContentBlocks('what_is_rotary').then(setBlocks);
+  }, []);
+
   return (
     <ScreenScroll>
       <View className="items-center gap-3">
@@ -62,6 +71,17 @@ export default function WhatIsRotaryScreen() {
           </View>
         </View>
       </View>
+
+      {blocks.length > 0 && (
+        <View className="gap-4">
+          {blocks.map((b) => (
+            <Card key={b.id} className="gap-2">
+              {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
+              {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
+            </Card>
+          ))}
+        </View>
+      )}
     </ScreenScroll>
   );
 }

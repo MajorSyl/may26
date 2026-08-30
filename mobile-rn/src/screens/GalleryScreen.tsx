@@ -7,6 +7,7 @@ import { Project } from '../types';
 import { getProjects } from '../lib/service';
 import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
 import SafeImage from '../components/SafeImage';
+import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<ProjectsStackParamList, 'Gallery'>;
@@ -19,6 +20,7 @@ export default function GalleryScreen({ navigation }: Props) {
   const [statusFilter, setStatusFilter] = useState('All');
 
   useEffect(() => {
+    logPageView('gallery');
     getProjects()
       .then(setProjects)
       .finally(() => setLoading(false));
@@ -27,8 +29,8 @@ export default function GalleryScreen({ navigation }: Props) {
   const filtered = projects.filter((p) => statusFilter === 'All' || p.status === statusFilter);
 
   return (
-    <ScreenScroll>
-      <View className="gap-2">
+    <ScreenScroll wide>
+      <View className="gap-2 md:max-w-3xl">
         <Badge label="On-The-Ground Impact" tone="gold" />
         <Text className="text-3xl font-extrabold text-rotary-dark">Service Gallery</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
@@ -68,7 +70,7 @@ export default function GalleryScreen({ navigation }: Props) {
           }
         />
       ) : (
-        <View className="gap-4">
+        <View className="gap-4 md:flex-row md:flex-wrap">
           {filtered.map((project) => {
             const isCompleted = project.status === 'Completed';
             const isActive = project.status === 'Active';
@@ -76,7 +78,7 @@ export default function GalleryScreen({ navigation }: Props) {
               <Pressable
                 key={project.id}
                 onPress={() => navigation.navigate('ProjectDetails', { project })}
-                className="bg-white border border-slate-200 rounded-3xl overflow-hidden"
+                className="bg-white border border-slate-200 rounded-3xl overflow-hidden md:w-[48%] lg:w-[31%]"
               >
                 {project.imageUrl && (
                   <View className="w-full h-40">

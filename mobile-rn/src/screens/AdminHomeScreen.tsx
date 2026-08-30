@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ShieldCheck, FolderKanban, CalendarDays, Users, Mail, ClipboardCheck, Settings, KeyRound, BarChart3 } from 'lucide-react-native';
+import { ShieldCheck, FolderKanban, CalendarDays, Users, Mail, ClipboardCheck, Settings, KeyRound, BarChart3, UserCheck, LayoutTemplate, Image as ImageIcon, ListChecks } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { logOut } from '../lib/service';
 import { ScreenScroll, PrimaryButton, LinkRow } from '../components/ui';
@@ -27,9 +27,13 @@ export default function AdminHomeScreen({ navigation }: Props) {
         <LinkRow icon={Users} label="Members" sublabel="Edit member profiles" onPress={() => navigation.navigate('AdminMembers')} />
         <LinkRow icon={Mail} label="Inquiries" sublabel="Contact form + Get Involved submissions" onPress={() => navigation.navigate('AdminInquiries')} />
         <LinkRow icon={ClipboardCheck} label="Approvals" sublabel="Review member-submitted projects & photos" onPress={() => navigation.navigate('AdminApprovals')} />
+        <LinkRow icon={ImageIcon} label="Gallery" sublabel="Add, edit, or remove gallery photos" onPress={() => navigation.navigate('AdminGallery')} />
         <LinkRow icon={Settings} label="Settings" sublabel="Site copy and contact details" onPress={() => navigation.navigate('AdminSettings')} />
+        <LinkRow icon={LayoutTemplate} label="Page Content" sublabel="Manage Home/About/etc. sections" onPress={() => navigation.navigate('AdminContentBlocks')} />
         <LinkRow icon={KeyRound} label="Roles" sublabel="Manage admin & reviewer access" onPress={() => navigation.navigate('AdminRoles')} />
-        <LinkRow icon={BarChart3} label="Analytics" sublabel="Club activity at a glance" onPress={() => navigation.navigate('AdminAnalytics')} />
+        <LinkRow icon={UserCheck} label="Pending Members" sublabel="Approve or reject new member sign-ups" onPress={() => navigation.navigate('AdminPendingMembers')} />
+        <LinkRow icon={BarChart3} label="Analytics" sublabel="Traffic charts and club activity" onPress={() => navigation.navigate('AdminAnalytics')} />
+        <LinkRow icon={ListChecks} label="Visitor Log" sublabel="Searchable page-view log" onPress={() => navigation.navigate('AdminVisitorLog')} />
       </View>
 
       <View className="pt-2">

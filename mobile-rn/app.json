@@ -3,6 +3,7 @@
     "name": "Rotary Freetown Sunset",
     "slug": "rcfs-mobile",
     "owner": "majordev999",
+    "scheme": "rcfsmobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",

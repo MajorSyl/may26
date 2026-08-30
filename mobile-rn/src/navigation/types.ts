@@ -44,6 +44,7 @@ export type RootStackParamList = {
   MemberHome: undefined;
   MemberProfile: undefined;
   MemberSubmissions: undefined;
+  MemberAccount: undefined;
   AdminLogin: undefined;
   AdminHome: undefined;
   AdminProjects: undefined;
@@ -54,4 +55,8 @@ export type RootStackParamList = {
   AdminSettings: undefined;
   AdminRoles: undefined;
   AdminAnalytics: undefined;
+  AdminPendingMembers: undefined;
+  AdminContentBlocks: undefined;
+  AdminGallery: undefined;
+  AdminVisitorLog: undefined;
 };

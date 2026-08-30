@@ -4,6 +4,7 @@ import { Search, Shield, Award, Calendar, Crown, UserCheck, Lock } from 'lucide-
 import { UserProfile } from '../types';
 import { getUsers } from '../lib/service';
 import { ScreenScroll, LoadingBlock, EmptyBlock } from '../components/ui';
+import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
 function initialsOf(name: string): string {
@@ -23,6 +24,7 @@ export default function MembersDirectoryScreen() {
   const [tab, setTab] = useState<'all' | 'executives' | 'phfs'>('all');
 
   useEffect(() => {
+    logPageView('members_directory');
     getUsers()
       .then(setMembers)
       .finally(() => setLoading(false));
@@ -43,7 +45,7 @@ export default function MembersDirectoryScreen() {
   });
 
   return (
-    <ScreenScroll>
+    <ScreenScroll wide>
       <View className="gap-2">
         <View className="self-start px-3 py-1 rounded-full bg-rotary-azure/10">
           <Text className="text-[10px] font-bold uppercase tracking-wider text-rotary-azure">Sunset Fellowship Roster</Text>
@@ -105,11 +107,11 @@ export default function MembersDirectoryScreen() {
       ) : filtered.length === 0 ? (
         <EmptyBlock label={`No members matching "${search}" found in this section.`} />
       ) : (
-        <View className="gap-3">
+        <View className="gap-3 md:flex-row md:flex-wrap">
           {filtered.map((m) => {
             const isExec = executives.some((e) => e.uid === m.uid);
             return (
-              <View key={m.uid} className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
+              <View key={m.uid} className="bg-white rounded-3xl border border-slate-200 overflow-hidden md:w-[48%] lg:w-[31%]">
                 <View className={`h-3 w-full ${isExec ? 'bg-rotary-gold' : m.isPaulHarrisFellow ? 'bg-rotary-azure' : 'bg-slate-200'}`} />
                 <View className="p-5 gap-3">
                   <View className="flex-row items-center gap-3">

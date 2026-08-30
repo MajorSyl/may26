@@ -68,7 +68,11 @@ export const supabase = isSupabaseConfigured
         storage: Platform.OS === 'web' ? AsyncStorage : SecureStoreAdapter,
         autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: false
+        // Only meaningful on web -- lets the client pick up the session
+        // from the URL hash after a Google OAuth redirect back to the app.
+        // Native handles the OAuth redirect via expo-web-browser instead
+        // (see lib/memberAccount.ts), where this flag has no effect.
+        detectSessionInUrl: Platform.OS === 'web'
       }
     })
   : null;

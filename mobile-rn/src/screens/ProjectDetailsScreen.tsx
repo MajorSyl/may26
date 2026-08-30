@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Calendar, MapPin, Check, FileText } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { ProjectApplication } from '../types';
 import { submitApplication } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
 import SafeImage from '../components/SafeImage';
+import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<ProjectsStackParamList, 'ProjectDetails'>;
@@ -22,6 +23,10 @@ export default function ProjectDetailsScreen({ route }: Props) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    logPageView(`project_${project.id}`);
+  }, [project.id]);
 
   const handleSubmit = async () => {
     if (!name || !email || !message) return;

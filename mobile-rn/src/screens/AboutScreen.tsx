@@ -3,7 +3,9 @@ import { View, Text, Pressable } from 'react-native';
 import { Compass, Heart } from 'lucide-react-native';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { FULL_MEMBER_LIST } from '../memberData';
-import { ScreenScroll, Badge } from '../components/ui';
+import { ScreenScroll, Badge, Card } from '../components/ui';
+import { logPageView } from '../lib/analytics';
+import { ContentBlock, getContentBlocks } from '../lib/cms';
 import { colors } from '../theme';
 
 const FOUR_WAY_TEST = [
@@ -30,10 +32,13 @@ const FOUR_WAY_TEST = [
 export default function AboutScreen() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [openTest, setOpenTest] = useState<number | null>(0);
+  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
     let active = true;
+    logPageView('about');
     getSiteSettings().then((s) => active && setSettings(s));
+    getContentBlocks('about').then((b) => active && setBlocks(b));
     return () => {
       active = false;
     };
@@ -114,6 +119,17 @@ export default function AboutScreen() {
               </View>
             ))}
           </View>
+        </View>
+      )}
+
+      {blocks.length > 0 && (
+        <View className="gap-4">
+          {blocks.map((b) => (
+            <Card key={b.id} className="gap-2">
+              {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
+              {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
+            </Card>
+          ))}
         </View>
       )}
     </ScreenScroll>

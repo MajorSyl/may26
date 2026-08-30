@@ -4,6 +4,7 @@ import { Calendar, Clock, MapPin } from 'lucide-react-native';
 import { ClubEvent, EventRSVP } from '../types';
 import { getEvents, submitRSVP } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField, LoadingBlock, EmptyBlock } from '../components/ui';
+import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 import { Pressable } from 'react-native';
 
@@ -24,6 +25,7 @@ export default function EventsScreen() {
   const load = async () => {
     setLoading(true);
     try {
+      logPageView('events');
       const data = await getEvents();
       setEvents(data);
       if (data.length > 0 && !selectedEventId) setSelectedEventId(data[0].id);
@@ -61,8 +63,8 @@ export default function EventsScreen() {
   };
 
   return (
-    <ScreenScroll>
-      <View className="gap-2">
+    <ScreenScroll wide>
+      <View className="gap-2 md:max-w-3xl">
         <Badge label="Fellowship Circles" />
         <Text className="text-3xl font-extrabold text-rotary-dark">Meetings & RSVP</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
@@ -82,9 +84,9 @@ export default function EventsScreen() {
         ) : events.length === 0 ? (
           <EmptyBlock label="No meetings are currently listed. Please check back shortly or feel free to contact a club officer." />
         ) : (
-          <View className="gap-3">
+          <View className="gap-3 md:flex-row md:flex-wrap">
             {events.map((ev) => (
-              <Card key={ev.id} className="gap-3">
+              <Card key={ev.id} className="gap-3 md:w-[48%] lg:w-[31%]">
                 <View className="flex-row items-center gap-2">
                   <Badge label={ev.type} />
                 </View>
@@ -112,7 +114,7 @@ export default function EventsScreen() {
         )}
       </View>
 
-      <View className="gap-4">
+      <View className="gap-4 md:max-w-xl">
         <Badge label="Hospitality Desk" tone="gold" />
         <Text className="text-xl font-bold text-slate-800">Lodge Guest RSVP</Text>
         <Text className="text-xs text-slate-500">Submit your visitor details so we can welcome you at our next meeting.</Text>

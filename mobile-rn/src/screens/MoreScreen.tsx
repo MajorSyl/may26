@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Image as ImageIcon, Heart, Mail, LayoutDashboard, ShieldCheck, ChevronRight, Sun, Shield } from 'lucide-react-native';
+import { Image as ImageIcon, Heart, Mail, LayoutDashboard, ShieldCheck, ChevronRight, Sun, Shield, UserPlus } from 'lucide-react-native';
 import { MoreStackParamList, TabParamList } from '../navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
@@ -31,7 +31,7 @@ export default function MoreScreen({ navigation }: Props) {
   // navigator, not a child of this tab's own stack), so reaching them
   // means climbing two levels: this MoreStack -> the Tab navigator -> the
   // RootStack. React Navigation doesn't type that hop cleanly, hence `any`.
-  const goToRootScreen = (screen: 'MemberLogin' | 'AdminLogin') => {
+  const goToRootScreen = (screen: 'MemberLogin' | 'AdminLogin' | 'MemberAccount') => {
     (navigation.getParent()?.getParent() as any)?.navigate(screen);
   };
 
@@ -48,6 +48,7 @@ export default function MoreScreen({ navigation }: Props) {
       <View className="h-px bg-slate-200 my-2" />
 
       <MenuRow icon={LayoutDashboard} label="Member Sign In" onPress={() => goToRootScreen('MemberLogin')} />
+      <MenuRow icon={UserPlus} label="Member Dashboard (Sign Up / Sign In)" onPress={() => goToRootScreen('MemberAccount')} />
       <MenuRow icon={ShieldCheck} label="Admin Sign In" onPress={() => goToRootScreen('AdminLogin')} />
     </ScrollView>
   );
