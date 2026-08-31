@@ -63,6 +63,13 @@ export default function AdminSettingsScreen({}: Props) {
         <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Home</Text>
         <TextField label="Hero Title" value={settings.homeHeroTitle} onChangeText={(v) => set('homeHeroTitle', v)} />
         <TextField label="Hero Subtitle" value={settings.homeHeroSubtitle} onChangeText={(v) => set('homeHeroSubtitle', v)} multiline />
+        <TextField
+          label="Featured Video URL"
+          value={settings.homeVideoUrl}
+          onChangeText={(v) => set('homeVideoUrl', v)}
+          placeholder="YouTube, Facebook, Instagram, or Google Drive share link"
+          autoCapitalize="none"
+        />
       </Card>
 
       <Card className="gap-4">

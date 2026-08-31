@@ -13,6 +13,7 @@ import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
 import SocialFeedSection from '../components/SocialFeedSection';
 import DownloadAppSection from '../components/DownloadAppSection';
+import VideoEmbed from '../components/VideoEmbed';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
@@ -183,6 +184,16 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <MemberSpotlight />
+
+      {settings.homeVideoUrl ? (
+        <View className="gap-3">
+          <View className="items-center gap-1.5">
+            <Badge label="Club Videos" tone="gold" />
+            <Text className="text-xl font-extrabold text-rotary-dark text-center">Featured Video</Text>
+          </View>
+          <VideoEmbed url={settings.homeVideoUrl} />
+        </View>
+      ) : null}
 
       <SocialFeedSection onViewAll={() => goToTab('MoreTab', 'SocialFeed')} />
 

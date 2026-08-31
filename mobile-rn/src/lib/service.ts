@@ -40,6 +40,7 @@ export interface SiteSettings {
   contactPhone: string;
   socialFacebookUrl: string;
   socialInstagramUrl: string;
+  homeVideoUrl: string;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -60,7 +61,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   contactEmail: 'placeholder@rcfsunset.org',
   contactPhone: '000000000',
   socialFacebookUrl: 'https://www.facebook.com/profile.php?id=100071187714639',
-  socialInstagramUrl: 'https://www.instagram.com/rcfsunset'
+  socialInstagramUrl: 'https://www.instagram.com/rcfsunset',
+  homeVideoUrl: ''
 };
 
 // Mirrors the web app: settings live as a JSON blob in the `description`
