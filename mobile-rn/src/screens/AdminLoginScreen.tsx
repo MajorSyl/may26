@@ -47,7 +47,6 @@ export default function AdminLoginScreen({ navigation }: Props) {
           <View className="w-14 h-14 rounded-2xl bg-rotary-dark items-center justify-center">
             <Lock size={24} color={colors.white} />
           </View>
-          <Text className="text-xl font-extrabold text-slate-800">Admin Sign In</Text>
           <Text className="text-[10px] uppercase tracking-widest text-slate-400">RCFS</Text>
         </View>
 
