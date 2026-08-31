@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import RootNavigator from './src/navigation/RootNavigator';
 import OnboardingModal from './src/components/OnboardingModal';
+import UpdateAvailableBanner from './src/components/UpdateAvailableBanner';
 import { RootStackParamList } from './src/navigation/types';
 import './global.css';
 
@@ -41,6 +42,7 @@ export default function App() {
         <RootNavigator />
       </NavigationContainer>
       <OnboardingModal />
+      <UpdateAvailableBanner />
     </SafeAreaProvider>
   );
 }

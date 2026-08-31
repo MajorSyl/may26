@@ -23,7 +23,9 @@
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#f8f9fa"
       },
-      "package": "org.rcfsunset.mobile"
+      "package": "org.rcfsunset.mobile",
+      "versionCode": 1,
+      "usesCleartextTraffic": false
     },
     "web": {
       "bundler": "metro",

@@ -66,6 +66,36 @@ jobs:
       - name: Download APK from EAS
         run: curl -L --fail -o rcfs.apk "${{ steps.eas_build.outputs.build_url }}"
 
+      # appVersionSource=remote (eas.json) means EAS's own servers -- not
+      # this checkout's app.json -- are the source of truth for
+      # versionCode, and increment it on every build (autoIncrement: true
+      # on the preview profile). That's what actually makes each APK a
+      # real Android "update" over the last one; a CI runner has no
+      # durable state between runs, so incrementing a value inside the
+      # repo alone would just reset to the same number every build. This
+      # reads back the number EAS actually assigned so the website's
+      # update-check can compare against it.
+      - name: Read assigned versionCode
+        id: version_info
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build:version:get --platform android --non-interactive --json > version-info.json || echo '{}' > version-info.json
+          cat version-info.json
+          VERSION_CODE=$(node -e "try { const v=require('./version-info.json'); console.log(v.android?.versionCode ?? v.versionCode ?? ''); } catch { console.log(''); }")
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          node -e "
+            const fs = require('fs');
+            const app = require('./app.json').expo;
+            fs.writeFileSync('version.json', JSON.stringify({
+              versionName: app.version,
+              versionCode: '$VERSION_CODE' ? parseInt('$VERSION_CODE', 10) : null,
+              apkUrl: 'https://github.com/${{ github.repository }}/releases/download/android-latest/rcfs.apk',
+              buildNumber: ${{ github.run_number }}
+            }, null, 2));
+          "
+          cat version.json
+
       # Publishes to a single stable tag (android-latest) rather than a new
       # tag per build, so the download link embedded in the app/website
       # never has to change -- each successful build just replaces the
@@ -74,10 +104,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-latest
-          name: "RCFS Android Preview (build #${{ github.run_number }})"
+          name: "RCFS Android Preview (build #${{ github.run_number }}, versionCode ${{ steps.version_info.outputs.version_code }})"
           body: |
             Automatically published by the EAS Preview Build workflow.
             Always available at the same URL -- this release is updated in place on every successful build, not created fresh each time.
-          files: mobile-rn/rcfs.apk
+          files: |
+            mobile-rn/rcfs.apk
+            mobile-rn/version.json
           make_latest: true
           token: ${{ secrets.GITHUB_TOKEN }}

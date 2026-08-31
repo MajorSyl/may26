@@ -43,6 +43,12 @@ export default function PrivacyPolicyScreen() {
           if you submit a project or photo for admin review, we store the details and images you provide until an admin
           reviews it.
         </Text>
+        <Text className="text-xs text-slate-600 leading-relaxed">
+          <Text className="font-bold text-slate-800">Meeting check-in: </Text>
+          if you use QR check-in at a club meeting, we record your device's GPS location at the moment you check in, solely
+          to confirm you were at the venue, along with the meeting and timestamp. This location reading is not collected at
+          any other time and is never shared publicly -- only club officers can view it, and only to confirm attendance.
+        </Text>
       </Card>
 
       <Card className="gap-3">
