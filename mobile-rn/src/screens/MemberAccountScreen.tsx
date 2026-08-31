@@ -81,6 +81,10 @@ export default function MemberAccountScreen({}: Props) {
 
   const handleAuthSubmit = async () => {
     if (!email || !password) return;
+    if (mode === 'signup' && password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
     setBusy(true);
     setError('');
     setNotice('');

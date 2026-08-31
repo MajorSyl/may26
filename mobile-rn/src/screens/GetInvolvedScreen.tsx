@@ -6,6 +6,7 @@ import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS } f
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
+import { isValidEmail, MAX_NAME_LENGTH, MAX_MESSAGE_LENGTH } from '../lib/validate';
 import { colors } from '../theme';
 
 function randomId(prefix: string): string {
@@ -34,6 +35,10 @@ export default function GetInvolvedScreen() {
 
   const handleSubmit = async () => {
     if (!name || !email || !message) return;
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -77,14 +82,15 @@ export default function GetInvolvedScreen() {
           the local scene. Let us know your background so we can send you an official invitation.
         </Text>
 
-        <TextField label="Full Name" value={name} onChangeText={setName} placeholder="e.g. Dr. Lansana Sesay" />
-        <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. lanssesay@gmail.com" keyboardType="email-address" autoCapitalize="none" />
+        <TextField label="Full Name" value={name} onChangeText={setName} placeholder="e.g. Dr. Lansana Sesay" maxLength={MAX_NAME_LENGTH} />
+        <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. lanssesay@gmail.com" keyboardType="email-address" autoCapitalize="none" maxLength={254} />
         <TextField
           label="Tell us why you wish to join"
           value={message}
           onChangeText={setMessage}
           placeholder="Brief summary of your background, experience, or interest in service..."
           multiline
+          maxLength={MAX_MESSAGE_LENGTH}
         />
 
         <PrimaryButton

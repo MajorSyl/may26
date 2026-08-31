@@ -5,6 +5,7 @@ import { ContactInquiry } from '../types';
 import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
 import { logPageView } from '../lib/analytics';
+import { isValidEmail, MAX_NAME_LENGTH, MAX_MESSAGE_LENGTH } from '../lib/validate';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
 import { colors } from '../theme';
 
@@ -34,6 +35,10 @@ export default function ContactScreen() {
 
   const handleSubmit = async () => {
     if (!name || !email || !message) return;
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -74,17 +79,15 @@ export default function ContactScreen() {
         <Text className="text-xs text-slate-400 leading-relaxed">
           Your inquiry is routed directly to the Club President, Secretary, and Membership directors.
         </Text>
-        <TextField label="Full Names" value={name} onChangeText={setName} placeholder="e.g. Sahr Kamanda" />
-        <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. name@domain.com" keyboardType="email-address" autoCapitalize="none" />
-        <TextField label="Write Message Detail" value={message} onChangeText={setMessage} placeholder="Details of your request..." multiline />
-        <PrimaryButton label={loading ? 'Transmitting...' : 'Transmit Message'} onPress={handleSubmit} loading={loading} />
+        <TextField label="Full Names" value={name} onChangeText={setName} placeholder="e.g. Sahr Kamanda" maxLength={MAX_NAME_LENGTH} />
+        <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. name@domain.com" keyboardType="email-address" autoCapitalize="none" maxLength={254} />
+        <TextField label="Message" value={message} onChangeText={setMessage} placeholder="Details of your request..." multiline maxLength={MAX_MESSAGE_LENGTH} />
+        <PrimaryButton label={loading ? 'Sending...' : 'Send Message'} onPress={handleSubmit} loading={loading} />
 
         {success && (
           <View className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex-row items-center gap-3">
             <CheckCircle2 size={18} color={colors.emerald600} />
-            <Text className="text-xs text-emerald-800 flex-1">
-              Successfully logged! Your message has been registered and synced with our central database.
-            </Text>
+            <Text className="text-xs text-emerald-800 flex-1">Thanks for reaching out -- we'll get back to you soon.</Text>
           </View>
         )}
         {error ? (

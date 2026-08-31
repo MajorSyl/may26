@@ -114,7 +114,8 @@ export function TextField({
   keyboardType,
   secureTextEntry,
   autoCapitalize,
-  multiline
+  multiline,
+  maxLength
 }: {
   label: string;
   value: string;
@@ -124,6 +125,7 @@ export function TextField({
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'characters' | 'sentences' | 'words';
   multiline?: boolean;
+  maxLength?: number;
 }) {
   return (
     <View className="gap-1.5">
@@ -136,6 +138,7 @@ export function TextField({
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
         autoCapitalize={autoCapitalize}
+        maxLength={maxLength}
         multiline={multiline}
         className={`bg-slate-50 border border-slate-200 rounded-xl px-3.5 text-slate-800 text-sm ${
           multiline ? 'py-3 min-h-[90px]' : 'py-3'

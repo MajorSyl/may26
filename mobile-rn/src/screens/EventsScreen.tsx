@@ -5,6 +5,7 @@ import { ClubEvent, EventRSVP } from '../types';
 import { getEvents, submitRSVP } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField, LoadingBlock, EmptyBlock } from '../components/ui';
 import { logPageView } from '../lib/analytics';
+import { isValidEmail, MAX_NAME_LENGTH } from '../lib/validate';
 import { colors } from '../theme';
 import { Pressable } from 'react-native';
 
@@ -40,6 +41,10 @@ export default function EventsScreen() {
 
   const handleRsvp = async () => {
     if (!guestName || !guestEmail || !selectedEventId) return;
+    if (!isValidEmail(guestEmail)) {
+      setRsvpError('Please enter a valid email address.');
+      return;
+    }
     setRsvpLoading(true);
     setRsvpError('');
     try {
@@ -138,7 +143,7 @@ export default function EventsScreen() {
           </View>
         )}
 
-        <TextField label="Your Full Name" value={guestName} onChangeText={setGuestName} placeholder="e.g. Samuel Jalloh" />
+        <TextField label="Your Full Name" value={guestName} onChangeText={setGuestName} placeholder="e.g. Samuel Jalloh" maxLength={MAX_NAME_LENGTH} />
         <TextField
           label="Your Email Address"
           value={guestEmail}
@@ -146,6 +151,7 @@ export default function EventsScreen() {
           placeholder="e.g. sam@gmail.com"
           keyboardType="email-address"
           autoCapitalize="none"
+          maxLength={254}
         />
 
         <PrimaryButton
