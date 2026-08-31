@@ -5,10 +5,6 @@ import { ScreenScroll, Badge, Card } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
-// Ported verbatim from the web app's PrivacyPolicy.tsx. Note: the "Delete
-// My Account" self-serve flow this describes lives in the old member
-// Dashboard, which is out of scope for this rebuild -- the copy is kept
-// as-is since it's still accurate for the web app members will also use.
 export default function PrivacyPolicyScreen() {
   useEffect(() => {
     logPageView('privacy_policy');
@@ -36,17 +32,11 @@ export default function PrivacyPolicyScreen() {
           This is used only to respond to your inquiry or send occasional club updates.
         </Text>
         <Text className="text-xs text-slate-600 leading-relaxed">
-          <Text className="font-bold text-slate-800">Club members: </Text>
-          if you're a member with a Rotary ID and PIN login, we hold your club roster information (name, role, committee,
-          recognitions) plus anything you choose to add yourself through the Member Portal: a short bio, profile photo,
-          contact email, phone number, and birthday. Your PIN is stored as a securely hashed credential — we never store or
-          can see it in plain text.
-        </Text>
-        <Text className="text-xs text-slate-600 leading-relaxed">
-          <Text className="font-bold text-slate-800">Member activity: </Text>
-          messages you send in the members-only Club Chat, and posts, photos, and comments you share on the Member
-          Timeline, are stored so other members can see them. These are only visible to signed-in members, never to the
-          public.
+          <Text className="font-bold text-slate-800">Member Dashboard sign-ups: </Text>
+          if you sign up through the Member Dashboard (email and password, or Google sign-in), we hold your email address
+          and whatever you add to your profile: name, bio, profile photo, and phone number. Passwords are never stored or
+          seen by us in plain text -- authentication is handled by our identity provider. Membership requests are reviewed
+          by a club admin before full member access is granted.
         </Text>
         <Text className="text-xs text-slate-600 leading-relaxed">
           <Text className="font-bold text-slate-800">Project submissions: </Text>
@@ -80,8 +70,8 @@ export default function PrivacyPolicyScreen() {
           site, the same way it would appear in a printed club roster.
         </Text>
         <Text className="text-xs text-slate-600 leading-relaxed">
-          Club Chat messages and Member Timeline posts are visible only to other signed-in club members — never to the
-          public or to visitors who haven't logged in.
+          Member Dashboard profile details (bio, phone number) are visible only to signed-in club officers who review and
+          manage membership — never to the public.
         </Text>
         <Text className="text-xs text-slate-600 leading-relaxed">
           Contact form messages and newsletter emails are only seen by club officers who administer the site.
@@ -94,19 +84,14 @@ export default function PrivacyPolicyScreen() {
           <Text className="text-base font-extrabold text-white">Deleting your account</Text>
         </View>
         <Text className="text-xs text-slate-300 leading-relaxed">
-          If you have a member login, you can permanently delete your account at any time from the Member Portal, under{' '}
-          <Text className="text-white font-bold">My Account → Delete My Account</Text>. No need to contact anyone.
+          If you have a Member Dashboard account, contact us using the Contact page to request deletion. We'll remove your
+          account, sign-in credentials, and profile information (bio, profile photo, phone number) within a reasonable
+          time.
         </Text>
-        <Text className="text-xs text-slate-300 leading-relaxed">Deleting your account immediately and permanently:</Text>
-        <View className="gap-1 pl-2">
-          <Text className="text-xs text-slate-300">• Deletes your login (Rotary ID + PIN) — you'll be signed out and can no longer log in</Text>
-          <Text className="text-xs text-slate-300">• Deletes your bio, profile photo, contact email, phone number, and birthday</Text>
-          <Text className="text-xs text-slate-300">• Deletes your Club Chat messages, and your Member Timeline posts, photos, and comments</Text>
-        </View>
         <Text className="text-xs text-slate-300 leading-relaxed">
           Your basic club roster entry (name, role) may remain listed in the public Members Directory, since club
           membership is a real-world affiliation the club administers independently of app access. If you'd like that
-          removed too, contact us using the Contact page and we'll handle it directly.
+          removed too, let us know in the same request and we'll handle it directly.
         </Text>
       </View>
 

@@ -238,67 +238,6 @@ export const submitApplication = async (app: ProjectApplication): Promise<void> 
 };
 
 // -----------------------------------------------------------------------
-// Member auth: Rotary ID + 6-digit PIN via the existing member-login Edge
-// Function (unauthenticated by design -- see supabase/functions/member-login
-// in the main repo). Same contract as the web app.
-// -----------------------------------------------------------------------
-
-export const loginWithRotaryIdAndPin = async (rotaryId: string, pin: string): Promise<UserProfile> => {
-  if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Member login requires a configured Supabase project.');
-  }
-
-  const { data, error } = await supabase.functions.invoke('member-login', {
-    body: { rotaryId: rotaryId.trim().toUpperCase(), pin }
-  });
-
-  if (error) {
-    // supabase-js surfaces non-2xx Edge Function responses as an error with
-    // no parsed body by default; try to recover the { error: string } JSON
-    // the function actually sent so the UI can show the real message
-    // ("Invalid Rotary ID or PIN.", lockout countdown, etc).
-    const context = (error as any)?.context;
-    if (context?.json) {
-      const body = await context.json().catch(() => null);
-      if (body?.error) throw new Error(body.error);
-    }
-    throw new Error(error.message || 'Could not sign in. Check your Rotary ID and PIN.');
-  }
-  if (data?.error) throw new Error(data.error);
-  if (!data?.access_token || !data?.refresh_token) {
-    throw new Error('Sign-in did not return a session. Please try again.');
-  }
-
-  const { error: sessionErr } = await supabase.auth.setSession({
-    access_token: data.access_token,
-    refresh_token: data.refresh_token
-  });
-  if (sessionErr) throw sessionErr;
-
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Signed in, but could not load your session.');
-
-  const { data: profileRow, error: profileErr } = await supabase.from('users').select('*').eq('auth_user_id', user.id).maybeSingle();
-  if (profileErr || !profileRow) throw new Error('Signed in, but could not load your member profile.');
-
-  return {
-    uid: profileRow.uid,
-    name: profileRow.name,
-    role: profileRow.role,
-    committee: profileRow.committee,
-    classification: profileRow.classification,
-    isPaulHarrisFellow: profileRow.ispaulharrisfellow,
-    paulHarrisLevel: profileRow.paulharrislevel,
-    avatarUrl: profileRow.avatarurl,
-    bio: profileRow.bio,
-    rotaryId: profileRow.rotary_id,
-    authUserId: profileRow.auth_user_id
-  };
-};
-
-// -----------------------------------------------------------------------
 // Admin auth: Supabase email/password, then re-verified against the
 // `admins` table (RLS-gated, same as the web app's checkIsAdmin) -- the
 // frontend check here is a UX convenience only, the actual enforcement is
