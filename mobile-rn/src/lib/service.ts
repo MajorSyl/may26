@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { getLocalData, setLocalData } from './localStore';
-import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, GalleryPhoto, Submission } from '../types';
+import { Project, ClubEvent, UserProfile, ContactInquiry, EventRSVP, ProjectApplication, GalleryPhoto, Submission, AttendanceRecord, RoleRequest } from '../types';
 import { INITIAL_PROJECTS, INITIAL_EVENTS, INITIAL_MEMBER_DIRECTORY } from '../data';
 
 export { isSupabaseConfigured };
@@ -186,6 +186,147 @@ export const adminListEventRsvps = async (eventId: string): Promise<EventRSVP[]>
   const { data, error } = await db.from('event_rsvps').select('*').eq('event_id', eventId).order('submitted_at', { ascending: false });
   if (error) throw error;
   return (data || []) as EventRSVP[];
+};
+
+// -----------------------------------------------------------------------
+// Attendance tracking (QR + geofence check-in)
+// -----------------------------------------------------------------------
+
+export const getCheckinToken = async (eventId: string): Promise<{ code: string; expiresAt: string }> => {
+  const db = requireSupabase();
+  const { data, error } = await db.functions.invoke('get-checkin-token', { body: { eventId } });
+  if (error) {
+    const context = (error as any)?.context;
+    if (context?.json) {
+      const b = await context.json().catch(() => null);
+      if (b?.error) throw new Error(b.error);
+    }
+    throw new Error(error.message || 'Could not generate check-in code.');
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+};
+
+export const submitCheckIn = async (
+  code: string,
+  lat: number,
+  lng: number,
+  accuracy: number
+): Promise<{ success: boolean; alreadyCheckedIn?: boolean; confidence?: string; eventTitle?: string }> => {
+  const db = requireSupabase();
+  const { data, error } = await db.functions.invoke('attendance-check-in', { body: { code, lat, lng, accuracy } });
+  if (error) {
+    const context = (error as any)?.context;
+    if (context?.json) {
+      const b = await context.json().catch(() => null);
+      if (b?.error) throw new Error(b.error);
+    }
+    throw new Error(error.message || 'Could not check in.');
+  }
+  if (data?.error) throw new Error(data.error);
+  return data;
+};
+
+export const adminListAttendance = async (eventId: string): Promise<AttendanceRecord[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('attendance_records').select('*').eq('event_id', eventId).order('checked_in_at', { ascending: false });
+  if (error) throw error;
+  const rows = (data || []) as any[];
+  if (rows.length === 0) return [];
+  const users = await getUsers();
+  return rows.map((r) => ({
+    ...r,
+    memberName: users.find((u) => u.authUserId === r.member_id)?.name
+  }));
+};
+
+export const adminManualCheckIn = async (eventId: string, memberId: string): Promise<void> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  const { error } = await db.from('attendance_records').insert({
+    event_id: eventId,
+    member_id: memberId,
+    method: 'manual',
+    confidence: 'manual',
+    recorded_by: user?.id
+  });
+  if (error) throw error;
+};
+
+export const adminRemoveAttendance = async (id: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('attendance_records').delete().eq('id', id);
+  if (error) throw error;
+};
+
+export const getMyAttendanceHistory = async (): Promise<AttendanceRecord[]> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await db.from('attendance_records').select('*').eq('member_id', user.id).order('checked_in_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as AttendanceRecord[];
+};
+
+// -----------------------------------------------------------------------
+// Officer access requests
+// -----------------------------------------------------------------------
+
+export const requestOfficerRole = async (role: 'secretary' | 'treasurer' | 'media', note: string): Promise<void> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+  const { error } = await db.from('role_requests').insert({ user_id: user.id, requested_role: role, note: note || null });
+  if (error) throw error;
+};
+
+export const getMyRoleRequest = async (): Promise<RoleRequest | null> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) return null;
+  const { data } = await db.from('role_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  return (data as RoleRequest) || null;
+};
+
+export const adminListRoleRequests = async (): Promise<RoleRequest[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('role_requests').select('*').eq('status', 'pending').order('created_at', { ascending: true });
+  if (error) throw error;
+  const rows = (data || []) as RoleRequest[];
+  if (rows.length === 0) return [];
+  const users = await getUsers();
+  return rows.map((r) => ({ ...r, memberName: users.find((u) => u.authUserId === r.user_id)?.name }));
+};
+
+export const adminApproveRoleRequest = async (request: RoleRequest): Promise<void> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  const { error: grantErr } = await db.from('admins').upsert({ user_id: request.user_id, role: request.requested_role });
+  if (grantErr) throw grantErr;
+  const { error } = await db
+    .from('role_requests')
+    .update({ status: 'approved', reviewed_by: user?.id, reviewed_at: new Date().toISOString() })
+    .eq('id', request.id);
+  if (error) throw error;
+};
+
+export const adminDenyRoleRequest = async (id: string): Promise<void> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  const { error } = await db.from('role_requests').update({ status: 'denied', reviewed_by: user?.id, reviewed_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw error;
 };
 
 // -----------------------------------------------------------------------

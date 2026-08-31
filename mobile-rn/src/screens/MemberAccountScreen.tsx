@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { User as UserIcon, Clock, XCircle, ShieldCheck, Camera, AlertTriangle, Check, ImagePlus } from 'lucide-react-native';
+import { User as UserIcon, Clock, XCircle, ShieldCheck, Camera, AlertTriangle, Check, ImagePlus, CalendarDays, Award, Send } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import {
   MemberProfile,
@@ -15,8 +15,11 @@ import {
   signOutMemberAccount,
   signInWithGoogle,
   uploadAvatar,
-  submitGalleryPhoto
+  submitGalleryPhoto,
+  listMySubmissions
 } from '../lib/memberAccount';
+import { getMyAttendanceHistory, getEvents, hasMemberRsvped, requestOfficerRole, getMyRoleRequest, OFFICER_ROLE_LABELS } from '../lib/service';
+import { AttendanceRecord, ClubEvent, RoleRequest } from '../types';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { ScreenScroll, PrimaryButton, TextField, Card, Badge, LoadingBlock } from '../components/ui';
 import { colors } from '../theme';
@@ -56,6 +59,15 @@ export default function MemberAccountScreen({}: Props) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<(ClubEvent & { rsvped: boolean })[]>([]);
+  const [mySubmissions, setMySubmissions] = useState<any[]>([]);
+  const [roleRequest, setRoleRequest] = useState<RoleRequest | null>(null);
+  const [requestingRole, setRequestingRole] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'secretary' | 'treasurer' | 'media'>('media');
+  const [roleNote, setRoleNote] = useState('');
+  const [requestBusy, setRequestBusy] = useState(false);
+
   const refresh = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
       setView('auth');
@@ -86,6 +98,33 @@ export default function MemberAccountScreen({}: Props) {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (view !== 'dashboard' || profile?.membershipStatus !== 'approved') return;
+    getMyAttendanceHistory().then(setAttendance).catch(() => {});
+    listMySubmissions().then(setMySubmissions).catch(() => {});
+    getMyRoleRequest().then(setRoleRequest).catch(() => {});
+    getEvents().then(async (evts) => {
+      const upcoming = evts.filter((e) => new Date(e.date).getTime() >= Date.now() - 86400000).slice(0, 5);
+      const withRsvp = await Promise.all(upcoming.map(async (e) => ({ ...e, rsvped: await hasMemberRsvped(e.id).catch(() => false) })));
+      setUpcomingEvents(withRsvp);
+    });
+  }, [view, profile?.membershipStatus]);
+
+  const handleRequestRole = async () => {
+    setRequestBusy(true);
+    setError('');
+    try {
+      await requestOfficerRole(selectedRole, roleNote);
+      setRoleRequest(await getMyRoleRequest());
+      setRequestingRole(false);
+      setRoleNote('');
+    } catch (err: any) {
+      setError(err?.message || 'Could not submit your request.');
+    } finally {
+      setRequestBusy(false);
+    }
+  };
 
   const handleAuthSubmit = async () => {
     if (!email || !password) return;
@@ -392,6 +431,115 @@ export default function MemberAccountScreen({}: Props) {
               <Text className="text-[11px] font-bold text-emerald-800">{notice}</Text>
             </View>
           ) : null}
+
+          {status === 'approved' && attendance.some((a) => a.confidence === 'low') && (
+            <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex-row items-center gap-2">
+              <AlertTriangle size={16} color={colors.amber500} />
+              <Text className="text-[11px] text-amber-700 flex-1">
+                One or more of your check-ins has a weak location signal and is awaiting officer review -- no action needed.
+              </Text>
+            </View>
+          )}
+          {status === 'approved' && roleRequest?.status === 'approved' && (
+            <View className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex-row items-center gap-2">
+              <Check size={16} color={colors.emerald600} />
+              <Text className="text-[11px] text-emerald-800 flex-1">
+                Your request for {OFFICER_ROLE_LABELS[roleRequest.requested_role]} access was approved!
+              </Text>
+            </View>
+          )}
+          {status === 'approved' && roleRequest?.status === 'denied' && (
+            <View className="bg-slate-100 border border-slate-200 rounded-xl p-3 flex-row items-center gap-2">
+              <Text className="text-[11px] text-slate-600 flex-1">Your officer access request wasn't approved this time.</Text>
+            </View>
+          )}
+
+          {status === 'approved' && upcomingEvents.length > 0 && (
+            <Card className="gap-3">
+              <View className="flex-row items-center gap-2">
+                <CalendarDays size={16} color={colors.rotaryAzure} />
+                <Text className="text-sm font-bold text-slate-800">Upcoming Events</Text>
+              </View>
+              {upcomingEvents.map((e) => (
+                <View key={e.id} className="flex-row items-center justify-between gap-2 py-1.5 border-t border-slate-100 first:border-t-0">
+                  <View className="flex-1">
+                    <Text className="text-xs font-bold text-slate-700">{e.title}</Text>
+                    <Text className="text-[10px] text-slate-400">{e.date} @ {e.time}</Text>
+                  </View>
+                  {e.rsvped ? <Badge label="Attending" /> : <Badge label="Not RSVP'd" tone="gold" />}
+                </View>
+              ))}
+            </Card>
+          )}
+
+          {status === 'approved' && (
+            <Card className="gap-3">
+              <View className="flex-row items-center gap-2">
+                <Award size={16} color={colors.rotaryAzure} />
+                <Text className="text-sm font-bold text-slate-800">My Attendance</Text>
+              </View>
+              {attendance.length === 0 ? (
+                <Text className="text-[11px] text-slate-400">No check-ins recorded yet.</Text>
+              ) : (
+                attendance.map((a) => (
+                  <View key={a.id} className="flex-row items-center justify-between gap-2 py-1.5 border-t border-slate-100 first:border-t-0">
+                    <Text className="text-xs text-slate-600">{new Date(a.checked_in_at).toLocaleDateString()}</Text>
+                    {a.confidence === 'low' ? <Badge label="Low Confidence" tone="gold" /> : <Badge label="Verified" />}
+                  </View>
+                ))
+              )}
+            </Card>
+          )}
+
+          {status === 'approved' && mySubmissions.length > 0 && (
+            <Card className="gap-3">
+              <View className="flex-row items-center gap-2">
+                <ImagePlus size={16} color={colors.rotaryAzure} />
+                <Text className="text-sm font-bold text-slate-800">My Photo Submissions</Text>
+              </View>
+              {mySubmissions.map((s: any) => (
+                <View key={s.id} className="flex-row items-center justify-between gap-2 py-1.5 border-t border-slate-100 first:border-t-0">
+                  <Text className="text-xs text-slate-600 flex-1">{s.title}</Text>
+                  <Badge
+                    label={s.status}
+                    tone={s.status === 'approved' ? 'azure' : s.status === 'rejected' ? undefined : 'gold'}
+                  />
+                </View>
+              ))}
+            </Card>
+          )}
+
+          {status === 'approved' && (
+            <Card className="gap-3">
+              <View className="flex-row items-center gap-2">
+                <Send size={16} color={colors.rotaryAzure} />
+                <Text className="text-sm font-bold text-slate-800">Officer Access</Text>
+              </View>
+              {roleRequest?.status === 'pending' ? (
+                <Text className="text-[11px] text-slate-500">
+                  Your request for {OFFICER_ROLE_LABELS[roleRequest.requested_role]} is awaiting review.
+                </Text>
+              ) : requestingRole ? (
+                <View className="gap-3">
+                  <View className="flex-row flex-wrap gap-2">
+                    {(['secretary', 'treasurer', 'media'] as const).map((r) => (
+                      <Pressable
+                        key={r}
+                        onPress={() => setSelectedRole(r)}
+                        className={`px-3 py-2 rounded-xl border ${selectedRole === r ? 'bg-rotary-azure border-rotary-azure' : 'bg-slate-50 border-slate-200'}`}
+                      >
+                        <Text className={`text-[10px] font-bold uppercase ${selectedRole === r ? 'text-white' : 'text-slate-500'}`}>{r}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <TextField label="Note (optional)" value={roleNote} onChangeText={setRoleNote} placeholder="Why would you like this role?" multiline />
+                  <PrimaryButton label="Submit Request" onPress={handleRequestRole} loading={requestBusy} />
+                </View>
+              ) : (
+                <PrimaryButton label="Request Officer Access" variant="outline" onPress={() => setRequestingRole(true)} />
+              )}
+            </Card>
+          )}
 
           <Card className="gap-4">
             <View className="items-center gap-3">

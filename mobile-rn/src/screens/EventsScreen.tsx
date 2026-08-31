@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
-import { Calendar, Clock, MapPin, Check } from 'lucide-react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { Calendar, Clock, MapPin, Check, QrCode } from 'lucide-react-native';
 import { ClubEvent, EventRSVP } from '../types';
+import { EventsStackParamList, TabParamList } from '../navigation/types';
 import { getEvents, submitRSVP, submitMemberRSVP, hasMemberRsvped } from '../lib/service';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField, LoadingBlock, EmptyBlock } from '../components/ui';
@@ -14,7 +18,9 @@ function randomId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
-export default function EventsScreen() {
+type Props = CompositeScreenProps<NativeStackScreenProps<EventsStackParamList, 'Events'>, BottomTabScreenProps<TabParamList>>;
+
+export default function EventsScreen({ navigation }: Props) {
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -155,6 +161,15 @@ export default function EventsScreen() {
                     </Pressable>
                   )
                 ) : null}
+                {signedIn && ev.attendance_tracking_enabled && (
+                  <Pressable
+                    onPress={() => (navigation.getParent()?.getParent() as any)?.navigate('MemberCheckIn', { eventId: ev.id, eventTitle: ev.title })}
+                    className="flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl border border-rotary-azure"
+                  >
+                    <QrCode size={14} color={colors.rotaryAzure} />
+                    <Text className="text-[11px] font-bold uppercase text-rotary-azure">Check In at Venue</Text>
+                  </Pressable>
+                )}
               </Card>
             ))}
           </View>

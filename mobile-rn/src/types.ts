@@ -81,6 +81,35 @@ export interface ClubEvent {
   speaker?: string;
   description?: string;
   type: 'Weekly Meeting' | 'Service Project' | 'Social' | 'Fundraiser';
+  attendance_tracking_enabled?: boolean;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
+  venue_radius_m?: number;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  event_id: string;
+  member_id: string;
+  method: 'qr' | 'manual';
+  checked_in_at: string;
+  distance_m?: number | null;
+  gps_accuracy_m?: number | null;
+  confidence: 'high' | 'low' | 'manual';
+  memberName?: string;
+}
+
+export interface RoleRequest {
+  id: string;
+  user_id: string;
+  requested_role: 'secretary' | 'treasurer' | 'media';
+  note?: string | null;
+  status: 'pending' | 'approved' | 'denied';
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  created_at: string;
+  memberName?: string;
+  memberEmail?: string;
 }
 
 export interface ContactInquiry {

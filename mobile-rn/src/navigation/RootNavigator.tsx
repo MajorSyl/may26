@@ -8,6 +8,9 @@ import AdminHomeScreen from '../screens/AdminHomeScreen';
 import AdminProjectsScreen from '../screens/AdminProjectsScreen';
 import AdminEventsScreen from '../screens/AdminEventsScreen';
 import AdminEventAttendeesScreen from '../screens/AdminEventAttendeesScreen';
+import AdminEventCheckInScreen from '../screens/AdminEventCheckInScreen';
+import AdminRoleRequestsScreen from '../screens/AdminRoleRequestsScreen';
+import MemberCheckInScreen from '../screens/MemberCheckInScreen';
 import AdminMembersScreen from '../screens/AdminMembersScreen';
 import AdminInquiriesScreen from '../screens/AdminInquiriesScreen';
 import AdminApprovalsScreen from '../screens/AdminApprovalsScreen';
@@ -47,6 +50,9 @@ export default function RootNavigator() {
         <Stack.Screen name="AdminProjects" component={AdminProjectsScreen} options={{ title: 'Projects' }} />
         <Stack.Screen name="AdminEvents" component={AdminEventsScreen} options={{ title: 'Events' }} />
         <Stack.Screen name="AdminEventAttendees" component={AdminEventAttendeesScreen} options={{ title: 'Attendees' }} />
+        <Stack.Screen name="AdminEventCheckIn" component={AdminEventCheckInScreen} options={{ title: 'Check-In Code' }} />
+        <Stack.Screen name="AdminRoleRequests" component={AdminRoleRequestsScreen} options={{ title: 'Access Requests' }} />
+        <Stack.Screen name="MemberCheckIn" component={MemberCheckInScreen} options={{ title: 'Check In' }} />
         <Stack.Screen name="AdminMembers" component={AdminMembersScreen} options={{ title: 'Members' }} />
         <Stack.Screen name="AdminInquiries" component={AdminInquiriesScreen} options={{ title: 'Inquiries' }} />
         <Stack.Screen name="AdminApprovals" component={AdminApprovalsScreen} options={{ title: 'Approvals' }} />

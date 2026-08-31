@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Alert } from '../lib/alert';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { X, Pencil, Trash2, AlertTriangle, Users } from 'lucide-react-native';
+import { X, Pencil, Trash2, AlertTriangle, Users, QrCode, MapPin } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { ClubEvent } from '../types';
 import { getEvents, adminCreateEvent, adminUpdateEvent, adminDeleteEvent, triggerNewsletterSend } from '../lib/service';
@@ -13,7 +13,19 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AdminEvents'>;
 
 const EVENT_TYPES = ['Weekly Meeting', 'Service Project', 'Social', 'Fundraiser'] as const;
 
-const BLANK = { title: '', date: '', time: '', location: '', speaker: '', description: '', type: 'Weekly Meeting' as ClubEvent['type'] };
+const BLANK = {
+  title: '',
+  date: '',
+  time: '',
+  location: '',
+  speaker: '',
+  description: '',
+  type: 'Weekly Meeting' as ClubEvent['type'],
+  attendance_tracking_enabled: false,
+  venue_lat: '',
+  venue_lng: '',
+  venue_radius_m: '100'
+};
 
 export default function AdminEventsScreen({ navigation }: Props) {
   const [items, setItems] = useState<ClubEvent[]>([]);
@@ -44,8 +56,32 @@ export default function AdminEventsScreen({ navigation }: Props) {
   };
 
   const startEdit = (e: ClubEvent) => {
-    setForm({ title: e.title, date: e.date, time: e.time, location: e.location, speaker: e.speaker || '', description: e.description || '', type: e.type });
+    setForm({
+      title: e.title,
+      date: e.date,
+      time: e.time,
+      location: e.location,
+      speaker: e.speaker || '',
+      description: e.description || '',
+      type: e.type,
+      attendance_tracking_enabled: !!e.attendance_tracking_enabled,
+      venue_lat: e.venue_lat != null ? String(e.venue_lat) : '',
+      venue_lng: e.venue_lng != null ? String(e.venue_lng) : '',
+      venue_radius_m: String(e.venue_radius_m || 100)
+    });
     setEditingId(e.id);
+  };
+
+  const useMyLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setError('Location isn\'t available in this browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setForm((f) => ({ ...f, venue_lat: String(pos.coords.latitude), venue_lng: String(pos.coords.longitude) })),
+      () => setError('Could not get your location. Enter coordinates manually.'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleSave = async () => {
@@ -53,11 +89,12 @@ export default function AdminEventsScreen({ navigation }: Props) {
     setSaving(true);
     setError('');
     try {
+      const payload: any = { ...form, venue_lat: form.venue_lat ? parseFloat(form.venue_lat) : null, venue_lng: form.venue_lng ? parseFloat(form.venue_lng) : null, venue_radius_m: parseInt(form.venue_radius_m, 10) || 100 };
       if (editingId === 'new') {
-        const id = await adminCreateEvent(form);
+        const id = await adminCreateEvent(payload);
         triggerNewsletterSend('event', id);
       } else if (editingId) {
-        await adminUpdateEvent(editingId, form);
+        await adminUpdateEvent(editingId, payload);
       }
       setEditingId(null);
       await load();
@@ -127,6 +164,40 @@ export default function AdminEventsScreen({ navigation }: Props) {
               );
             })}
           </View>
+
+          <View className="gap-3 pt-2 border-t border-slate-100">
+            <Pressable
+              onPress={() => setForm({ ...form, attendance_tracking_enabled: !form.attendance_tracking_enabled })}
+              className="flex-row items-center justify-between"
+            >
+              <View className="flex-1">
+                <Text className="text-xs font-bold text-slate-700">Attendance Tracking</Text>
+                <Text className="text-[10px] text-slate-400">QR + GPS check-in for this event</Text>
+              </View>
+              <View className={`w-11 h-6 rounded-full ${form.attendance_tracking_enabled ? 'bg-rotary-azure' : 'bg-slate-200'} justify-center px-0.5`}>
+                <View className={`w-5 h-5 rounded-full bg-white ${form.attendance_tracking_enabled ? 'self-end' : 'self-start'}`} />
+              </View>
+            </Pressable>
+
+            {form.attendance_tracking_enabled && (
+              <View className="gap-3">
+                <Pressable onPress={useMyLocation} className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 bg-slate-50">
+                  <MapPin size={14} color={colors.rotaryAzure} />
+                  <Text className="text-[11px] font-bold uppercase text-rotary-azure">Use My Current Location</Text>
+                </Pressable>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <TextField label="Venue Latitude" value={form.venue_lat} onChangeText={(v) => setForm({ ...form, venue_lat: v.replace(/[^0-9.\-]/g, '') })} keyboardType="number-pad" />
+                  </View>
+                  <View className="flex-1">
+                    <TextField label="Venue Longitude" value={form.venue_lng} onChangeText={(v) => setForm({ ...form, venue_lng: v.replace(/[^0-9.\-]/g, '') })} keyboardType="number-pad" />
+                  </View>
+                </View>
+                <TextField label="Allowed Radius (meters)" value={form.venue_radius_m} onChangeText={(v) => setForm({ ...form, venue_radius_m: v.replace(/\D/g, '') })} keyboardType="number-pad" />
+              </View>
+            )}
+          </View>
+
           <PrimaryButton label="Save" onPress={handleSave} loading={saving} disabled={!form.title || !form.date || !form.time || !form.location} />
         </Card>
       )}
@@ -148,6 +219,9 @@ export default function AdminEventsScreen({ navigation }: Props) {
                   </Text>
                 </View>
                 <View className="flex-row gap-2">
+                  {e.attendance_tracking_enabled && (
+                    <IconButton icon={QrCode} onPress={() => navigation.navigate('AdminEventCheckIn', { eventId: e.id, eventTitle: e.title })} />
+                  )}
                   <IconButton icon={Users} onPress={() => navigation.navigate('AdminEventAttendees', { eventId: e.id, eventTitle: e.title })} />
                   <IconButton icon={Pencil} onPress={() => startEdit(e)} />
                   <IconButton icon={Trash2} onPress={() => handleDelete(e)} color={colors.rose600} />

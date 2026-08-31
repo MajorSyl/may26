@@ -47,6 +47,9 @@ export type RootStackParamList = {
   AdminProjects: undefined;
   AdminEvents: undefined;
   AdminEventAttendees: { eventId: string; eventTitle: string };
+  AdminEventCheckIn: { eventId: string; eventTitle: string };
+  AdminRoleRequests: undefined;
+  MemberCheckIn: { eventId: string; eventTitle: string };
   AdminMembers: undefined;
   AdminInquiries: undefined;
   AdminApprovals: undefined;

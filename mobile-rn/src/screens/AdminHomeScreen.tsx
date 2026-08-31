@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ShieldCheck, FolderKanban, CalendarDays, Users, Mail, ClipboardCheck, Settings, KeyRound, BarChart3, UserCheck, LayoutTemplate, Image as ImageIcon, ListChecks, Instagram } from 'lucide-react-native';
+import { ShieldCheck, FolderKanban, CalendarDays, Users, Mail, ClipboardCheck, Settings, KeyRound, BarChart3, UserCheck, LayoutTemplate, Image as ImageIcon, ListChecks, Instagram, UserPlus } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { logOut, getCurrentOfficerRole, OfficerRole } from '../lib/service';
 import { ScreenScroll, PrimaryButton, LinkRow } from '../components/ui';
@@ -52,6 +52,9 @@ export default function AdminHomeScreen({ navigation }: Props) {
           <LinkRow icon={LayoutTemplate} label="Page Content" sublabel="Manage Home/About/etc. sections" onPress={() => navigation.navigate('AdminContentBlocks')} />
         )}
         {isFull && <LinkRow icon={KeyRound} label="Roles" sublabel="Manage officer access" onPress={() => navigation.navigate('AdminRoles')} />}
+        {isFull && (
+          <LinkRow icon={UserPlus} label="Access Requests" sublabel="Members requesting officer access" onPress={() => navigation.navigate('AdminRoleRequests')} />
+        )}
         {isFull && (
           <LinkRow icon={UserCheck} label="Pending Members" sublabel="Approve or reject new member sign-ups" onPress={() => navigation.navigate('AdminPendingMembers')} />
         )}
