@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, TextInput, Alert } from 'react-native';
+import { View, Text, Pressable, TextInput } from 'react-native';
+import { Alert } from '../lib/alert';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Search, X, Pencil, Trash2, AlertTriangle } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';

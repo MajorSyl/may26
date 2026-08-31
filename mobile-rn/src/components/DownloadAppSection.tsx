@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, Linking, Alert } from 'react-native';
+import { View, Text, Pressable, Linking } from 'react-native';
+import { Alert } from '../lib/alert';
 import { Apple, CirclePlay, Smartphone, QrCode } from 'lucide-react-native';
 import { colors } from '../theme';
 

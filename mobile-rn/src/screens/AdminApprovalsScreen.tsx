@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Alert } from '../lib/alert';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Check, X as XIcon, AlertTriangle } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
