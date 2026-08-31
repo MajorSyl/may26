@@ -5,7 +5,6 @@ import { ArrowRight, CheckCircle, Users, ExternalLink, Compass } from 'lucide-re
 import { HomeStackParamList } from '../navigation/types';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, getImpactTotals } from '../lib/service';
 import { getProjects } from '../lib/service';
-import DonateButton from '../components/DonateButton';
 import { Project } from '../types';
 import SafeImage from '../components/SafeImage';
 import MemberSpotlight from '../components/MemberSpotlight';
@@ -117,7 +116,6 @@ export default function HomeScreen({ navigation }: Props) {
             </View>
           ))}
         </View>
-        <DonateButton />
       </View>
 
       {/* Mission */}

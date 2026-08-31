@@ -7,7 +7,6 @@ import { ProjectApplication } from '../types';
 import { submitApplication } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
 import SafeImage from '../components/SafeImage';
-import DonateButton from '../components/DonateButton';
 import { logPageView } from '../lib/analytics';
 import { isValidEmail, MAX_NAME_LENGTH, MAX_MESSAGE_LENGTH } from '../lib/validate';
 import { colors } from '../theme';
@@ -122,7 +121,6 @@ export default function ProjectDetailsScreen({ route }: Props) {
               ))}
           </View>
         )}
-        <DonateButton projectId={project.id} projectTitle={project.title} />
       </Card>
 
       <Card className="gap-3">
