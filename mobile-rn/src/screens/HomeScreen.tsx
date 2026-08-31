@@ -52,13 +52,21 @@ export default function HomeScreen({ navigation }: Props) {
 
   const completedProjects = projects.filter((p) => p.status === 'Completed').slice(0, 3);
 
+  // Container aspect ratio stays at or above the source photo's native 3:2
+  // (1080x720) at every breakpoint, widening only slightly on larger
+  // screens -- that keeps "cover" cropping strictly vertical (top/bottom),
+  // never horizontal, so the full width of the crowd is always in frame.
+  // The community well sign sits within the middle ~16%-51% of the
+  // photo's height, well clear of the largest trim (desktop, ~12.5% off
+  // top and bottom), so a plain centered crop keeps it fully visible at
+  // every size without needing a custom focal offset.
   const hero = (
-    <View className="w-full bg-rotary-dark items-center justify-center">
+    <View className="w-full aspect-[3/2] md:aspect-[16/9] lg:aspect-[2/1] bg-rotary-dark">
       <Image
         source={require('../assets/hero-connect.jpg')}
-        resizeMode="contain"
-        style={{ width: '100%', height: 260 }}
-        accessibilityLabel="Rotary Club of Freetown Sunset - Kerefay Loko MCHP Community Well dedication"
+        resizeMode="cover"
+        style={{ width: '100%', height: '100%' }}
+        accessibilityLabel="A Rotary Club of Freetown Sunset sign for the Kerefay Loko MCHP Community Well project, surrounded by club members and applauding local children and residents at the dedication ceremony"
       />
     </View>
   );
