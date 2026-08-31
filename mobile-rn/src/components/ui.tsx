@@ -57,11 +57,14 @@ export function Badge({ label, tone = 'azure' }: { label: string; tone?: 'azure'
   );
 }
 
-export function ScreenTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+// The native header already shows the page title (see each Stack.Screen's
+// `options.title`) -- this renders only the descriptive subtitle beneath
+// it, rather than repeating the title as a second, body-level heading.
+export function ScreenTitle({ subtitle }: { title?: string; subtitle?: string }) {
+  if (!subtitle) return null;
   return (
     <View className="gap-2">
-      <Text className="text-3xl font-extrabold text-rotary-dark tracking-tight">{title}</Text>
-      {subtitle ? <Text className="text-slate-500 text-sm leading-relaxed">{subtitle}</Text> : null}
+      <Text className="text-slate-500 text-sm leading-relaxed">{subtitle}</Text>
     </View>
   );
 }

@@ -200,7 +200,6 @@ export default function MemberAccountScreen({}: Props) {
           <View className="w-14 h-14 rounded-2xl bg-rotary-azure/10 items-center justify-center">
             <UserIcon size={26} color={colors.rotaryAzure} />
           </View>
-          <Text className="text-xl font-extrabold text-slate-800">Member Dashboard</Text>
           <Text className="text-[11px] text-slate-400 text-center">Sign up or sign in to request member access</Text>
         </View>
 

@@ -15,10 +15,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AdminHome'>;
 export default function AdminHomeScreen({ navigation }: Props) {
   return (
     <ScreenScroll>
-      <View className="items-center gap-3 py-6">
-        <ShieldCheck size={40} color={colors.rotaryAzure} />
-        <Text className="text-2xl font-extrabold text-slate-800 text-center">Admin Access Granted</Text>
-        <Text className="text-xs text-slate-400 text-center">Rotary Dist. 9101 Security Protocol Compliance Grid</Text>
+      <View className="items-center gap-2 py-4">
+        <ShieldCheck size={32} color={colors.rotaryAzure} />
+        <Text className="text-xs text-slate-400 text-center">Manage the club's site and membership below.</Text>
       </View>
 
       <View className="gap-3">

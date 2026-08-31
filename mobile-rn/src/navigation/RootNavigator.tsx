@@ -2,10 +2,6 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import TabNavigator from './TabNavigator';
-import MemberLoginScreen from '../screens/MemberLoginScreen';
-import MemberHomeScreen from '../screens/MemberHomeScreen';
-import MemberProfileScreen from '../screens/MemberProfileScreen';
-import MemberSubmissionsScreen from '../screens/MemberSubmissionsScreen';
 import MemberAccountScreen from '../screens/MemberAccountScreen';
 import AdminLoginScreen from '../screens/AdminLoginScreen';
 import AdminHomeScreen from '../screens/AdminHomeScreen';
@@ -42,13 +38,9 @@ export default function RootNavigator() {
           headerTitleStyle: { fontWeight: '700' }
         }}
       >
-        <Stack.Screen name="MemberLogin" component={MemberLoginScreen} options={{ title: 'Member Sign In' }} />
         <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: 'Admin Sign In' }} />
       </Stack.Group>
       <Stack.Group screenOptions={{ headerShown: true, headerTintColor: colors.rotaryAzure }}>
-        <Stack.Screen name="MemberHome" component={MemberHomeScreen} options={{ title: 'Member Portal' }} />
-        <Stack.Screen name="MemberProfile" component={MemberProfileScreen} options={{ title: 'My Profile' }} />
-        <Stack.Screen name="MemberSubmissions" component={MemberSubmissionsScreen} options={{ title: 'My Submissions' }} />
         <Stack.Screen name="MemberAccount" component={MemberAccountScreen} options={{ title: 'Member Dashboard' }} />
         <Stack.Screen name="AdminHome" component={AdminHomeScreen} options={{ title: 'Admin' }} />
         <Stack.Screen name="AdminProjects" component={AdminProjectsScreen} options={{ title: 'Projects' }} />

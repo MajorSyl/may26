@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { ShieldCheck } from 'lucide-react-native';
 import { Breakpoint } from '../hooks/useBreakpoint';
 import { colors } from '../theme';
 
@@ -76,6 +77,28 @@ export default function ResponsiveTabBar(props: BottomTabBarProps & { breakpoint
           </Pressable>
         );
       })}
+
+      <View style={{ flex: 1 }} />
+
+      {/* Admin Sign In needs to be reachable without digging into the More
+          menu on tablet/desktop, where there's room for a persistent
+          footer link -- mobile keeps it in More only, since the bottom tab
+          bar has no room for a permanent extra entry. */}
+      <Pressable
+        onPress={() => (navigation.getParent() as any)?.navigate('AdminLogin')}
+        style={{
+          flexDirection: showLabels ? 'row' : 'column',
+          alignItems: 'center',
+          gap: showLabels ? 12 : 4,
+          paddingVertical: 12,
+          paddingHorizontal: showLabels ? 20 : 8,
+          marginHorizontal: 8,
+          borderRadius: 12
+        }}
+      >
+        <ShieldCheck size={20} color="#8B9BC7" />
+        <Text style={{ color: '#8B9BC7', fontSize: showLabels ? 13 : 9, fontWeight: '600' }}>Admin Sign In</Text>
+      </Pressable>
     </View>
   );
 }

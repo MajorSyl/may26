@@ -50,7 +50,6 @@ export default function MembersDirectoryScreen() {
         <View className="self-start px-3 py-1 rounded-full bg-rotary-azure/10">
           <Text className="text-[10px] font-bold uppercase tracking-wider text-rotary-azure">Sunset Fellowship Roster</Text>
         </View>
-        <Text className="text-3xl font-extrabold text-rotary-dark">Members Directory</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
           Meet the dedicated business leaders, executives, and professionals who constitute the Rotary Club of Freetown
           Sunset. Together we advocate for the ultimate civic standards under "Service Above Self".

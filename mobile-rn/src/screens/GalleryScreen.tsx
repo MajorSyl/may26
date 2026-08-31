@@ -32,7 +32,6 @@ export default function GalleryScreen({ navigation }: Props) {
     <ScreenScroll wide>
       <View className="gap-2 md:max-w-3xl">
         <Badge label="On-The-Ground Impact" tone="gold" />
-        <Text className="text-3xl font-extrabold text-rotary-dark">Service Gallery</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
           A look at our club's community service projects — completed, active, and planned.
         </Text>

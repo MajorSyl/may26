@@ -66,7 +66,6 @@ export default function EventsScreen() {
     <ScreenScroll wide>
       <View className="gap-2 md:max-w-3xl">
         <Badge label="Fellowship Circles" />
-        <Text className="text-3xl font-extrabold text-rotary-dark">Meetings & RSVP</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
           We meet weekly in Freetown. Visiting Rotarians, family guests, and prospective service leaders are always welcome
           to join. Let us know you are coming!

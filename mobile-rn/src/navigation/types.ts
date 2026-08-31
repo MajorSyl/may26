@@ -41,10 +41,6 @@ export type TabParamList = {
 // on top of the tabs regardless of which tab/stack the user is in.
 export type RootStackParamList = {
   Tabs: undefined;
-  MemberLogin: undefined;
-  MemberHome: undefined;
-  MemberProfile: undefined;
-  MemberSubmissions: undefined;
   MemberAccount: undefined;
   AdminLogin: undefined;
   AdminHome: undefined;

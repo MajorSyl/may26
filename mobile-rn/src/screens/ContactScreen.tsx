@@ -63,7 +63,6 @@ export default function ContactScreen() {
     <ScreenScroll>
       <View className="gap-2">
         <Badge label="Get in Touch" />
-        <Text className="text-3xl font-extrabold text-rotary-dark">Contact Us</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
           Have an inquiry about participating in our sunset beach service drives? Interested in joining as a nominated guest
           or making an audited project donation? Reach out to our Executive board.

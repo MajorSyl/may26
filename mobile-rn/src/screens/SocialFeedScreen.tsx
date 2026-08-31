@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Image, Linking } from 'react-native';
 import { Instagram, Facebook, ExternalLink } from 'lucide-react-native';
 import { SocialPost, getSocialPosts } from '../lib/social';
-import { ScreenScroll, ScreenTitle, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
+import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
@@ -26,7 +26,6 @@ export default function SocialFeedScreen() {
     <ScreenScroll wide>
       <View className="gap-2 md:max-w-3xl">
         <Badge label="Stay Connected" tone="gold" />
-        <Text className="text-3xl font-extrabold text-rotary-dark">Social Feed</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">Recent posts from our Instagram and Facebook pages.</Text>
       </View>
 

@@ -18,7 +18,6 @@ export default function PrivacyPolicyScreen() {
     <ScreenScroll>
       <View className="gap-2">
         <Badge label="Privacy" />
-        <Text className="text-3xl font-extrabold text-slate-800">Privacy Policy</Text>
         <Text className="text-sm text-slate-500 leading-relaxed">
           This page explains what information the Rotary Club of Freetown Sunset website and mobile app collect, how it's
           used, and how you can have your account and data removed.

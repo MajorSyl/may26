@@ -29,7 +29,7 @@ export default function AdminLoginScreen({ navigation }: Props) {
       await loginAdmin(email, password);
       navigation.replace('AdminHome');
     } catch (err: any) {
-      setError(err?.message || 'Supabase authentication failed. Please confirm email & password.');
+      setError(err?.message === 'Invalid login credentials' ? 'Incorrect email or password.' : err?.message || 'Unable to sign in. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -44,19 +44,17 @@ export default function AdminLoginScreen({ navigation }: Props) {
 
       <View className="bg-white rounded-3xl border border-slate-100 p-6 gap-6 mt-4">
         <View className="items-center gap-1.5">
-          <View className="w-14 h-14 rounded-2xl bg-rotary-azure/10 items-center justify-center">
-            <Lock size={26} color={colors.rotaryAzure} />
+          <View className="w-14 h-14 rounded-2xl bg-rotary-dark items-center justify-center">
+            <Lock size={24} color={colors.white} />
           </View>
-          <Text className="text-xl font-extrabold text-slate-800">Rotary CMS Access Gate</Text>
-          <Text className="text-[10px] text-slate-400 text-center">Authorized Officers of Freetown Sunset Chapter</Text>
+          <Text className="text-xl font-extrabold text-slate-800">Admin Sign In</Text>
+          <Text className="text-[10px] uppercase tracking-widest text-slate-400">RCFS</Text>
         </View>
 
         {!isSupabaseConfigured ? (
           <View className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex-row items-center gap-2">
             <AlertTriangle size={16} color={colors.amber500} />
-            <Text className="text-xs text-amber-700 flex-1">
-              Admin access requires a configured Supabase project (EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY).
-            </Text>
+            <Text className="text-xs text-amber-700 flex-1">Admin access isn't configured yet. Please contact your site administrator.</Text>
           </View>
         ) : (
           <>
@@ -67,14 +65,16 @@ export default function AdminLoginScreen({ navigation }: Props) {
               </View>
             ) : null}
 
-            <TextField label="Admin Email" value={email} onChangeText={setEmail} placeholder="admin@example.com" keyboardType="email-address" autoCapitalize="none" />
+            <TextField label="Email" value={email} onChangeText={setEmail} placeholder="you@rcfsunset.org" keyboardType="email-address" autoCapitalize="none" />
             <TextField label="Password" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry />
 
-            <PrimaryButton label="Sign In with Supabase" onPress={handleLogin} loading={loading} disabled={!email || !password} />
+            <PrimaryButton label="Sign In" onPress={handleLogin} loading={loading} disabled={!email || !password} />
           </>
         )}
 
-        <Text className="text-[10px] text-slate-400 text-center">Rotary Dist. 9101 Security Protocol Compliance Grid</Text>
+        <Text className="text-[10px] text-slate-400 text-center leading-relaxed">
+          This area is restricted to authorized RCFS officers. All access is logged.
+        </Text>
       </View>
     </ScreenScroll>
   );
