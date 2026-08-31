@@ -276,6 +276,10 @@ export default function HomeScreen({ navigation }: Props) {
           ))}
         </View>
       )}
+
+      <View className="items-center pt-2 pb-4">
+        <Text className="text-[10px] text-slate-400">RCFS • Rotary Club of Freetown Sunset, D9101</Text>
+      </View>
     </ScreenScroll>
   );
 }
