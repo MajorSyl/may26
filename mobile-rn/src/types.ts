@@ -66,6 +66,10 @@ export interface Project {
   beneficiariesCount?: string;
   locationName?: string;
   teamLeads?: string[];
+  wellsBuilt?: number;
+  studentsSponsored?: number;
+  fundsRaised?: number;
+  peopleImpacted?: number;
 }
 
 export interface ClubEvent {
@@ -96,6 +100,7 @@ export interface EventRSVP {
   email: string;
   submitted_at: string;
   event_title?: string;
+  member_id?: string | null;
 }
 
 export interface ProjectApplication {

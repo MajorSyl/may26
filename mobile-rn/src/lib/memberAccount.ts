@@ -179,6 +179,56 @@ export const uploadAvatar = async (uri: string, contentType: string = 'image/jpe
 };
 
 // -----------------------------------------------------------------------
+// Member: submit a photo for the public gallery (goes into `submissions`,
+// reviewed by an admin or Media/Communications officer before it appears
+// in gallery_photos -- see AdminApprovalsScreen).
+// -----------------------------------------------------------------------
+
+export const submitGalleryPhoto = async (
+  title: string,
+  description: string,
+  category: string,
+  uri: string,
+  contentType: string = 'image/jpeg'
+): Promise<void> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+
+  const ext = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${user.id}/submissions/${Date.now()}.${ext}`;
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const { error: uploadErr } = await db.storage.from('member-uploads').upload(path, blob, { contentType, upsert: false });
+  if (uploadErr) throw uploadErr;
+  const { data: pub } = db.storage.from('member-uploads').getPublicUrl(path);
+
+  const { error } = await db.from('submissions').insert({
+    submitter_id: user.id,
+    kind: 'photo',
+    title,
+    description,
+    category,
+    image_url: pub.publicUrl,
+    status: 'pending'
+  });
+  if (error) throw error;
+};
+
+export const listMySubmissions = async () => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await db.from('submissions').select('*').eq('submitter_id', user.id).order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+// -----------------------------------------------------------------------
 // Admin: pending-member review queue
 // -----------------------------------------------------------------------
 

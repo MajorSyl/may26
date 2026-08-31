@@ -5,13 +5,25 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { X, Pencil, Trash2, AlertTriangle } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { Project } from '../types';
-import { getProjects, adminCreateProject, adminUpdateProject, adminDeleteProject } from '../lib/service';
+import { getProjects, adminCreateProject, adminUpdateProject, adminDeleteProject, triggerNewsletterSend } from '../lib/service';
 import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminProjects'>;
 
-const BLANK = { title: '', category: '', description: '', year: String(new Date().getFullYear()), impact: '', status: 'Active' as Project['status'], imageUrl: '' };
+const BLANK = {
+  title: '',
+  category: '',
+  description: '',
+  year: String(new Date().getFullYear()),
+  impact: '',
+  status: 'Active' as Project['status'],
+  imageUrl: '',
+  wellsBuilt: '0',
+  studentsSponsored: '0',
+  fundsRaised: '0',
+  peopleImpacted: '0'
+};
 
 export default function AdminProjectsScreen({}: Props) {
   const [items, setItems] = useState<Project[]>([]);
@@ -49,7 +61,11 @@ export default function AdminProjectsScreen({}: Props) {
       year: String(p.year),
       impact: p.impact || '',
       status: p.status,
-      imageUrl: p.imageUrl || ''
+      imageUrl: p.imageUrl || '',
+      wellsBuilt: String(p.wellsBuilt || 0),
+      studentsSponsored: String(p.studentsSponsored || 0),
+      fundsRaised: String(p.fundsRaised || 0),
+      peopleImpacted: String(p.peopleImpacted || 0)
     });
     setEditingId(p.id);
   };
@@ -66,10 +82,15 @@ export default function AdminProjectsScreen({}: Props) {
         year: parseInt(form.year, 10) || new Date().getFullYear(),
         impact: form.impact,
         status: form.status,
-        imageUrl: form.imageUrl
+        imageUrl: form.imageUrl,
+        wellsBuilt: parseInt(form.wellsBuilt, 10) || 0,
+        studentsSponsored: parseInt(form.studentsSponsored, 10) || 0,
+        fundsRaised: parseFloat(form.fundsRaised) || 0,
+        peopleImpacted: parseInt(form.peopleImpacted, 10) || 0
       };
       if (editingId === 'new') {
-        await adminCreateProject(payload);
+        const id = await adminCreateProject(payload);
+        triggerNewsletterSend('project', id);
       } else if (editingId) {
         await adminUpdateProject(editingId, payload);
       }
@@ -127,6 +148,25 @@ export default function AdminProjectsScreen({}: Props) {
           <TextField label="Year" value={form.year} onChangeText={(v) => setForm({ ...form, year: v.replace(/\D/g, '').slice(0, 4) })} keyboardType="number-pad" />
           <TextField label="Impact" value={form.impact} onChangeText={(v) => setForm({ ...form, impact: v })} placeholder="e.g. 500+ beneficiaries" />
           <ImagePickerField label="Project Photo" imageUrl={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} folder="projects" />
+
+          <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Impact Numbers</Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <TextField label="Wells Built" value={form.wellsBuilt} onChangeText={(v) => setForm({ ...form, wellsBuilt: v.replace(/\D/g, '') })} keyboardType="number-pad" />
+            </View>
+            <View className="flex-1">
+              <TextField label="Students Sponsored" value={form.studentsSponsored} onChangeText={(v) => setForm({ ...form, studentsSponsored: v.replace(/\D/g, '') })} keyboardType="number-pad" />
+            </View>
+          </View>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <TextField label="Funds Raised (USD)" value={form.fundsRaised} onChangeText={(v) => setForm({ ...form, fundsRaised: v.replace(/[^0-9.]/g, '') })} keyboardType="number-pad" />
+            </View>
+            <View className="flex-1">
+              <TextField label="People Impacted" value={form.peopleImpacted} onChangeText={(v) => setForm({ ...form, peopleImpacted: v.replace(/\D/g, '') })} keyboardType="number-pad" />
+            </View>
+          </View>
+
           <View className="flex-row gap-2">
             {(['Planning', 'Active', 'Completed'] as const).map((s) => {
               const isSel = form.status === s;

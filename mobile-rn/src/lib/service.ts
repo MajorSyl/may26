@@ -93,7 +93,14 @@ export const getProjects = async (): Promise<Project[]> => {
       if (data && data.length > 0) {
         return data
           .filter((d: any) => d.id !== 'settings_site_config')
-          .map((d: any) => ({ ...d, imageUrl: d.imageUrl || d.imageurl })) as Project[];
+          .map((d: any) => ({
+            ...d,
+            imageUrl: d.imageUrl || d.imageurl,
+            wellsBuilt: d.wells_built || 0,
+            studentsSponsored: d.students_sponsored || 0,
+            fundsRaised: Number(d.funds_raised) || 0,
+            peopleImpacted: d.people_impacted || 0
+          })) as Project[];
       }
       return INITIAL_PROJECTS;
     } catch (err) {
@@ -127,7 +134,8 @@ export const submitRSVP = async (rsvp: EventRSVP): Promise<void> => {
     const { error } = await supabase.from('event_rsvps').insert({
       event_id: rsvp.event_id,
       name: rsvp.name,
-      email: rsvp.email
+      email: rsvp.email,
+      member_id: rsvp.member_id || null
     });
     if (error) throw error;
     return;
@@ -135,6 +143,49 @@ export const submitRSVP = async (rsvp: EventRSVP): Promise<void> => {
   const list = await getLocalData<EventRSVP[]>('rn_rsvps', []);
   list.push(rsvp);
   await setLocalData('rn_rsvps', list);
+};
+
+// Quick one-tap RSVP for a signed-in member -- auto-fills name/email from
+// their Member Dashboard profile and stamps member_id so it's
+// distinguishable from an anonymous guest RSVP in the organizer view.
+export const submitMemberRSVP = async (eventId: string): Promise<void> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+  const { data: profile } = await db.from('profiles').select('full_name, email').eq('id', user.id).maybeSingle();
+  const { error } = await db.from('event_rsvps').insert({
+    event_id: eventId,
+    name: profile?.full_name || user.email || 'Member',
+    email: profile?.email || user.email || '',
+    member_id: user.id
+  });
+  if (error) throw error;
+};
+
+export const hasMemberRsvped = async (eventId: string): Promise<boolean> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) return false;
+  const { data } = await db.from('event_rsvps').select('id').eq('event_id', eventId).eq('member_id', user.id).maybeSingle();
+  return !!data;
+};
+
+export const getEventRsvpCount = async (eventId: string): Promise<number> => {
+  const db = requireSupabase();
+  const { count, error } = await db.from('event_rsvps').select('id', { count: 'exact', head: true }).eq('event_id', eventId);
+  if (error) throw error;
+  return count || 0;
+};
+
+export const adminListEventRsvps = async (eventId: string): Promise<EventRSVP[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('event_rsvps').select('*').eq('event_id', eventId).order('submitted_at', { ascending: false });
+  if (error) throw error;
+  return (data || []) as EventRSVP[];
 };
 
 // -----------------------------------------------------------------------
@@ -395,19 +446,25 @@ function mapSubmissionRow(d: any): Submission {
 // explicitly rather than spreading the input object, since Project also
 // carries fields (locationName, budget, teamLeads, etc.) that don't exist
 // as columns and would otherwise get sent straight into a failing insert.
-export const adminCreateProject = async (input: Omit<Project, 'id'>): Promise<void> => {
+export const adminCreateProject = async (input: Omit<Project, 'id'>): Promise<string> => {
   const db = requireSupabase();
+  const id = randomId('proj');
   const { error } = await db.from('projects').insert({
-    id: randomId('proj'),
+    id,
     title: input.title,
     category: input.category,
     description: input.description,
     year: input.year,
     impact: input.impact || null,
     status: input.status,
-    imageurl: input.imageUrl || null
+    imageurl: input.imageUrl || null,
+    wells_built: input.wellsBuilt || 0,
+    students_sponsored: input.studentsSponsored || 0,
+    funds_raised: input.fundsRaised || 0,
+    people_impacted: input.peopleImpacted || 0
   });
   if (error) throw error;
+  return id;
 };
 
 export const adminUpdateProject = async (id: string, patch: Partial<Project>): Promise<void> => {
@@ -420,8 +477,37 @@ export const adminUpdateProject = async (id: string, patch: Partial<Project>): P
   if (patch.impact !== undefined) payload.impact = patch.impact;
   if (patch.status !== undefined) payload.status = patch.status;
   if (patch.imageUrl !== undefined) payload.imageurl = patch.imageUrl;
+  if (patch.wellsBuilt !== undefined) payload.wells_built = patch.wellsBuilt;
+  if (patch.studentsSponsored !== undefined) payload.students_sponsored = patch.studentsSponsored;
+  if (patch.fundsRaised !== undefined) payload.funds_raised = patch.fundsRaised;
+  if (patch.peopleImpacted !== undefined) payload.people_impacted = patch.peopleImpacted;
   const { error } = await db.from('projects').update(payload).eq('id', id);
   if (error) throw error;
+};
+
+// Fire-and-forget: called after a NEW project/event is created (not on
+// edits, to avoid re-notifying on every tweak). Never throws -- a missing
+// email-provider key or a send failure shouldn't block the officer's save.
+export const triggerNewsletterSend = async (kind: 'project' | 'event', recordId: string): Promise<void> => {
+  if (!isSupabaseConfigured || !supabase) return;
+  try {
+    await supabase.functions.invoke('send-newsletter', { body: { kind, recordId } });
+  } catch {
+    // Best-effort -- surfaced only via the newsletter_sends table, not to the officer's save flow.
+  }
+};
+
+export const getImpactTotals = async () => {
+  const projects = await getProjects();
+  return projects.reduce(
+    (acc, p) => ({
+      wellsBuilt: acc.wellsBuilt + (p.wellsBuilt || 0),
+      studentsSponsored: acc.studentsSponsored + (p.studentsSponsored || 0),
+      fundsRaised: acc.fundsRaised + (p.fundsRaised || 0),
+      peopleImpacted: acc.peopleImpacted + (p.peopleImpacted || 0)
+    }),
+    { wellsBuilt: 0, studentsSponsored: 0, fundsRaised: 0, peopleImpacted: 0 }
+  );
 };
 
 export const adminDeleteProject = async (id: string): Promise<void> => {
@@ -434,10 +520,12 @@ export const adminDeleteProject = async (id: string): Promise<void> => {
 // Admin: Events CRUD
 // -----------------------------------------------------------------------
 
-export const adminCreateEvent = async (input: Omit<ClubEvent, 'id'>): Promise<void> => {
+export const adminCreateEvent = async (input: Omit<ClubEvent, 'id'>): Promise<string> => {
   const db = requireSupabase();
-  const { error } = await db.from('events').insert({ id: randomId('evt'), ...input });
+  const id = randomId('evt');
+  const { error } = await db.from('events').insert({ id, ...input });
   if (error) throw error;
+  return id;
 };
 
 export const adminUpdateEvent = async (id: string, patch: Partial<ClubEvent>): Promise<void> => {
@@ -614,7 +702,18 @@ export const adminListAdmins = async (): Promise<AdminRow[]> => {
   });
 };
 
-export const adminAddAdmin = async (authUserId: string, role: 'admin' | 'reviewer' = 'admin'): Promise<void> => {
+export type OfficerRole = 'admin' | 'president' | 'secretary' | 'treasurer' | 'media' | 'reviewer';
+
+export const OFFICER_ROLE_LABELS: Record<OfficerRole, string> = {
+  admin: 'Admin (full access)',
+  president: 'President (full access)',
+  secretary: 'Secretary (full access)',
+  treasurer: 'Treasurer (financial/project data)',
+  media: 'Media & Communications (content/gallery)',
+  reviewer: 'Reviewer (legacy)'
+};
+
+export const adminAddAdmin = async (authUserId: string, role: OfficerRole = 'admin'): Promise<void> => {
   const db = requireSupabase();
   const { error } = await db.from('admins').insert({ user_id: authUserId, role });
   if (error) throw error;
@@ -624,6 +723,19 @@ export const adminRemoveAdmin = async (authUserId: string): Promise<void> => {
   const db = requireSupabase();
   const { error } = await db.from('admins').delete().eq('user_id', authUserId);
   if (error) throw error;
+};
+
+// Client-side UX hint only (which admin nav sections to show) -- actual
+// enforcement is the RLS policies added alongside is_media_officer() /
+// is_treasurer_officer() in the officer-roles migration.
+export const getCurrentOfficerRole = async (): Promise<OfficerRole | null> => {
+  const db = requireSupabase();
+  const {
+    data: { user }
+  } = await db.auth.getUser();
+  if (!user) return null;
+  const { data } = await db.from('admins').select('role').eq('user_id', user.id).maybeSingle();
+  return (data?.role as OfficerRole) || null;
 };
 
 // -----------------------------------------------------------------------

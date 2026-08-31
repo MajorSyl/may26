@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
-import { Calendar, Clock, MapPin } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, Check } from 'lucide-react-native';
 import { ClubEvent, EventRSVP } from '../types';
-import { getEvents, submitRSVP } from '../lib/service';
+import { getEvents, submitRSVP, submitMemberRSVP, hasMemberRsvped } from '../lib/service';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField, LoadingBlock, EmptyBlock } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { isValidEmail, MAX_NAME_LENGTH } from '../lib/validate';
@@ -22,6 +23,9 @@ export default function EventsScreen() {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
+  const [signedIn, setSignedIn] = useState(false);
+  const [attending, setAttending] = useState<Set<string>>(new Set());
+  const [attendingBusy, setAttendingBusy] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -30,6 +34,17 @@ export default function EventsScreen() {
       const data = await getEvents();
       setEvents(data);
       if (data.length > 0 && !selectedEventId) setSelectedEventId(data[0].id);
+
+      if (isSupabaseConfigured && supabase) {
+        const {
+          data: { user }
+        } = await supabase.auth.getUser();
+        if (user) {
+          setSignedIn(true);
+          const results = await Promise.all(data.map(async (ev) => [ev.id, await hasMemberRsvped(ev.id).catch(() => false)] as const));
+          setAttending(new Set(results.filter(([, going]) => going).map(([id]) => id)));
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -38,6 +53,18 @@ export default function EventsScreen() {
   useEffect(() => {
     load();
   }, []);
+
+  const handleImAttending = async (eventId: string) => {
+    setAttendingBusy(eventId);
+    try {
+      await submitMemberRSVP(eventId);
+      setAttending((prev) => new Set(prev).add(eventId));
+    } catch {
+      // Silently ignore -- e.g. session expired mid-visit; the button just stays tappable.
+    } finally {
+      setAttendingBusy(null);
+    }
+  };
 
   const handleRsvp = async () => {
     if (!guestName || !guestEmail || !selectedEventId) return;
@@ -112,6 +139,22 @@ export default function EventsScreen() {
                     <Text className="text-xs font-semibold text-slate-600">{ev.location}</Text>
                   </View>
                 </View>
+                {signedIn ? (
+                  attending.has(ev.id) ? (
+                    <View className="flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <Check size={14} color={colors.emerald600} />
+                      <Text className="text-[11px] font-bold uppercase text-emerald-700">You're Attending</Text>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={() => handleImAttending(ev.id)}
+                      disabled={attendingBusy === ev.id}
+                      className="flex-row items-center justify-center gap-1.5 py-2.5 rounded-xl bg-rotary-azure"
+                    >
+                      <Text className="text-[11px] font-bold uppercase text-white">I'm Attending</Text>
+                    </Pressable>
+                  )
+                ) : null}
               </Card>
             ))}
           </View>

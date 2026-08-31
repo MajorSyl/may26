@@ -5,7 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Search, Trash2, AlertTriangle, KeyRound } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { UserProfile } from '../types';
-import { AdminRow, adminListAdmins, adminAddAdmin, adminRemoveAdmin, getUsers } from '../lib/service';
+import { AdminRow, adminListAdmins, adminAddAdmin, adminRemoveAdmin, getUsers, OfficerRole, OFFICER_ROLE_LABELS } from '../lib/service';
 import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, IconButton } from '../components/ui';
 import { colors } from '../theme';
 
@@ -18,6 +18,7 @@ export default function AdminRolesScreen({}: Props) {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [pickingRoleFor, setPickingRoleFor] = useState<UserProfile | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -41,24 +42,17 @@ export default function AdminRolesScreen({}: Props) {
     (m) => m.authUserId && !adminUserIds.has(m.authUserId) && (search === '' || m.name.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleAdd = (m: UserProfile) => {
-    Alert.alert('Grant Admin Access', `Give "${m.name}" full admin access?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Grant',
-        onPress: async () => {
-          setBusyId(m.uid);
-          try {
-            await adminAddAdmin(m.authUserId!, 'admin');
-            await load();
-          } catch (err: any) {
-            setError(err?.message || 'Could not grant access.');
-          } finally {
-            setBusyId(null);
-          }
-        }
-      }
-    ]);
+  const handleGrant = async (m: UserProfile, role: OfficerRole) => {
+    setBusyId(m.uid);
+    setPickingRoleFor(null);
+    try {
+      await adminAddAdmin(m.authUserId!, role);
+      await load();
+    } catch (err: any) {
+      setError(err?.message || 'Could not grant access.');
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const handleRemove = (row: AdminRow) => {
@@ -109,7 +103,7 @@ export default function AdminRolesScreen({}: Props) {
                   </View>
                   <View className="flex-1">
                     <Text className="text-sm font-bold text-slate-800">{a.memberName || 'Unknown member'}</Text>
-                    <Badge label={a.role} />
+                    <Badge label={OFFICER_ROLE_LABELS[a.role as OfficerRole] || a.role} />
                   </View>
                   <IconButton icon={Trash2} onPress={() => handleRemove(a)} color={colors.rose600} />
                 </Card>
@@ -131,12 +125,29 @@ export default function AdminRolesScreen({}: Props) {
             </View>
             {search.length > 0 &&
               candidates.slice(0, 8).map((m) => (
-                <Pressable key={m.uid} onPress={() => handleAdd(m)} disabled={busyId === m.uid}>
-                  <Card className="flex-row items-center justify-between">
-                    <Text className="text-sm font-semibold text-slate-700">{m.name}</Text>
-                    <Text className="text-[10px] font-bold uppercase text-rotary-azure">Grant Admin</Text>
-                  </Card>
-                </Pressable>
+                <View key={m.uid}>
+                  <Pressable onPress={() => setPickingRoleFor(pickingRoleFor?.uid === m.uid ? null : m)} disabled={busyId === m.uid}>
+                    <Card className="flex-row items-center justify-between">
+                      <Text className="text-sm font-semibold text-slate-700">{m.name}</Text>
+                      <Text className="text-[10px] font-bold uppercase text-rotary-azure">
+                        {pickingRoleFor?.uid === m.uid ? 'Choose Role Below' : 'Grant Access'}
+                      </Text>
+                    </Card>
+                  </Pressable>
+                  {pickingRoleFor?.uid === m.uid && (
+                    <View className="flex-row flex-wrap gap-2 px-1 pt-2 pb-1">
+                      {(['president', 'secretary', 'admin', 'treasurer', 'media'] as OfficerRole[]).map((role) => (
+                        <Pressable
+                          key={role}
+                          onPress={() => handleGrant(m, role)}
+                          className="px-3 py-2 rounded-xl border bg-slate-50 border-slate-200"
+                        >
+                          <Text className="text-[10px] font-bold uppercase text-slate-600">{OFFICER_ROLE_LABELS[role]}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </View>
               ))}
           </View>
         </>

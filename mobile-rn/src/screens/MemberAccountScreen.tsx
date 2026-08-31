@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { User as UserIcon, Clock, XCircle, ShieldCheck, Camera, AlertTriangle, Check } from 'lucide-react-native';
+import { User as UserIcon, Clock, XCircle, ShieldCheck, Camera, AlertTriangle, Check, ImagePlus } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import {
   MemberProfile,
@@ -14,7 +14,8 @@ import {
   signInMemberAccount,
   signOutMemberAccount,
   signInWithGoogle,
-  uploadAvatar
+  uploadAvatar,
+  submitGalleryPhoto
 } from '../lib/memberAccount';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { ScreenScroll, PrimaryButton, TextField, Card, Badge, LoadingBlock } from '../components/ui';
@@ -43,6 +44,13 @@ export default function MemberAccountScreen({}: Props) {
   const [editPhone, setEditPhone] = useState('');
   const [editPhotoUrl, setEditPhotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const [submitTitle, setSubmitTitle] = useState('');
+  const [submitDescription, setSubmitDescription] = useState('');
+  const [submitCategory, setSubmitCategory] = useState<'meetings' | 'anniversary' | 'outreach' | 'rotaract'>('outreach');
+  const [submitUri, setSubmitUri] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitNotice, setSubmitNotice] = useState('');
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -159,6 +167,35 @@ export default function MemberAccountScreen({}: Props) {
       setError(err?.message || 'Could not upload photo.');
     } finally {
       setUploadingPhoto(false);
+    }
+  };
+
+  const handlePickSubmissionPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError('Photo library access is needed to submit a photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.7 });
+    if (result.canceled || !result.assets?.[0]) return;
+    setSubmitUri(result.assets[0].uri);
+  };
+
+  const handleSubmitPhoto = async () => {
+    if (!submitTitle || !submitUri) return;
+    setSubmitting(true);
+    setError('');
+    setSubmitNotice('');
+    try {
+      await submitGalleryPhoto(submitTitle, submitDescription, submitCategory, submitUri);
+      setSubmitNotice('Submitted! An officer will review it before it appears in the public gallery.');
+      setSubmitTitle('');
+      setSubmitDescription('');
+      setSubmitUri(null);
+    } catch (err: any) {
+      setError(err?.message || 'Could not submit this photo.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -377,6 +414,53 @@ export default function MemberAccountScreen({}: Props) {
 
             <PrimaryButton label="Save Profile" onPress={handleSaveProfile} loading={busy} />
           </Card>
+
+          {status === 'approved' && (
+            <Card className="gap-4">
+              <View className="flex-row items-center gap-2">
+                <ImagePlus size={16} color={colors.rotaryAzure} />
+                <Text className="text-sm font-bold text-slate-800">Submit a Photo to the Gallery</Text>
+              </View>
+              <Text className="text-[11px] text-slate-400 leading-relaxed">
+                Photos are reviewed by an officer before appearing publicly.
+              </Text>
+
+              {submitNotice ? (
+                <View className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex-row items-center gap-2">
+                  <Check size={16} color={colors.emerald600} />
+                  <Text className="text-[11px] font-bold text-emerald-800 flex-1">{submitNotice}</Text>
+                </View>
+              ) : null}
+
+              <Pressable onPress={handlePickSubmissionPhoto} className="w-full h-32 rounded-2xl bg-slate-100 items-center justify-center overflow-hidden border border-slate-200">
+                {submitUri ? (
+                  <Image source={{ uri: submitUri }} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+                ) : (
+                  <View className="items-center gap-1">
+                    <Camera size={22} color={colors.slate400} />
+                    <Text className="text-[10px] font-bold text-slate-400 uppercase">Choose a Photo</Text>
+                  </View>
+                )}
+              </Pressable>
+
+              <TextField label="Title" value={submitTitle} onChangeText={setSubmitTitle} placeholder="e.g. Well handover at Kaningo" />
+              <TextField label="Description" value={submitDescription} onChangeText={setSubmitDescription} placeholder="Optional" multiline />
+
+              <View className="flex-row flex-wrap gap-2">
+                {(['meetings', 'anniversary', 'outreach', 'rotaract'] as const).map((c) => (
+                  <Pressable
+                    key={c}
+                    onPress={() => setSubmitCategory(c)}
+                    className={`px-3 py-2 rounded-xl border ${submitCategory === c ? 'bg-rotary-azure border-rotary-azure' : 'bg-slate-50 border-slate-200'}`}
+                  >
+                    <Text className={`text-[10px] font-bold uppercase ${submitCategory === c ? 'text-white' : 'text-slate-500'}`}>{c}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <PrimaryButton label="Submit for Review" onPress={handleSubmitPhoto} loading={submitting} disabled={!submitTitle || !submitUri} />
+            </Card>
+          )}
 
           <PrimaryButton label="Sign Out" variant="outline" onPress={handleSignOut} />
         </>

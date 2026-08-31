@@ -7,7 +7,9 @@ import { ProjectApplication } from '../types';
 import { submitApplication } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
 import SafeImage from '../components/SafeImage';
+import DonateButton from '../components/DonateButton';
 import { logPageView } from '../lib/analytics';
+import { isValidEmail, MAX_NAME_LENGTH, MAX_MESSAGE_LENGTH } from '../lib/validate';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<ProjectsStackParamList, 'ProjectDetails'>;
@@ -23,6 +25,7 @@ export default function ProjectDetailsScreen({ route }: Props) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     logPageView(`project_${project.id}`);
@@ -30,6 +33,11 @@ export default function ProjectDetailsScreen({ route }: Props) {
 
   const handleSubmit = async () => {
     if (!name || !email || !message) return;
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    setError('');
     setLoading(true);
     try {
       const app: ProjectApplication = {
@@ -97,6 +105,24 @@ export default function ProjectDetailsScreen({ route }: Props) {
             <Text className="text-sm font-extrabold text-slate-800">{project.impact}</Text>
           </View>
         )}
+        {((project.wellsBuilt || 0) > 0 || (project.studentsSponsored || 0) > 0 || (project.fundsRaised || 0) > 0 || (project.peopleImpacted || 0) > 0) && (
+          <View className="flex-row flex-wrap gap-3">
+            {[
+              { label: 'Wells Built', value: project.wellsBuilt },
+              { label: 'Students Sponsored', value: project.studentsSponsored },
+              { label: 'Funds Raised', value: project.fundsRaised ? `$${project.fundsRaised.toLocaleString()}` : undefined },
+              { label: 'People Impacted', value: project.peopleImpacted }
+            ]
+              .filter((s) => s.value)
+              .map((stat) => (
+                <View key={stat.label} className="flex-1 min-w-[45%] bg-white rounded-2xl border border-slate-200 p-3 items-center gap-0.5">
+                  <Text className="text-lg font-extrabold text-rotary-azure">{stat.value}</Text>
+                  <Text className="text-[9px] font-bold uppercase text-slate-400 text-center">{stat.label}</Text>
+                </View>
+              ))}
+          </View>
+        )}
+        <DonateButton projectId={project.id} projectTitle={project.title} />
       </Card>
 
       <Card className="gap-3">
@@ -106,9 +132,11 @@ export default function ProjectDetailsScreen({ route }: Props) {
           Submit your inquiry to join this project team, propose a donor alignment, or ask logistical questions.
         </Text>
 
-        <TextField label="Full Name" value={name} onChangeText={setName} placeholder="e.g. Sahr Kamanda" />
-        <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. sahr@gmail.com" keyboardType="email-address" autoCapitalize="none" />
-        <TextField label="Message Description" value={message} onChangeText={setMessage} placeholder="How would you like to participate?" multiline />
+        <TextField label="Full Name" value={name} onChangeText={setName} placeholder="e.g. Sahr Kamanda" maxLength={MAX_NAME_LENGTH} />
+        <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. sahr@gmail.com" keyboardType="email-address" autoCapitalize="none" maxLength={254} />
+        <TextField label="Message Description" value={message} onChangeText={setMessage} placeholder="How would you like to participate?" multiline maxLength={MAX_MESSAGE_LENGTH} />
+
+        {error ? <Text className="text-xs text-rose-600">{error}</Text> : null}
 
         <PrimaryButton
           label={success ? 'Sent!' : 'Submit Project Inquiry'}

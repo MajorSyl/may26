@@ -3,8 +3,9 @@ import { View, Text, Pressable, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ArrowRight, CheckCircle, Users, ExternalLink, Compass } from 'lucide-react-native';
 import { HomeStackParamList } from '../navigation/types';
-import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
+import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, getImpactTotals } from '../lib/service';
 import { getProjects } from '../lib/service';
+import DonateButton from '../components/DonateButton';
 import { Project } from '../types';
 import SafeImage from '../components/SafeImage';
 import MemberSpotlight from '../components/MemberSpotlight';
@@ -28,6 +29,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
+  const [impact, setImpact] = useState({ wellsBuilt: 0, studentsSponsored: 0, fundsRaised: 0, peopleImpacted: 0 });
 
   useEffect(() => {
     let active = true;
@@ -35,6 +37,7 @@ export default function HomeScreen({ navigation }: Props) {
     getSiteSettings().then((s) => active && setSettings(s));
     getProjects().then((p) => active && setProjects(p));
     getContentBlocks('home').then((b) => active && setBlocks(b));
+    getImpactTotals().then((t) => active && setImpact(t));
     return () => {
       active = false;
     };
@@ -93,6 +96,28 @@ export default function HomeScreen({ navigation }: Props) {
             <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Contact Our Officers</Text>
           </Pressable>
         </View>
+      </View>
+
+      {/* Our Impact */}
+      <View className="gap-4">
+        <View className="items-center gap-1.5">
+          <Badge label="Our Impact" tone="gold" />
+          <Text className="text-xl font-extrabold text-rotary-dark text-center">What We've Achieved Together</Text>
+        </View>
+        <View className="flex-row flex-wrap gap-3">
+          {[
+            { label: 'Wells Built', value: impact.wellsBuilt },
+            { label: 'Students Sponsored', value: impact.studentsSponsored },
+            { label: 'Funds Raised', value: `$${impact.fundsRaised.toLocaleString()}` },
+            { label: 'People Impacted', value: impact.peopleImpacted.toLocaleString() }
+          ].map((stat) => (
+            <View key={stat.label} className="flex-1 min-w-[45%] bg-white rounded-2xl border border-slate-200 p-4 items-center gap-1">
+              <Text className="text-2xl font-extrabold text-rotary-azure">{stat.value}</Text>
+              <Text className="text-[10px] font-bold uppercase text-slate-400 text-center">{stat.label}</Text>
+            </View>
+          ))}
+        </View>
+        <DonateButton />
       </View>
 
       {/* Mission */}

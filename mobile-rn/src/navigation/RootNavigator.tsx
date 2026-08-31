@@ -7,6 +7,7 @@ import AdminLoginScreen from '../screens/AdminLoginScreen';
 import AdminHomeScreen from '../screens/AdminHomeScreen';
 import AdminProjectsScreen from '../screens/AdminProjectsScreen';
 import AdminEventsScreen from '../screens/AdminEventsScreen';
+import AdminEventAttendeesScreen from '../screens/AdminEventAttendeesScreen';
 import AdminMembersScreen from '../screens/AdminMembersScreen';
 import AdminInquiriesScreen from '../screens/AdminInquiriesScreen';
 import AdminApprovalsScreen from '../screens/AdminApprovalsScreen';
@@ -45,6 +46,7 @@ export default function RootNavigator() {
         <Stack.Screen name="AdminHome" component={AdminHomeScreen} options={{ title: 'Admin' }} />
         <Stack.Screen name="AdminProjects" component={AdminProjectsScreen} options={{ title: 'Projects' }} />
         <Stack.Screen name="AdminEvents" component={AdminEventsScreen} options={{ title: 'Events' }} />
+        <Stack.Screen name="AdminEventAttendees" component={AdminEventAttendeesScreen} options={{ title: 'Attendees' }} />
         <Stack.Screen name="AdminMembers" component={AdminMembersScreen} options={{ title: 'Members' }} />
         <Stack.Screen name="AdminInquiries" component={AdminInquiriesScreen} options={{ title: 'Inquiries' }} />
         <Stack.Screen name="AdminApprovals" component={AdminApprovalsScreen} options={{ title: 'Approvals' }} />

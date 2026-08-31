@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Alert } from '../lib/alert';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { X, Pencil, Trash2, AlertTriangle } from 'lucide-react-native';
+import { X, Pencil, Trash2, AlertTriangle, Users } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { ClubEvent } from '../types';
-import { getEvents, adminCreateEvent, adminUpdateEvent, adminDeleteEvent } from '../lib/service';
+import { getEvents, adminCreateEvent, adminUpdateEvent, adminDeleteEvent, triggerNewsletterSend } from '../lib/service';
 import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton } from '../components/ui';
 import { colors } from '../theme';
 
@@ -15,7 +15,7 @@ const EVENT_TYPES = ['Weekly Meeting', 'Service Project', 'Social', 'Fundraiser'
 
 const BLANK = { title: '', date: '', time: '', location: '', speaker: '', description: '', type: 'Weekly Meeting' as ClubEvent['type'] };
 
-export default function AdminEventsScreen({}: Props) {
+export default function AdminEventsScreen({ navigation }: Props) {
   const [items, setItems] = useState<ClubEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,7 +54,8 @@ export default function AdminEventsScreen({}: Props) {
     setError('');
     try {
       if (editingId === 'new') {
-        await adminCreateEvent(form);
+        const id = await adminCreateEvent(form);
+        triggerNewsletterSend('event', id);
       } else if (editingId) {
         await adminUpdateEvent(editingId, form);
       }
@@ -147,6 +148,7 @@ export default function AdminEventsScreen({}: Props) {
                   </Text>
                 </View>
                 <View className="flex-row gap-2">
+                  <IconButton icon={Users} onPress={() => navigation.navigate('AdminEventAttendees', { eventId: e.id, eventTitle: e.title })} />
                   <IconButton icon={Pencil} onPress={() => startEdit(e)} />
                   <IconButton icon={Trash2} onPress={() => handleDelete(e)} color={colors.rose600} />
                 </View>
