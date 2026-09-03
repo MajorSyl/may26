@@ -12,7 +12,6 @@ import { ScreenScroll, Badge, Card } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
 import SocialFeedSection from '../components/SocialFeedSection';
-import DownloadAppSection from '../components/DownloadAppSection';
 import VideoEmbed from '../components/VideoEmbed';
 import { colors } from '../theme';
 
@@ -204,8 +203,6 @@ export default function HomeScreen({ navigation }: Props) {
       ) : null}
 
       <SocialFeedSection onViewAll={() => goToTab('MoreTab', 'SocialFeed')} />
-
-      <DownloadAppSection />
 
       {/* Announcements */}
       <View className="gap-4">
