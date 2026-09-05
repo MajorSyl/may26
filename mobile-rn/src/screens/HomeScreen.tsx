@@ -12,6 +12,7 @@ import { ScreenScroll, Badge, Card } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
 import SocialFeedSection from '../components/SocialFeedSection';
+import FacebookFeed from '../components/FacebookFeed';
 import VideoEmbed from '../components/VideoEmbed';
 import { colors } from '../theme';
 
@@ -93,6 +94,8 @@ export default function HomeScreen({ navigation }: Props) {
           </Pressable>
         </View>
       </View>
+
+      <FacebookFeed />
 
       {/* Mission */}
       <View className="gap-4">
