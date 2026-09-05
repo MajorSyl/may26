@@ -45,7 +45,8 @@ jobs:
       - name: Publish OTA update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas update --branch preview --environment preview --message "Auto-publish from CI (run #${{ github.run_number }}, ${{ github.sha }})" --non-interactive
+        run: |
+          eas update --branch preview --environment preview --message "Auto-publish from CI run ${{ github.run_number }} (${{ github.sha }})" --non-interactive
 
       # iOS builds need real Apple Developer Program credentials (a paid
       # account + Apple ID), which EAS can't generate non-interactively the
