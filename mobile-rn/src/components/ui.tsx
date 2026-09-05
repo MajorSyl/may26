@@ -137,7 +137,8 @@ export function TextField({
         placeholderTextColor={colors.slate400}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
-        autoCapitalize={autoCapitalize}
+        autoCapitalize={autoCapitalize ?? (secureTextEntry ? 'none' : undefined)}
+        autoCorrect={secureTextEntry ? false : undefined}
         maxLength={maxLength}
         multiline={multiline}
         className={`bg-slate-50 border border-slate-200 rounded-xl px-3.5 text-slate-800 text-sm ${
