@@ -5,6 +5,12 @@
     "owner": "majordev999",
     "scheme": "rcfsmobile",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/aa5e8680-5f8e-444c-990c-19b93f00a3e8"
+    },
     "orientation": "portrait",
     "icon": "./src/assets/icon.png",
     "userInterfaceStyle": "light",

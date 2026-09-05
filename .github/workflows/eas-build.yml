@@ -34,6 +34,19 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: eas init --non-interactive --force
 
+      # Publishes an EAS Update (OTA) to the "preview" channel on every
+      # push -- this is what lets already-installed apps pick up JS/logic/
+      # copy changes without a reinstall (see app.json's runtimeVersion/
+      # updates config). Runs before, and independent of, the native
+      # build step below, so a JS-only fix still reaches devices even if
+      # the native build is blocked (e.g. by the EAS free-tier build
+      # quota) -- only a genuinely new native dependency/permission needs
+      # that slower path.
+      - name: Publish OTA update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: eas update --branch preview --environment preview --message "Auto-publish from CI (run #${{ github.run_number }}, ${{ github.sha }})" --non-interactive
+
       # iOS builds need real Apple Developer Program credentials (a paid
       # account + Apple ID), which EAS can't generate non-interactively the
       # way it auto-generates an Android keystore. Building Android only
