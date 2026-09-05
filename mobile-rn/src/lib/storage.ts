@@ -27,3 +27,17 @@ export const uploadSiteImage = async (uri: string, folder: string, contentType: 
   const { data } = db.storage.from('site-images').getPublicUrl(path);
   return data.publicUrl;
 };
+
+// Newsletter PDF uploads (`newsletters` bucket) -- public read, media-officer-
+// tier write only (RLS on storage.objects), separate bucket from site-images
+// since it holds documents, not photos, and has its own mime/size limits.
+export const uploadNewsletterPdf = async (uri: string): Promise<string> => {
+  const db = requireSupabase();
+  const path = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}.pdf`;
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const { error } = await db.storage.from('newsletters').upload(path, blob, { contentType: 'application/pdf', upsert: false });
+  if (error) throw error;
+  const { data } = db.storage.from('newsletters').getPublicUrl(path);
+  return data.publicUrl;
+};

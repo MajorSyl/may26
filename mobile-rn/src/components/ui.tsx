@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
-import { ChevronRight, Image as ImageIcon, LucideIcon } from 'lucide-react-native';
-import { uploadSiteImage } from '../lib/storage';
+import * as DocumentPicker from 'expo-document-picker';
+import { ChevronRight, Image as ImageIcon, FileText, LucideIcon } from 'lucide-react-native';
+import { uploadSiteImage, uploadNewsletterPdf } from '../lib/storage';
 import { colors } from '../theme';
 
 // Shared building blocks used across every ported screen, so each screen
@@ -232,6 +233,52 @@ export function ImagePickerField({
       >
         {uploading ? <ActivityIndicator size="small" color={colors.rotaryAzure} /> : <ImageIcon size={16} color={colors.slate500} />}
         <Text className="text-xs font-bold text-slate-600">{uploading ? 'Uploading...' : imageUrl ? 'Change Photo' : 'Upload Photo'}</Text>
+      </Pressable>
+      {error ? <Text className="text-[10px] text-rose-600">{error}</Text> : null}
+    </View>
+  );
+}
+
+// Admin-only PDF upload for newsletter issues -- uploads straight to the
+// `newsletters` Storage bucket, mirroring ImagePickerField's direct-upload
+// pattern above but for a single PDF document instead of a photo.
+export function PdfPickerField({ label, pdfUrl, onChange }: { label: string; pdfUrl: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handlePick = async () => {
+    const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf', copyToCacheDirectory: true });
+    if (result.canceled || !result.assets?.[0]) return;
+    setUploading(true);
+    setError('');
+    try {
+      const url = await uploadNewsletterPdf(result.assets[0].uri);
+      onChange(url);
+    } catch (err: any) {
+      setError(err?.message || 'Could not upload PDF.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <View className="gap-2">
+      <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</Text>
+      {pdfUrl ? (
+        <View className="flex-row items-center gap-2 p-3 rounded-xl bg-slate-100 border border-slate-200">
+          <FileText size={16} color={colors.rotaryAzure} />
+          <Text className="text-xs text-slate-600 flex-1" numberOfLines={1}>
+            {pdfUrl.split('/').pop()}
+          </Text>
+        </View>
+      ) : null}
+      <Pressable
+        onPress={handlePick}
+        disabled={uploading}
+        className="flex-row items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-slate-300 bg-slate-50"
+      >
+        {uploading ? <ActivityIndicator size="small" color={colors.rotaryAzure} /> : <FileText size={16} color={colors.slate500} />}
+        <Text className="text-xs font-bold text-slate-600">{uploading ? 'Uploading...' : pdfUrl ? 'Change PDF' : 'Upload PDF'}</Text>
       </Pressable>
       {error ? <Text className="text-[10px] text-rose-600">{error}</Text> : null}
     </View>

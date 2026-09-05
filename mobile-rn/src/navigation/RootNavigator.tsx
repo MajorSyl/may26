@@ -22,6 +22,7 @@ import AdminContentBlocksScreen from '../screens/AdminContentBlocksScreen';
 import AdminGalleryScreen from '../screens/AdminGalleryScreen';
 import AdminVisitorLogScreen from '../screens/AdminVisitorLogScreen';
 import AdminSocialFeedScreen from '../screens/AdminSocialFeedScreen';
+import AdminNewsletterScreen from '../screens/AdminNewsletterScreen';
 import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -64,6 +65,7 @@ export default function RootNavigator() {
         <Stack.Screen name="AdminGallery" component={AdminGalleryScreen} options={{ title: 'Gallery' }} />
         <Stack.Screen name="AdminVisitorLog" component={AdminVisitorLogScreen} options={{ title: 'Visitor Log' }} />
         <Stack.Screen name="AdminSocialFeed" component={AdminSocialFeedScreen} options={{ title: 'Social Feed' }} />
+        <Stack.Screen name="AdminNewsletter" component={AdminNewsletterScreen} options={{ title: 'Newsletter' }} />
       </Stack.Group>
     </Stack.Navigator>
   );

@@ -652,6 +652,66 @@ export const triggerNewsletterSend = async (kind: 'project' | 'event', recordId:
   }
 };
 
+export interface NewsletterIssue {
+  id: string;
+  title: string;
+  message: string;
+  pdfUrl: string;
+  createdAt: string;
+  sendStatus: 'unsent' | 'sent' | 'failed';
+  recipientCount: number;
+  sendError: string;
+}
+
+export const adminListNewsletterIssues = async (): Promise<NewsletterIssue[]> => {
+  const db = requireSupabase();
+  const { data: issues, error } = await db.from('newsletter_issues').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const { data: sends } = await db.from('newsletter_sends').select('record_id, status, recipient_count, error').eq('kind', 'pdf');
+  const sendByRecordId = new Map((sends || []).map((s: any) => [s.record_id, s]));
+  return (issues || []).map((row: any) => {
+    const send = sendByRecordId.get(row.id);
+    return {
+      id: row.id,
+      title: row.title,
+      message: row.message || '',
+      pdfUrl: row.pdf_url,
+      createdAt: row.created_at,
+      sendStatus: send ? (send.status as 'sent' | 'failed') : 'unsent',
+      recipientCount: send?.recipient_count ?? 0,
+      sendError: send?.error || ''
+    };
+  });
+};
+
+// Uploads happen client-side (uploadNewsletterPdf in storage.ts) straight to
+// the `newsletters` Storage bucket under the signed-in officer's own RLS-
+// checked session -- this just records the resulting issue row.
+export const adminCreateNewsletterIssue = async (title: string, message: string, pdfUrl: string): Promise<string> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('newsletter_issues').insert({ title, message: message || null, pdf_url: pdfUrl }).select('id').single();
+  if (error) throw error;
+  return data.id;
+};
+
+// Unlike triggerNewsletterSend (fire-and-forget for project/event auto-
+// notify), an officer explicitly choosing to send a newsletter issue needs
+// to know whether it actually went out -- so this surfaces both outcomes
+// instead of swallowing them.
+export const adminSendNewsletterIssue = async (recordId: string): Promise<number> => {
+  const db = requireSupabase();
+  const { data, error } = await db.functions.invoke('send-newsletter', { body: { kind: 'pdf', recordId } });
+  if (error) {
+    const context = (error as any)?.context;
+    if (context?.json) {
+      const b = await context.json().catch(() => null);
+      if (b?.error) throw new Error(b.error);
+    }
+    throw new Error(error.message || 'Could not send the newsletter.');
+  }
+  return data?.recipientCount ?? 0;
+};
+
 export const getImpactTotals = async () => {
   const projects = await getProjects();
   return projects.reduce(
