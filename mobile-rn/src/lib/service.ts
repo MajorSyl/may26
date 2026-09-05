@@ -447,6 +447,20 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
   }
 };
 
+// Resolves a chosen admin username to its account email via the
+// resolve_admin_email RPC (SECURITY DEFINER -- looks up admins.username
+// joined to auth.users.email, returns null if no match). Callable by the
+// anon key since sign-in itself needs to happen before any session exists;
+// a non-existent username resolves to null and loginAdmin below then fails
+// with the same generic "incorrect" message a bad password would, so this
+// can't be used to enumerate valid usernames.
+export const resolveAdminUsername = async (username: string): Promise<string | null> => {
+  if (!isSupabaseConfigured || !supabase) return null;
+  const { data, error } = await supabase.rpc('resolve_admin_email', { p_username: username.trim() });
+  if (error) return null;
+  return (data as string | null) ?? null;
+};
+
 export const loginAdmin = async (email: string, password: string): Promise<void> => {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Admin login requires a configured Supabase project.');
