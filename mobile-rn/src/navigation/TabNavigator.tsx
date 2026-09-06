@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Home, FolderKanban, Calendar, Users, MoreHorizontal } from 'lucide-react-native';
 import { TabParamList } from './types';
@@ -13,10 +14,13 @@ import { colors } from '../theme';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
-// Mobile: unchanged bottom tabs. Tablet/desktop: a persistent left side
-// rail (icon-only on tablet, icon+label on desktop) -- see
-// ResponsiveTabBar.tsx. Scene content gets left padding matching the
-// rail's width so it sits beside the rail rather than underneath it.
+// Native mobile: unchanged bottom tabs. Native tablet/desktop: a
+// persistent left side rail (icon-only on tablet, icon+label on desktop)
+// -- see ResponsiveTabBar.tsx. Scene content gets left padding matching
+// the rail's width so it sits beside the rail rather than underneath it.
+// Web renders neither (ResponsiveTabBar is a no-op there): each public
+// stack navigator supplies its own SiteHeader instead, so no sidebar
+// padding is needed on web at any width.
 export default function TabNavigator() {
   const breakpoint = useBreakpoint();
   const isWide = breakpoint !== 'mobile';
@@ -30,7 +34,7 @@ export default function TabNavigator() {
         tabBarActiveTintColor: colors.rotaryAzure,
         tabBarInactiveTintColor: colors.slate400,
         tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
-        sceneStyle: isWide ? { paddingLeft: sidebarWidth } : undefined
+        sceneStyle: Platform.OS !== 'web' && isWide ? { paddingLeft: sidebarWidth } : undefined
       }}
     >
       <Tab.Screen

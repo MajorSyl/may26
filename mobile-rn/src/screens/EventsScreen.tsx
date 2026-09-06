@@ -101,7 +101,7 @@ export default function EventsScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenScroll wide>
+    <ScreenScroll>
       <View className="gap-2 md:max-w-3xl">
         <Badge label="Fellowship Circles" />
         <Text className="text-sm text-slate-500 leading-relaxed">

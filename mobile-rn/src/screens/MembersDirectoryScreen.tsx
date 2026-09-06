@@ -45,7 +45,7 @@ export default function MembersDirectoryScreen() {
   });
 
   return (
-    <ScreenScroll wide>
+    <ScreenScroll>
       <View className="gap-2">
         <View className="self-start px-3 py-1 rounded-full bg-rotary-azure/10">
           <Text className="text-[10px] font-bold uppercase tracking-wider text-rotary-azure">Sunset Fellowship Roster</Text>

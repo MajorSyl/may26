@@ -1,20 +1,24 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { ShieldCheck } from 'lucide-react-native';
 import { Breakpoint } from '../hooks/useBreakpoint';
 import { colors } from '../theme';
 
-// Mobile keeps React Navigation's own default bottom tab bar untouched
-// (re-exported, not reimplemented) -- only tablet/desktop swap to a
-// persistent left side rail, per the brief's "desktop gets persistent
-// side/top navigation instead of bottom tabs" requirement. The
-// TabNavigator pads scene content by the rail's width so screens sit
-// beside it rather than underneath it.
+// Native only, at every size: React Navigation's own default bottom tab
+// bar on phones, a persistent left side rail on tablet/desktop (e.g. a
+// large Android tablet). Web no longer uses this component at all -- the
+// public site now has its own top SiteHeader (logo + nav links,
+// hamburger below 640px) rendered per public stack navigator instead, so
+// this returns null there, leaving no bottom bar and no sidebar. This
+// left-rail pattern is kept only for a possible future logged-in native
+// dashboard, per the brief -- not for the public web experience.
 export default function ResponsiveTabBar(props: BottomTabBarProps & { breakpoint: Breakpoint; sidebarWidth: number }) {
   const { breakpoint, sidebarWidth, state, descriptors, navigation } = props;
   const insets = useSafeAreaInsets();
+
+  if (Platform.OS === 'web') return null;
 
   if (breakpoint === 'mobile') {
     return <BottomTabBar {...props} />;

@@ -39,7 +39,7 @@ export default function ClubGalleryScreen() {
   const filtered = activeCategory === 'all' ? photos : photos.filter((p) => p.category === activeCategory);
 
   return (
-    <ScreenScroll wide>
+    <ScreenScroll>
       <View className="gap-2 md:max-w-3xl">
         <Badge label="Historical Archives" tone="gold" />
         <Text className="text-3xl font-extrabold text-rotary-dark">Club Archives & Memoirs</Text>

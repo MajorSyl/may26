@@ -61,7 +61,7 @@ export default function HomeScreen({ navigation }: Props) {
   // top and bottom), so a plain centered crop keeps it fully visible at
   // every size without needing a custom focal offset.
   const hero = (
-    <View className="w-full aspect-[3/2] md:aspect-[16/9] lg:aspect-[2/1] bg-rotary-dark">
+    <View className="w-full aspect-[3/2] sm:aspect-[16/9] lg:aspect-[2/1] bg-rotary-dark">
       <Image
         source={require('../assets/hero-connect.jpg')}
         resizeMode="cover"
@@ -73,23 +73,31 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScreenScroll edgeToEdge={hero}>
-      {/* Hero copy */}
-      <View className="gap-4 items-center">
+      {/* Hero copy -- narrower than the page's own max-w-6xl container so
+          heading/paragraph line length stays comfortable on desktop
+          instead of stretching edge to edge. */}
+      <View className="gap-3.5 items-center w-full sm:max-w-xl lg:max-w-2xl mx-auto">
         <Badge label="Welcome to Freetown Sunset" />
-        <Text className="text-3xl font-extrabold text-rotary-dark text-center leading-tight">
+        <Text className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-rotary-dark text-center leading-tight">
           Fellowship, Integrity, and Direct Local Service
         </Text>
-        <Text className="text-sm text-slate-600 text-center leading-relaxed">
+        <Text className="text-sm sm:text-base text-slate-600 text-center leading-relaxed">
           Founded on Freetown's beautiful shores, the Rotary Club of Freetown Sunset (RCFS) gathers a diverse cohort of
           passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we
           combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
         </Text>
-        <View className="flex-row flex-wrap gap-3 justify-center pt-1">
-          <Pressable onPress={() => navigation.navigate('About')} className="flex-row items-center gap-2 bg-rotary-azure px-4 py-2.5 rounded-xl">
+        <View className="flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center pt-1.5">
+          <Pressable
+            onPress={() => navigation.navigate('About')}
+            className="flex-row items-center justify-center gap-2 bg-rotary-azure px-5 py-3 rounded-xl w-full sm:w-auto hover:bg-rotary-azure-dark active:opacity-90"
+          >
             <Text className="text-white text-xs font-bold uppercase tracking-wider">Read Our Core Values</Text>
             <ArrowRight size={14} color={colors.white} />
           </Pressable>
-          <Pressable onPress={() => goToTab('MoreTab', 'Contact')} className="bg-white border border-slate-300 px-4 py-2.5 rounded-xl">
+          <Pressable
+            onPress={() => goToTab('MoreTab', 'Contact')}
+            className="flex-row items-center justify-center bg-white border border-slate-300 px-5 py-3 rounded-xl w-full sm:w-auto hover:bg-slate-50 active:opacity-90"
+          >
             <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Contact Our Officers</Text>
           </Pressable>
         </View>
@@ -100,46 +108,46 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Mission */}
       <View className="gap-4">
         <Badge label="The Sunset Mission" />
-        <Text className="text-2xl font-extrabold text-rotary-dark leading-snug">{settings.homeHeroTitle}</Text>
-        <Text className="text-sm text-slate-500 leading-relaxed">{settings.homeHeroSubtitle}</Text>
+        <Text className="text-2xl sm:text-3xl font-extrabold text-rotary-dark leading-snug">{settings.homeHeroTitle}</Text>
+        <Text className="text-sm text-slate-500 leading-relaxed sm:max-w-2xl">{settings.homeHeroSubtitle}</Text>
         <Pressable onPress={() => navigation.navigate('About')} className="flex-row items-center gap-2">
           <Text className="text-rotary-azure font-bold text-sm">Explore Our Story & Ethics</Text>
           <ArrowRight size={16} color={colors.rotaryAzure} />
         </Pressable>
 
-        <View className="gap-3 mt-2">
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 flex-row items-start gap-4">
-            <View className="p-3 bg-indigo-50 rounded-2xl">
+        <View className="gap-4 lg:flex-row mt-2">
+          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-3 lg:flex-1">
+            <View className="w-12 h-12 rounded-2xl bg-indigo-50 items-center justify-center">
               <Compass size={22} color="#4f46e5" />
             </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-bold uppercase text-indigo-600">Our Approach</Text>
-              <Text className="font-extrabold text-slate-800 mt-1">Service Above Self</Text>
-              <Text className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <View>
+              <Text className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Our Approach</Text>
+              <Text className="text-base font-extrabold text-slate-800 mt-1">Service Above Self</Text>
+              <Text className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                 We work to identify real community needs and respond with practical, locally-supported solutions.
               </Text>
             </View>
           </View>
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 flex-row items-start gap-4">
-            <View className="p-3 bg-emerald-50 rounded-2xl">
+          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-3 lg:flex-1">
+            <View className="w-12 h-12 rounded-2xl bg-emerald-50 items-center justify-center">
               <CheckCircle size={22} color={colors.emerald600} />
             </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-bold uppercase text-emerald-600">The 4-Way Test</Text>
-              <Text className="font-extrabold text-slate-800 mt-1">Ethical Guardrails</Text>
-              <Text className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <View>
+              <Text className="text-[10px] font-bold uppercase tracking-wide text-emerald-600">The 4-Way Test</Text>
+              <Text className="text-base font-extrabold text-slate-800 mt-1">Ethical Guardrails</Text>
+              <Text className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                 We follow Rotary's ethical Four-Way Test in all of our decisions and activities.
               </Text>
             </View>
           </View>
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 flex-row items-start gap-4">
-            <View className="p-3 bg-amber-50 rounded-2xl">
+          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-3 lg:flex-1">
+            <View className="w-12 h-12 rounded-2xl bg-amber-50 items-center justify-center">
               <Users size={22} color={colors.amber500} />
             </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-bold uppercase text-amber-600">Our Values</Text>
-              <Text className="font-extrabold text-slate-800 mt-1">Community Cooperation</Text>
-              <Text className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <View>
+              <Text className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Our Values</Text>
+              <Text className="text-base font-extrabold text-slate-800 mt-1">Community Cooperation</Text>
+              <Text className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                 We aim to work alongside local leaders and community members on the projects we undertake.
               </Text>
             </View>
@@ -152,9 +160,12 @@ export default function HomeScreen({ navigation }: Props) {
         <View className="flex-row items-center justify-between">
           <View className="gap-1 flex-1 pr-2">
             <Badge label="Pioneering Action" tone="gold" />
-            <Text className="text-xl font-extrabold text-rotary-dark">Recent Completed Projects</Text>
+            <Text className="text-2xl font-extrabold text-rotary-dark">Recent Completed Projects</Text>
           </View>
-          <Pressable onPress={() => goToTab('ProjectsTab')} className="flex-row items-center gap-1.5 border border-slate-300 bg-white rounded-xl px-3 py-2">
+          <Pressable
+            onPress={() => goToTab('ProjectsTab')}
+            className="flex-row items-center gap-1.5 border border-slate-300 bg-white rounded-xl px-3 py-2 hover:bg-slate-50"
+          >
             <Text className="text-[10px] font-bold uppercase text-slate-700">All</Text>
             <ExternalLink size={12} color={colors.slate600} />
           </Pressable>
@@ -183,7 +194,7 @@ export default function HomeScreen({ navigation }: Props) {
         <View className="gap-3">
           <View className="items-center gap-1.5">
             <Badge label="Club Videos" tone="gold" />
-            <Text className="text-xl font-extrabold text-rotary-dark text-center">Featured Video</Text>
+            <Text className="text-2xl font-extrabold text-rotary-dark text-center">Featured Video</Text>
           </View>
           <VideoEmbed url={settings.homeVideoUrl} />
         </View>
@@ -193,7 +204,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Announcements */}
       <View className="gap-4">
-        <Text className="text-xl font-extrabold text-rotary-dark text-center">Latest News from Sunset</Text>
+        <Text className="text-2xl font-extrabold text-rotary-dark text-center">Latest News from Sunset</Text>
         <View className="gap-4">
           <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-2">
             <Badge label="Weekly Meetings" tone="gold" />

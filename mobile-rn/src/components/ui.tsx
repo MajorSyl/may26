@@ -11,11 +11,15 @@ import { colors } from '../theme';
 // file stays focused on its own content instead of re-declaring the same
 // badge/button/card markup. Uses NativeWind className throughout.
 
-// `wide`: text-first screens (About, Contact, forms, ...) cap and center
-// their content at tablet/desktop widths for readability -- a full-bleed
-// column of text stretched across a desktop window reads poorly. Grid
-// screens (Gallery, MembersDirectory, Events, ClubGallery) pass wide so
-// their multi-column layouts can use the full available width instead.
+// One shared container for every screen, public and admin alike: capped
+// at max-w-6xl and centered, with horizontal padding that scales at the
+// same two breakpoints used everywhere else on the site (sm: 640,
+// lg: 1024). No screen opts into a different width system any more --
+// that's what used to make some sections (grid screens like Gallery) look
+// edge-to-edge while others (Home) looked narrowly inset, at different
+// breakpoints from each other and from SiteHeader's own container. 6xl is
+// wide enough for a comfortable 3-column card grid without ever going
+// edge-to-edge on a large monitor.
 //
 // `edgeToEdge`: an optional header (e.g. a hero image) rendered above the
 // padded content, genuinely full-bleed to the viewport edge. This exists
@@ -25,11 +29,9 @@ import { colors } from '../theme';
 // viewport edge, clipping the bled content instead of bleeding it).
 export function ScreenScroll({
   children,
-  wide = false,
   edgeToEdge
 }: {
   children: React.ReactNode;
-  wide?: boolean;
   edgeToEdge?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -37,10 +39,7 @@ export function ScreenScroll({
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-rotary-light">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
         {edgeToEdge}
-        <View
-          className={wide ? 'w-full md:px-6 lg:px-10' : 'w-full md:max-w-3xl md:mx-auto lg:max-w-4xl'}
-          style={{ paddingTop: 16, paddingHorizontal: 16, gap: 24 }}
-        >
+        <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10" style={{ paddingTop: 20, gap: 28 }}>
           {children}
         </View>
       </ScrollView>

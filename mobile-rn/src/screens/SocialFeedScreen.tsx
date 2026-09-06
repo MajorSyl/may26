@@ -23,7 +23,7 @@ export default function SocialFeedScreen() {
   const filtered = filter === 'all' ? posts : posts.filter((p) => p.platform === filter);
 
   return (
-    <ScreenScroll wide>
+    <ScreenScroll>
       <View className="gap-2 md:max-w-3xl">
         <Badge label="Stay Connected" tone="gold" />
         <Text className="text-sm text-slate-500 leading-relaxed">Recent posts from our Instagram and Facebook pages.</Text>

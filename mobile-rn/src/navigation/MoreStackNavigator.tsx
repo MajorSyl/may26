@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MoreStackParamList } from './types';
 import MoreScreen from '../screens/MoreScreen';
@@ -8,13 +9,20 @@ import ContactScreen from '../screens/ContactScreen';
 import WhatIsRotaryScreen from '../screens/WhatIsRotaryScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import SocialFeedScreen from '../screens/SocialFeedScreen';
+import SiteHeader from './SiteHeader';
 import { colors } from '../theme';
 
 const Stack = createNativeStackNavigator<MoreStackParamList>();
 
 export default function MoreStackNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }}>
+    <Stack.Navigator
+      screenOptions={
+        Platform.OS === 'web'
+          ? { header: () => <SiteHeader /> }
+          : { headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }
+      }
+    >
       <Stack.Screen name="More" component={MoreScreen} options={{ title: 'More' }} />
       <Stack.Screen name="ClubGallery" component={ClubGalleryScreen} options={{ title: 'Club Gallery' }} />
       <Stack.Screen name="GetInvolved" component={GetInvolvedScreen} options={{ title: 'Get Involved' }} />
