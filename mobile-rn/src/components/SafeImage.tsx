@@ -21,12 +21,18 @@ interface SafeImageProps {
 // "Genuinely uploaded" now includes real https URLs from this project's own
 // Supabase Storage buckets (site-images, avatars) -- those are actual admin/
 // member-uploaded photos, not stock placeholders, even though they're http(s)
-// like an unverified external link would be. Everything else http(s)
+// like an unverified external link would be. It also includes assets served
+// from this site's own domain (e.g. static files committed to the repo's
+// public/ folder, used for content that predates a Storage upload) -- same
+// reasoning, just a different genuine hosting path. Everything else http(s)
 // (pasted external URLs, unsplash, etc.) still gets the placeholder treatment.
 const SUPABASE_STORAGE_PREFIX = process.env.EXPO_PUBLIC_SUPABASE_URL ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/` : null;
+const OWN_SITE_PREFIXES = ['https://rcfsunset.org/', 'https://www.rcfsunset.org/'];
 
 export default function SafeImage({ src, alt, style, containerStyle }: SafeImageProps) {
-  const isOwnUpload = !!src && !!SUPABASE_STORAGE_PREFIX && src.startsWith(SUPABASE_STORAGE_PREFIX);
+  const isOwnUpload =
+    !!src &&
+    ((!!SUPABASE_STORAGE_PREFIX && src.startsWith(SUPABASE_STORAGE_PREFIX)) || OWN_SITE_PREFIXES.some((p) => src.startsWith(p)));
   const isExternalOrPlaceholder = !src || (!isOwnUpload && (src.includes('unsplash.com') || src.startsWith('http')));
 
   if (isExternalOrPlaceholder) {
