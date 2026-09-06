@@ -6,7 +6,7 @@ import { HomeStackParamList } from '../navigation/types';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { getProjects } from '../lib/service';
 import { Project } from '../types';
-import SafeImage from '../components/SafeImage';
+import ProjectCard from '../components/ProjectCard';
 import MemberSpotlight from '../components/MemberSpotlight';
 import { ScreenScroll, Badge, Card } from '../components/ui';
 import { logPageView } from '../lib/analytics';
@@ -40,11 +40,11 @@ export default function HomeScreen({ navigation }: Props) {
     };
   }, []);
 
-  const goToTab = (tab: 'ProjectsTab' | 'EventsTab' | 'MoreTab', screen?: string) => {
+  const goToTab = (tab: 'ProjectsTab' | 'EventsTab' | 'MoreTab', screen?: string, params?: object) => {
     const parent = navigation.getParent();
     if (!parent) return;
     if (screen) {
-      (parent.navigate as any)(tab, { screen });
+      (parent.navigate as any)(tab, { screen, params });
     } else {
       (parent.navigate as any)(tab);
     }
@@ -167,26 +167,10 @@ export default function HomeScreen({ navigation }: Props) {
             </Text>
           </View>
         ) : (
-          <View className="gap-4">
+          <View className="gap-4 sm:flex-row sm:flex-wrap">
             {completedProjects.map((project) => (
-              <View key={project.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-                {project.imageUrl && (
-                  <View className="w-full h-40">
-                    <SafeImage src={project.imageUrl} alt={project.title} />
-                  </View>
-                )}
-                <View className="p-5 gap-2">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-[10px] font-bold uppercase text-rotary-azure">{project.category}</Text>
-                    <View className="bg-emerald-500 px-2.5 py-0.5 rounded-full">
-                      <Text className="text-[9px] font-extrabold uppercase text-white">Completed • {project.year}</Text>
-                    </View>
-                  </View>
-                  <Text className="font-extrabold text-slate-800 leading-snug">{project.title}</Text>
-                  <Text className="text-xs text-slate-500 leading-relaxed" numberOfLines={4}>
-                    {project.description}
-                  </Text>
-                </View>
+              <View key={project.id} className="sm:w-[48%] lg:w-[31.5%]">
+                <ProjectCard project={project} onPress={() => goToTab('ProjectsTab', 'ProjectDetails', { project })} />
               </View>
             ))}
           </View>

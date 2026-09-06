@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Filter, Clock, ArrowRight } from 'lucide-react-native';
+import { Filter } from 'lucide-react-native';
 import { ProjectsStackParamList } from '../navigation/types';
 import { Project } from '../types';
 import { getProjects } from '../lib/service';
 import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
-import SafeImage from '../components/SafeImage';
+import ProjectCard from '../components/ProjectCard';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
@@ -69,50 +69,12 @@ export default function GalleryScreen({ navigation }: Props) {
           }
         />
       ) : (
-        <View className="gap-4 md:flex-row md:flex-wrap">
-          {filtered.map((project) => {
-            const isCompleted = project.status === 'Completed';
-            const isActive = project.status === 'Active';
-            return (
-              <Pressable
-                key={project.id}
-                onPress={() => navigation.navigate('ProjectDetails', { project })}
-                className="bg-white border border-slate-200 rounded-3xl overflow-hidden md:w-[48%] lg:w-[31%]"
-              >
-                {project.imageUrl && (
-                  <View className="w-full h-40">
-                    <SafeImage src={project.imageUrl} alt={project.title} />
-                  </View>
-                )}
-                <View className="p-5 gap-3">
-                  <View className="flex-row items-center justify-between">
-                    <View className="bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-md flex-1 mr-2">
-                      <Text className="text-[9px] font-bold uppercase text-slate-800" numberOfLines={1}>{project.category}</Text>
-                    </View>
-                    <View className={`px-2 py-0.5 rounded-lg ${isCompleted ? 'bg-emerald-600' : isActive ? 'bg-indigo-600' : 'bg-amber-600'}`}>
-                      <Text className="text-[9px] font-extrabold uppercase text-white">{project.status}</Text>
-                    </View>
-                  </View>
-                  <View className="flex-row items-center gap-1.5">
-                    <Clock size={12} color={colors.rotaryGold} />
-                    <Text className="text-[10px] font-bold uppercase text-slate-400">{project.year} Program</Text>
-                  </View>
-                  <Text className="font-extrabold text-slate-800 leading-tight">{project.title}</Text>
-                  <Text className="text-xs text-slate-500 leading-relaxed" numberOfLines={4}>{project.description}</Text>
-                  {project.impact && (
-                    <View className="bg-slate-50 border border-slate-100 rounded-2xl p-3 gap-1">
-                      <Text className="text-[9px] font-bold uppercase text-slate-400">Sunset Impact Metric</Text>
-                      <Text className="text-[11px] font-bold text-slate-700">{project.impact}</Text>
-                    </View>
-                  )}
-                  <View className="flex-row items-center justify-between pt-3 border-t border-slate-100">
-                    <Text className="text-[11px] font-black text-rotary-azure uppercase tracking-wider">Explore Project Details</Text>
-                    <ArrowRight size={16} color={colors.rotaryAzure} />
-                  </View>
-                </View>
-              </Pressable>
-            );
-          })}
+        <View className="gap-4 sm:flex-row sm:flex-wrap">
+          {filtered.map((project) => (
+            <View key={project.id} className="sm:w-[48%] lg:w-[31.5%]">
+              <ProjectCard project={project} onPress={() => navigation.navigate('ProjectDetails', { project })} />
+            </View>
+          ))}
         </View>
       )}
     </ScreenScroll>
