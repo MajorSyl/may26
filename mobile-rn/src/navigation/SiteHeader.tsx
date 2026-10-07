@@ -33,15 +33,15 @@ export default function SiteHeader() {
         <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 flex-row items-center justify-between" style={{ height: 68 }}>
           <Pressable onPress={() => goTab('HomeTab')} className="py-2 flex-row items-center gap-3">
             <View>
-              <Text className="text-lg sm:text-xl font-extrabold text-rotary-azure tracking-tight leading-none">Rotary</Text>
-              <Text className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-rotary-dark leading-none mt-0.5">
+              <Text className="text-lg sm:text-xl font-extrabold text-rotary-royal tracking-tight leading-none">Rotary</Text>
+              <Text className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-rotary-royal leading-none mt-0.5">
                 Club of Freetown-Sunset
               </Text>
             </View>
             <View className="hidden md:flex border-l border-slate-300 pl-3 py-0.5">
-              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-dark leading-tight">Create</Text>
-              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-dark leading-tight">Lasting</Text>
-              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-dark leading-tight">Impact</Text>
+              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-royal leading-tight">Create</Text>
+              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-royal leading-tight">Lasting</Text>
+              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-royal leading-tight">Impact</Text>
             </View>
           </Pressable>
 

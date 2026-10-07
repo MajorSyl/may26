@@ -10,6 +10,7 @@ module.exports = {
         'rotary-azure-dark': '#1D6FE0',
         'rotary-gold': '#F7A81B',
         'rotary-dark': '#0F1E4D',
+        'rotary-royal': '#17458F',
         'rotary-light': '#F3F4F6'
       }
     }
