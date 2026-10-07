@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Menu, X, ShieldCheck, UserCircle2 } from 'lucide-react-native';
+import { Menu, X } from 'lucide-react-native';
 import { colors } from '../theme';
 
-// The web-only public site header: logo left, nav links right (tablet/
-// desktop), collapsing into a hamburger + dropdown menu below 640px. This
-// replaces the old bottom-tab-bar-that-becomes-a-left-sidebar setup for
-// every public page (see ResponsiveTabBar.tsx, now a no-op on web) --
-// that pattern is reserved for a future logged-in member/admin dashboard,
-// not the public site. Rendered once per public stack navigator (Home,
-// Projects, Events, Members, More) via each one's `header` screenOption,
-// so it sits above that stack's own ScrollView -- structurally "sticky"
-// for free, no scroll listener needed, since it never enters the
-// scrolling content itself.
+// The web-only public site header: full club wordmark left, nav links
+// right (tablet/desktop), collapsing into a hamburger + dropdown menu
+// below 640px. Rendered once per public stack navigator (Home, Projects,
+// Events, Members, More) via each one's `header` screenOption, so it sits
+// above that stack's own ScrollView -- structurally "sticky" for free.
 //
-// Uses the exact same getParent() hop pattern as HomeScreen's goToTab and
-// MoreScreen's goToRootScreen: one hop from this stack to the Tab
-// navigator for tab targets, two hops to the root Stack for the
-// standalone auth screens.
+// Per the club's Sept 2026 revamp brief: a simpler, cohesive nav --
+// Home | About | Projects | Members | Contact -- with Events and the old
+// "More" catch-all dropped from the primary bar (Events stays reachable
+// from Home's own meeting-info section; the old More sub-pages are now
+// reachable from the pages they're thematically closest to). Member/Admin
+// sign-in no longer live in the header at all -- Member sign-in now sits
+// on the Members page itself, Admin sign-in in the site footer -- both
+// per the brief's explicit "don't display login prominently in the
+// top-right corner" direction.
 const NAV_LINKS: { label: string; tab: string; screen?: string }[] = [
   { label: 'Home', tab: 'HomeTab' },
-  { label: 'Projects', tab: 'ProjectsTab' },
-  { label: 'Events', tab: 'EventsTab' },
-  { label: 'Members', tab: 'MembersTab' },
   { label: 'About', tab: 'HomeTab', screen: 'About' },
-  { label: 'More', tab: 'MoreTab' }
+  { label: 'Projects', tab: 'ProjectsTab' },
+  { label: 'Members', tab: 'MembersTab' },
+  { label: 'Contact', tab: 'MoreTab', screen: 'Contact' }
 ];
 
 export default function SiteHeader() {
@@ -42,17 +41,15 @@ export default function SiteHeader() {
     else (parent.navigate as any)(tab);
   };
 
-  const goRoot = (screen: 'AdminLogin' | 'MemberAccount') => {
-    setMenuOpen(false);
-    (navigation.getParent()?.getParent() as any)?.navigate(screen);
-  };
-
   return (
     <View style={{ position: 'relative', zIndex: 40 }}>
       <View className="bg-white border-b border-slate-200 shadow-sm">
-        <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 flex-row items-center justify-between" style={{ height: 64 }}>
+        <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 flex-row items-center justify-between" style={{ height: 68 }}>
           <Pressable onPress={() => goTab('HomeTab')} className="py-2">
-            <Text className="text-xl font-extrabold text-rotary-azure tracking-tight">RCFS</Text>
+            <Text className="text-lg sm:text-xl font-extrabold text-rotary-azure tracking-tight leading-none">Rotary</Text>
+            <Text className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-rotary-dark leading-none mt-0.5">
+              Club of Freetown-Sunset
+            </Text>
           </Pressable>
 
           <View className="hidden sm:flex flex-row items-center gap-1">
@@ -60,25 +57,11 @@ export default function SiteHeader() {
               <Pressable
                 key={link.label}
                 onPress={() => goTab(link.tab, link.screen)}
-                className="px-3 py-2 rounded-lg hover:bg-slate-100"
+                className="px-3.5 py-2 rounded-lg hover:bg-slate-100"
               >
                 <Text className="text-[13px] font-bold text-slate-700">{link.label}</Text>
               </Pressable>
             ))}
-            <Pressable
-              onPress={() => goRoot('MemberAccount')}
-              className="ml-2 flex-row items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-100"
-            >
-              <UserCircle2 size={15} color={colors.slate600} />
-              <Text className="text-[13px] font-bold text-slate-700">Sign In</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => goRoot('AdminLogin')}
-              accessibilityLabel="Admin Sign In"
-              className="w-9 h-9 rounded-full bg-rotary-dark items-center justify-center hover:opacity-90"
-            >
-              <ShieldCheck size={16} color={colors.white} />
-            </Pressable>
           </View>
 
           <Pressable
@@ -103,15 +86,6 @@ export default function SiteHeader() {
                 <Text className="text-sm font-bold text-slate-700">{link.label}</Text>
               </Pressable>
             ))}
-            <View className="h-px bg-slate-200 my-1" />
-            <Pressable onPress={() => goRoot('MemberAccount')} className="flex-row items-center gap-2 px-3 py-3 rounded-lg active:bg-slate-100">
-              <UserCircle2 size={16} color={colors.slate600} />
-              <Text className="text-sm font-bold text-slate-700">Member Sign In</Text>
-            </Pressable>
-            <Pressable onPress={() => goRoot('AdminLogin')} className="flex-row items-center gap-2 px-3 py-3 rounded-lg active:bg-slate-100">
-              <ShieldCheck size={16} color={colors.rotaryDark} />
-              <Text className="text-sm font-bold text-rotary-dark">Admin Sign In</Text>
-            </Pressable>
           </View>
         </View>
       )}

@@ -1,12 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
-import { Compass, Heart } from 'lucide-react-native';
+import { View, Text, Pressable } from 'react-native';
+import {
+  Compass,
+  Heart,
+  Calendar,
+  ShieldAlert,
+  Droplets,
+  Baby,
+  BookOpen,
+  TrendingUp,
+  Sprout
+} from 'lucide-react-native';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
-import { FULL_MEMBER_LIST } from '../memberData';
-import { ScreenScroll, Badge, Card } from '../components/ui';
+import { ROTARY_FOCUS_AREAS } from '../data';
+import { ScreenScroll, Badge } from '../components/ui';
 import { logPageView } from '../lib/analytics';
-import { ContentBlock, getContentBlocks } from '../lib/cms';
 import { colors } from '../theme';
+
+const OBJECTS_OF_ROTARY = [
+  'Building friendship as an opportunity for service.',
+  'High ethical standards in business, professions, and community life.',
+  'Applying the ideal of service in each Rotarian’s personal, business, and community life.',
+  'Advancing international understanding, goodwill, and peace through a world fellowship of professionals united in service.'
+];
 
 const FOUR_WAY_TEST = [
   { num: 1, q: 'Is it the TRUTH?', desc: 'We advocate for honesty and clarity in our reporting and communications.' },
@@ -27,31 +43,32 @@ const FOUR_WAY_TEST = [
   }
 ];
 
-// Simplified from the web app's admin-editable block layout (About.tsx) into
-// a fixed section order, matching the same simplification made in HomeScreen.
+const FOCUS_ICONS = [ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout];
+
+// Who we are, in one place: founding, vision, a brief introduction to
+// Rotary, the Objects of Rotary, the Four-Way Test, and our areas of
+// work -- informative without being text-heavy, per the club's revamp
+// brief. Individual leadership bios moved to the Members page, which now
+// owns "names and positions" so this page isn't duplicating that list.
 export default function AboutScreen() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [openTest, setOpenTest] = useState<number | null>(0);
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
-    let active = true;
     logPageView('about');
-    getSiteSettings().then((s) => active && setSettings(s));
-    getContentBlocks('about').then((b) => active && setBlocks(b));
-    return () => {
-      active = false;
-    };
+    getSiteSettings().then(setSettings);
   }, []);
-
-  const leadership = FULL_MEMBER_LIST.filter((m) => m.title);
 
   return (
     <ScreenScroll>
-      <View className="items-center gap-3">
+      <View className="items-center gap-3 w-full sm:max-w-2xl mx-auto">
         <Badge label={settings.aboutHeaderBadge} tone="gold" />
         <Text className="text-3xl font-extrabold text-slate-800 text-center leading-snug">{settings.aboutHeaderTitle}</Text>
         <Text className="text-sm text-slate-500 text-center leading-relaxed">{settings.aboutHeaderDesc}</Text>
+        <View className="flex-row items-center gap-2 bg-rotary-azure/10 rounded-full px-4 py-1.5 mt-1">
+          <Calendar size={13} color={colors.rotaryAzure} />
+          <Text className="text-[11px] font-bold text-rotary-azure">Founded 2014 &middot; Rotary District 9101</Text>
+        </View>
       </View>
 
       <View className="gap-4">
@@ -71,6 +88,33 @@ export default function AboutScreen() {
         </View>
       </View>
 
+      {/* What is Rotary, briefly */}
+      <View className="gap-4">
+        <Badge label="What Is Rotary?" />
+        <Text className="text-2xl font-extrabold text-slate-800">A Global Fellowship of Service</Text>
+        <Text className="text-sm text-slate-500 leading-relaxed">
+          Rotary is a global network of neighbors, friends, and problem-solvers who come together to take action and
+          create lasting change -- across communities and around the world. Our club is part of Rotary District 9101,
+          spanning West Africa.
+        </Text>
+      </View>
+
+      {/* Objects of Rotary */}
+      <View className="gap-4">
+        <Text className="text-xl font-extrabold text-slate-800">The Objects of Rotary</Text>
+        <View className="gap-2.5">
+          {OBJECTS_OF_ROTARY.map((obj, i) => (
+            <View key={i} className="flex-row items-start gap-3 bg-white border border-slate-100 rounded-2xl p-4">
+              <View className="w-6 h-6 rounded-full bg-rotary-azure items-center justify-center mt-0.5">
+                <Text className="text-white text-[11px] font-extrabold">{i + 1}</Text>
+              </View>
+              <Text className="text-xs text-slate-600 leading-relaxed flex-1">{obj}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Four-Way Test */}
       <View className="gap-4">
         <Badge label="Ethical Guardrails" tone="gold" />
         <Text className="text-2xl font-extrabold text-slate-800">The Four-Way Test</Text>
@@ -99,44 +143,23 @@ export default function AboutScreen() {
         </View>
       </View>
 
-      {leadership.length > 0 && (
-        <View className="gap-4">
-          <Text className="text-xs font-semibold uppercase text-rotary-azure text-center">Board of Directors</Text>
-          <Text className="text-2xl font-bold text-rotary-dark text-center">Club Leadership</Text>
-          <View className="gap-3">
-            {leadership.map((leader, i) => (
-              <View key={i} className="bg-white border border-slate-200 rounded-3xl p-5 items-center gap-2">
-                <View className="w-16 h-16 rounded-full border-2 border-rotary-azure bg-sky-50 items-center justify-center">
-                  <Text className="text-rotary-azure font-extrabold">
-                    {leader.name.replace('Rtn. ', '').split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase()}
-                  </Text>
+      {/* Areas of work */}
+      <View className="gap-4">
+        <Text className="text-xl font-extrabold text-slate-800">Our Main Areas of Work</Text>
+        <View className="gap-3 sm:flex-row sm:flex-wrap">
+          {ROTARY_FOCUS_AREAS.map((area, i) => {
+            const Icon = FOCUS_ICONS[i];
+            return (
+              <View key={area.title} className="bg-white border border-slate-100 rounded-2xl p-4 gap-2 sm:w-[48%] lg:w-[31%]">
+                <View className="w-9 h-9 rounded-xl bg-rotary-azure/10 items-center justify-center">
+                  <Icon size={17} color={colors.rotaryAzure} />
                 </View>
-                <Text className="font-extrabold text-slate-800 text-sm text-center">{leader.name}</Text>
-                <Text className="text-[10px] font-bold uppercase tracking-widest text-rotary-azure">{leader.title}</Text>
-                {leader.classification && (
-                  <Text className="text-xs text-slate-500 text-center">Classification: {leader.classification}</Text>
-                )}
+                <Text className="text-sm font-bold text-slate-800">{area.title}</Text>
               </View>
-            ))}
-          </View>
+            );
+          })}
         </View>
-      )}
-
-      {blocks.length > 0 && (
-        <View className="gap-4">
-          {blocks.map((b) => (
-            <Card key={b.id} className="gap-2">
-              {b.imageUrl ? (
-                <View className="w-full h-40 rounded-xl overflow-hidden -mt-1 mb-1">
-                  <Image source={{ uri: b.imageUrl }} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
-                </View>
-              ) : null}
-              {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
-              {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
-            </Card>
-          ))}
-        </View>
-      )}
+      </View>
     </ScreenScroll>
   );
 }

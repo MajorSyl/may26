@@ -1,40 +1,55 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { ArrowRight, CheckCircle, Users, ExternalLink, Compass } from 'lucide-react-native';
+import {
+  ArrowRight,
+  ExternalLink,
+  ShieldAlert,
+  Heart,
+  Droplets,
+  Baby,
+  BookOpen,
+  TrendingUp,
+  Sprout
+} from 'lucide-react-native';
 import { HomeStackParamList } from '../navigation/types';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { getProjects } from '../lib/service';
 import { Project } from '../types';
+import { ROTARY_FOCUS_AREAS } from '../data';
 import ProjectCard from '../components/ProjectCard';
+import SafeImage from '../components/SafeImage';
 import MemberSpotlight from '../components/MemberSpotlight';
-import { ScreenScroll, Badge, Card } from '../components/ui';
+import { ScreenScroll, Badge } from '../components/ui';
+import SiteFooter from '../navigation/SiteFooter';
 import { logPageView } from '../lib/analytics';
-import { ContentBlock, getContentBlocks } from '../lib/cms';
 import SocialFeedSection from '../components/SocialFeedSection';
 import FacebookFeed from '../components/FacebookFeed';
-import VideoEmbed from '../components/VideoEmbed';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
 
-// Ported from the web app's Home.tsx, simplified from its admin-editable
-// block-reordering CMS system (tied to AdminDashboard's Design tab, out of
-// scope for this rebuild) into a fixed section order: hero, mission,
-// recent projects, member spotlight, announcements. Content strings still
-// come from the same getSiteSettings() the web app's CMS edits, so an
-// admin's copy edits still show up here.
+const FOCUS_ICONS = [ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout];
+
+// The homepage as the club's Sept 2026 revamp brief asks for it: an
+// editorial story, not a pile of information. One fixed scroll order --
+// Who we are -> What Rotary is about -> What we do -> our impact -> how
+// to connect -- rather than a grab-bag of sections competing for
+// attention. "Our impact" is deliberately folded into the flagship
+// project panel's own numbers rather than a separate stats dashboard
+// (that was removed earlier this project specifically because a wall of
+// tiles read as more "functional dashboard" than "story").
+const FLAGSHIP_PROJECT_ID = 'safe-water-rural-health-facilities-bombali';
+
 export default function HomeScreen({ navigation }: Props) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [blocks, setBlocks] = useState<ContentBlock[]>([]);
 
   useEffect(() => {
     let active = true;
     logPageView('home');
     getSiteSettings().then((s) => active && setSettings(s));
     getProjects().then((p) => active && setProjects(p));
-    getContentBlocks('home').then((b) => active && setBlocks(b));
     return () => {
       active = false;
     };
@@ -50,16 +65,13 @@ export default function HomeScreen({ navigation }: Props) {
     }
   };
 
-  const completedProjects = projects.filter((p) => p.status === 'Completed').slice(0, 3);
+  const flagship = projects.find((p) => p.id === FLAGSHIP_PROJECT_ID) || projects[0];
+  const otherProjects = projects.filter((p) => p.id !== flagship?.id).slice(0, 3);
 
   // Container aspect ratio stays at or above the source photo's native 3:2
   // (1080x720) at every breakpoint, widening only slightly on larger
   // screens -- that keeps "cover" cropping strictly vertical (top/bottom),
   // never horizontal, so the full width of the crowd is always in frame.
-  // The community well sign sits within the middle ~16%-51% of the
-  // photo's height, well clear of the largest trim (desktop, ~12.5% off
-  // top and bottom), so a plain centered crop keeps it fully visible at
-  // every size without needing a custom focal offset.
   const hero = (
     <View className="w-full aspect-[3/2] sm:aspect-[16/9] lg:aspect-[2/1] bg-rotary-dark">
       <Image
@@ -73,185 +85,168 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScreenScroll edgeToEdge={hero}>
-      {/* Hero copy -- narrower than the page's own max-w-6xl container so
-          heading/paragraph line length stays comfortable on desktop
-          instead of stretching edge to edge. */}
+      {/* WHO WE ARE */}
       <View className="gap-3.5 items-center w-full sm:max-w-xl lg:max-w-2xl mx-auto">
-        <Badge label="Welcome to Freetown Sunset" />
+        <Badge label="Create Lasting Impact" tone="gold" />
         <Text className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-rotary-dark text-center leading-tight">
-          Fellowship, Integrity, and Direct Local Service
+          Rotary Club of Freetown-Sunset
         </Text>
         <Text className="text-sm sm:text-base text-slate-600 text-center leading-relaxed">
-          Founded on Freetown's beautiful shores, the Rotary Club of Freetown Sunset (RCFS) gathers a diverse cohort of
-          passionate Sierra Leonean and international professionals. Sharing a deep devotion to community enrichment, we
-          combine energetic fellowship with rigorous, hands-on humanitarian initiatives in local neighborhoods.
+          A diverse fellowship of Sierra Leonean and international professionals, united by Rotary's "Service Above Self"
+          and devoted to practical, lasting impact in our Freetown community.
         </Text>
         <View className="flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center pt-1.5">
           <Pressable
             onPress={() => navigation.navigate('About')}
             className="flex-row items-center justify-center gap-2 bg-rotary-azure px-5 py-3 rounded-xl w-full sm:w-auto hover:bg-rotary-azure-dark active:opacity-90"
           >
-            <Text className="text-white text-xs font-bold uppercase tracking-wider">Read Our Core Values</Text>
+            <Text className="text-white text-xs font-bold uppercase tracking-wider">Our Story</Text>
             <ArrowRight size={14} color={colors.white} />
           </Pressable>
           <Pressable
             onPress={() => goToTab('MoreTab', 'Contact')}
             className="flex-row items-center justify-center bg-white border border-slate-300 px-5 py-3 rounded-xl w-full sm:w-auto hover:bg-slate-50 active:opacity-90"
           >
-            <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Contact Our Officers</Text>
+            <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Get In Touch</Text>
           </Pressable>
         </View>
+      </View>
+
+      {/* WHAT ROTARY IS ABOUT */}
+      <View className="gap-4">
+        <Badge label="What Is Rotary?" />
+        <Text className="text-2xl sm:text-3xl font-extrabold text-rotary-dark leading-snug">
+          A Global Network, United in Service
+        </Text>
+        <Text className="text-sm text-slate-500 leading-relaxed sm:max-w-2xl">
+          Rotary brings together neighbors, friends, and problem-solvers across the world who see a need and take action.
+          Every Rotarian lives by the Four-Way Test and channels service into seven key areas of focus -- from clean water
+          and health to education and peace.
+        </Text>
+
+        <View className="flex-row flex-wrap gap-2.5">
+          {ROTARY_FOCUS_AREAS.map((area, i) => {
+            const Icon = FOCUS_ICONS[i];
+            return (
+              <View key={area.title} className="flex-row items-center gap-2 bg-white border border-slate-200 rounded-full pl-2 pr-3.5 py-2">
+                <View className="w-6 h-6 rounded-full bg-rotary-azure/10 items-center justify-center">
+                  <Icon size={13} color={colors.rotaryAzure} />
+                </View>
+                <Text className="text-[11px] font-bold text-slate-700">{area.title}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <Pressable onPress={() => navigation.navigate('About')} className="flex-row items-center gap-2">
+          <Text className="text-rotary-azure font-bold text-sm">Read Our Full Story, Objects & The Four-Way Test</Text>
+          <ArrowRight size={16} color={colors.rotaryAzure} />
+        </Pressable>
       </View>
 
       <FacebookFeed />
 
-      {/* Mission */}
-      <View className="gap-4">
-        <Badge label="The Sunset Mission" />
-        <Text className="text-2xl sm:text-3xl font-extrabold text-rotary-dark leading-snug">{settings.homeHeroTitle}</Text>
-        <Text className="text-sm text-slate-500 leading-relaxed sm:max-w-2xl">{settings.homeHeroSubtitle}</Text>
-        <Pressable onPress={() => navigation.navigate('About')} className="flex-row items-center gap-2">
-          <Text className="text-rotary-azure font-bold text-sm">Explore Our Story & Ethics</Text>
-          <ArrowRight size={16} color={colors.rotaryAzure} />
-        </Pressable>
-
-        <View className="gap-4 lg:flex-row mt-2">
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-3 lg:flex-1">
-            <View className="w-12 h-12 rounded-2xl bg-indigo-50 items-center justify-center">
-              <Compass size={22} color="#4f46e5" />
-            </View>
-            <View>
-              <Text className="text-[10px] font-bold uppercase tracking-wide text-indigo-600">Our Approach</Text>
-              <Text className="text-base font-extrabold text-slate-800 mt-1">Service Above Self</Text>
-              <Text className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                We work to identify real community needs and respond with practical, locally-supported solutions.
-              </Text>
-            </View>
-          </View>
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-3 lg:flex-1">
-            <View className="w-12 h-12 rounded-2xl bg-emerald-50 items-center justify-center">
-              <CheckCircle size={22} color={colors.emerald600} />
-            </View>
-            <View>
-              <Text className="text-[10px] font-bold uppercase tracking-wide text-emerald-600">The 4-Way Test</Text>
-              <Text className="text-base font-extrabold text-slate-800 mt-1">Ethical Guardrails</Text>
-              <Text className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                We follow Rotary's ethical Four-Way Test in all of our decisions and activities.
-              </Text>
-            </View>
-          </View>
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-3 lg:flex-1">
-            <View className="w-12 h-12 rounded-2xl bg-amber-50 items-center justify-center">
-              <Users size={22} color={colors.amber500} />
-            </View>
-            <View>
-              <Text className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Our Values</Text>
-              <Text className="text-base font-extrabold text-slate-800 mt-1">Community Cooperation</Text>
-              <Text className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                We aim to work alongside local leaders and community members on the projects we undertake.
-              </Text>
-            </View>
-          </View>
+      {/* WHAT WE DO -- flagship project + the rest */}
+      <View className="gap-5">
+        <View>
+          <Badge label="Pioneering Action" tone="gold" />
+          <Text className="text-2xl sm:text-3xl font-extrabold text-rotary-dark mt-2">What We Do</Text>
         </View>
-      </View>
 
-      {/* Recent projects */}
-      <View className="gap-4">
-        <View className="flex-row items-center justify-between">
-          <View className="gap-1 flex-1 pr-2">
-            <Badge label="Pioneering Action" tone="gold" />
-            <Text className="text-2xl font-extrabold text-rotary-dark">Recent Completed Projects</Text>
-          </View>
+        {flagship && (
           <Pressable
-            onPress={() => goToTab('ProjectsTab')}
-            className="flex-row items-center gap-1.5 border border-slate-300 bg-white rounded-xl px-3 py-2 hover:bg-slate-50"
+            onPress={() => goToTab('ProjectsTab', 'ProjectDetails', { project: flagship })}
+            className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-200 lg:flex-row"
           >
-            <Text className="text-[10px] font-bold uppercase text-slate-700">All</Text>
-            <ExternalLink size={12} color={colors.slate600} />
+            <View className="w-full lg:w-1/2 aspect-[16/10] lg:aspect-auto bg-slate-100">
+              {flagship.imageUrl ? (
+                <SafeImage src={flagship.imageUrl} alt={flagship.title} />
+              ) : (
+                <View className="w-full h-full items-center justify-center bg-rotary-dark" />
+              )}
+            </View>
+            <View className="p-6 gap-3 lg:w-1/2 lg:justify-center">
+              <Badge label="Flagship Project" tone="gold" />
+              <Text className="text-xl sm:text-2xl font-extrabold text-rotary-dark leading-snug">{flagship.title}</Text>
+              <Text className="text-sm text-slate-500 leading-relaxed" numberOfLines={4}>
+                {flagship.description}
+              </Text>
+              {flagship.impact ? (
+                <View className="bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 mt-1">
+                  <Text className="text-xs font-bold text-emerald-700">{flagship.impact}</Text>
+                </View>
+              ) : null}
+              <View className="flex-row items-center gap-1.5 pt-1">
+                <Text className="text-[11px] font-bold uppercase tracking-wide text-rotary-azure">Read The Full Story</Text>
+                <ArrowRight size={13} color={colors.rotaryAzure} />
+              </View>
+            </View>
           </Pressable>
-        </View>
+        )}
 
-        {completedProjects.length === 0 ? (
+        {otherProjects.length > 0 && (
+          <View className="gap-4">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-base font-extrabold text-slate-700">More of Our Work</Text>
+              <Pressable
+                onPress={() => goToTab('ProjectsTab')}
+                className="flex-row items-center gap-1.5 border border-slate-300 bg-white rounded-xl px-3 py-2 hover:bg-slate-50"
+              >
+                <Text className="text-[10px] font-bold uppercase text-slate-700">All Projects</Text>
+                <ExternalLink size={12} color={colors.slate600} />
+              </Pressable>
+            </View>
+            <View className="gap-4 sm:flex-row sm:flex-wrap">
+              {otherProjects.map((project) => (
+                <View key={project.id} className="sm:w-[48%] lg:w-[31.5%]">
+                  <ProjectCard project={project} onPress={() => goToTab('ProjectsTab', 'ProjectDetails', { project })} />
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {projects.length === 0 && (
           <View className="bg-slate-50 rounded-3xl p-8 border border-dashed border-slate-200">
             <Text className="text-slate-400 text-sm text-center">
               Our project portfolio is being updated. Contact a club officer to learn about our current initiatives.
             </Text>
-          </View>
-        ) : (
-          <View className="gap-4 sm:flex-row sm:flex-wrap">
-            {completedProjects.map((project) => (
-              <View key={project.id} className="sm:w-[48%] lg:w-[31.5%]">
-                <ProjectCard project={project} onPress={() => goToTab('ProjectsTab', 'ProjectDetails', { project })} />
-              </View>
-            ))}
           </View>
         )}
       </View>
 
       <MemberSpotlight />
 
-      {settings.homeVideoUrl ? (
-        <View className="gap-3">
-          <View className="items-center gap-1.5">
-            <Badge label="Club Videos" tone="gold" />
-            <Text className="text-2xl font-extrabold text-rotary-dark text-center">Featured Video</Text>
-          </View>
-          <VideoEmbed url={settings.homeVideoUrl} />
-        </View>
-      ) : null}
-
       <SocialFeedSection onViewAll={() => goToTab('MoreTab', 'SocialFeed')} />
 
-      {/* Announcements */}
-      <View className="gap-4">
-        <Text className="text-2xl font-extrabold text-rotary-dark text-center">Latest News from Sunset</Text>
-        <View className="gap-4">
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-2">
-            <Badge label="Weekly Meetings" tone="gold" />
-            <Text className="font-bold text-slate-800">Join Us at Our Next Meeting</Text>
-            <Text className="text-xs text-slate-500 leading-relaxed">
-              We gather every Thursday at the Lagoonda Hotel. Check our events calendar for the latest meeting details and
-              guest speakers.
-            </Text>
-            <Pressable onPress={() => goToTab('EventsTab')} className="flex-row items-center gap-1.5 mt-1">
-              <Text className="text-rotary-azure text-xs font-bold">View Meeting Calendar</Text>
-              <ArrowRight size={13} color={colors.rotaryAzure} />
-            </Pressable>
-          </View>
-          <View className="bg-white p-5 rounded-3xl border border-slate-200 gap-2">
-            <Badge label="Our Projects" />
-            <Text className="font-bold text-slate-800">Ask Us About Our Current Projects</Text>
-            <Text className="text-xs text-slate-500 leading-relaxed">
-              We're always working on new service initiatives across Freetown. Visit our gallery or reach out to a club
-              officer to learn what we're doing right now.
-            </Text>
-            <Pressable onPress={() => goToTab('ProjectsTab')} className="flex-row items-center gap-1.5 mt-1">
-              <Text className="text-rotary-azure text-xs font-bold">Examine Gallery</Text>
-              <ArrowRight size={13} color={colors.rotaryAzure} />
-            </Pressable>
-          </View>
+      {/* HOW TO CONNECT WITH US -- closing CTA */}
+      <View className="bg-rotary-dark rounded-3xl p-7 sm:p-10 gap-4 items-center">
+        <Badge label="Join the Fellowship" tone="gold" />
+        <Text className="text-xl sm:text-2xl font-extrabold text-white text-center leading-snug">
+          We Meet Every Thursday at 6:30 PM, Lagoonda Hotel
+        </Text>
+        <Text className="text-sm text-slate-300 text-center leading-relaxed sm:max-w-lg">
+          Whether you want to volunteer, partner on a project, or simply learn more about Rotary, we'd love to hear from
+          you.
+        </Text>
+        <View className="flex-col sm:flex-row gap-3 w-full sm:w-auto pt-1">
+          <Pressable
+            onPress={() => goToTab('MoreTab', 'Contact')}
+            className="flex-row items-center justify-center gap-2 bg-rotary-azure px-5 py-3 rounded-xl w-full sm:w-auto hover:bg-rotary-azure-dark active:opacity-90"
+          >
+            <Text className="text-white text-xs font-bold uppercase tracking-wider">Contact Us</Text>
+            <ArrowRight size={14} color={colors.white} />
+          </Pressable>
+          <Pressable
+            onPress={() => goToTab('EventsTab')}
+            className="flex-row items-center justify-center bg-white/10 border border-white/30 px-5 py-3 rounded-xl w-full sm:w-auto hover:bg-white/20 active:opacity-90"
+          >
+            <Text className="text-white text-xs font-bold uppercase tracking-wider">View Meeting Calendar</Text>
+          </Pressable>
         </View>
       </View>
 
-      {blocks.length > 0 && (
-        <View className="gap-4">
-          {blocks.map((b) => (
-            <Card key={b.id} className="gap-2">
-              {b.imageUrl ? (
-                <View className="w-full h-40 rounded-xl overflow-hidden -mt-1 mb-1">
-                  <Image source={{ uri: b.imageUrl }} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
-                </View>
-              ) : null}
-              {b.title ? <Text className="text-lg font-bold text-slate-800">{b.title}</Text> : null}
-              {b.body ? <Text className="text-xs text-slate-500 leading-relaxed">{b.body}</Text> : null}
-            </Card>
-          ))}
-        </View>
-      )}
-
-      <View className="items-center pt-2 pb-4">
-        <Text className="text-[10px] text-slate-400">RCFS • Rotary Club of Freetown Sunset, D9101</Text>
-      </View>
+      <SiteFooter />
     </ScreenScroll>
   );
 }

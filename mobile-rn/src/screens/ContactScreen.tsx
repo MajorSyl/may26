@@ -69,16 +69,13 @@ export default function ContactScreen() {
       <View className="gap-2">
         <Badge label="Get in Touch" />
         <Text className="text-sm text-slate-500 leading-relaxed">
-          Have an inquiry about participating in our sunset beach service drives? Interested in joining as a nominated guest
-          or making an audited project donation? Reach out to our Executive board.
+          Have a question, want to partner on a project, or thinking about joining us? We'd love to hear from you.
         </Text>
       </View>
 
       <Card className="gap-4">
-        <Text className="text-lg font-extrabold text-slate-800">Transmit Safe Message</Text>
-        <Text className="text-xs text-slate-400 leading-relaxed">
-          Your inquiry is routed directly to the Club President, Secretary, and Membership directors.
-        </Text>
+        <Text className="text-lg font-extrabold text-slate-800">Send Us a Message</Text>
+        <Text className="text-xs text-slate-400 leading-relaxed">We'll get back to you as soon as we can.</Text>
         <TextField label="Full Names" value={name} onChangeText={setName} placeholder="e.g. Sahr Kamanda" maxLength={MAX_NAME_LENGTH} />
         <TextField label="Email Address" value={email} onChangeText={setEmail} placeholder="e.g. name@domain.com" keyboardType="email-address" autoCapitalize="none" maxLength={254} />
         <TextField label="Message" value={message} onChangeText={setMessage} placeholder="Details of your request..." multiline maxLength={MAX_MESSAGE_LENGTH} />
@@ -99,7 +96,7 @@ export default function ContactScreen() {
       </Card>
 
       <Card className="gap-3">
-        <Text className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Meeting Coordinates</Text>
+        <Text className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">When &amp; Where We Meet</Text>
         <View className="flex-row gap-2.5">
           <Clock size={14} color={colors.rotaryGold} />
           <View className="flex-1">
@@ -119,7 +116,7 @@ export default function ContactScreen() {
       </Card>
 
       <View className="bg-slate-900 rounded-3xl p-5 gap-4">
-        <Text className="text-xs font-extrabold text-white uppercase tracking-widest">Secretariat Helpline</Text>
+        <Text className="text-xs font-extrabold text-white uppercase tracking-widest">Reach Us Directly</Text>
         <View className="flex-row items-center gap-3">
           <View className="p-2 rounded-xl bg-slate-800"><Phone size={16} color={colors.rotaryGold} /></View>
           <View>

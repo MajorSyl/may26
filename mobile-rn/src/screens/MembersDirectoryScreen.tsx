@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
-import { Search, Shield, Award, Calendar, Crown, UserCheck, Lock } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Search, UserCircle2 } from 'lucide-react-native';
 import { UserProfile } from '../types';
 import { getUsers } from '../lib/service';
-import { ScreenScroll, LoadingBlock, EmptyBlock } from '../components/ui';
+import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
@@ -13,15 +14,17 @@ function initialsOf(name: string): string {
   return parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 }
 
-// Simplified from the web app's MembersDirectory: same three filter tabs
-// (Charter & Active / Board Executives / Paul Harris Fellows), but without
-// the "Verbatim Roster" sub-tab, which was a redundant stripped-down
-// duplicate view of the same member list.
+// Simplified per the club's revamp brief: no individual "year joined" or
+// PHF status on public cards, no filter tabs. Just an intro ("60 vibrant
+// members"), the 2026-2027 Executive by name and role, then a clean,
+// name-only general roster -- plus Member Sign In, moved here from the
+// header per the brief's "login shouldn't be prominent in the top-right
+// corner" direction.
 export default function MembersDirectoryScreen() {
   const [members, setMembers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<'all' | 'executives' | 'phfs'>('all');
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     logPageView('members_directory');
@@ -30,129 +33,95 @@ export default function MembersDirectoryScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  const executives = members.filter((m) => m.role === 'President' || m.role === 'Club Officer');
+  const president = members.find((m) => m.role === 'President');
+  const executiveBoard = members.filter((m) => m.role === 'Club Officer' && m.committee === 'Executive Board');
+  const generalMembers = members
+    .filter((m) => m.uid !== president?.uid && !executiveBoard.some((e) => e.uid === m.uid))
+    .filter((m) => m.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const filtered = members.filter((m) => {
-    const term = search.toLowerCase();
-    const matchesSearch =
-      m.name.toLowerCase().includes(term) ||
-      (m.classification && m.classification.toLowerCase().includes(term)) ||
-      (m.committee && m.committee.toLowerCase().includes(term));
-    if (!matchesSearch) return false;
-    if (tab === 'executives') return executives.some((e) => e.uid === m.uid);
-    if (tab === 'phfs') return !!m.isPaulHarrisFellow;
-    return true;
-  });
+  const diasporaCount = 12;
 
   return (
     <ScreenScroll>
-      <View className="gap-2">
-        <View className="self-start px-3 py-1 rounded-full bg-rotary-azure/10">
-          <Text className="text-[10px] font-bold uppercase tracking-wider text-rotary-azure">Sunset Fellowship Roster</Text>
-        </View>
-        <Text className="text-sm text-slate-500 leading-relaxed">
-          Meet the dedicated business leaders, executives, and professionals who constitute the Rotary Club of Freetown
-          Sunset. Together we advocate for the ultimate civic standards under "Service Above Self".
+      <View className="items-center gap-3 w-full sm:max-w-2xl mx-auto">
+        <Badge label="Our Fellowship" tone="gold" />
+        <Text className="text-3xl font-extrabold text-rotary-dark text-center leading-snug">
+          {members.length || 60} Vibrant Members
         </Text>
-      </View>
-
-      <View className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex-row items-start gap-3">
-        <View className="p-2 rounded-xl bg-orange-50">
-          <Lock size={16} color={colors.amber500} />
-        </View>
-        <Text className="text-[11px] text-slate-500 leading-snug flex-1">
-          To protect member privacy, phone numbers and email addresses are never published on this public page. Authorized
-          members and club officers can access full contact details through the secure Portal.
+        <Text className="text-sm text-slate-500 text-center leading-relaxed">
+          Business leaders and professionals united in service, including {diasporaCount} members in the diaspora.
         </Text>
-      </View>
-
-      <View className="gap-3">
-        <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-3">
-          <Search size={16} color={colors.slate400} />
-          <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search roster..."
-            placeholderTextColor={colors.slate400}
-            className="flex-1 px-2 py-2.5 text-xs text-slate-700"
-          />
-        </View>
-        <View className="flex-row gap-2">
-          {[
-            { id: 'all' as const, label: 'Charter & Active', icon: UserCheck },
-            { id: 'executives' as const, label: 'Executives', icon: Crown },
-            { id: 'phfs' as const, label: 'PHFs', icon: Award }
-          ].map((t) => {
-            const isSel = tab === t.id;
-            const Icon = t.icon;
-            return (
-              <Pressable
-                key={t.id}
-                onPress={() => setTab(t.id)}
-                className={`flex-1 flex-row items-center justify-center gap-1.5 py-3 rounded-xl border ${
-                  isSel ? 'bg-rotary-azure border-rotary-azure' : 'bg-slate-50 border-slate-200'
-                }`}
-              >
-                <Icon size={13} color={isSel ? colors.white : colors.slate500} />
-                <Text className={`text-[10px] font-bold uppercase ${isSel ? 'text-white' : 'text-slate-500'}`}>{t.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
       </View>
 
       {loading ? (
-        <LoadingBlock label="Querying Chapter member profiles..." />
-      ) : filtered.length === 0 ? (
-        <EmptyBlock label={`No members matching "${search}" found in this section.`} />
+        <LoadingBlock label="Loading members..." />
       ) : (
-        <View className="gap-3 md:flex-row md:flex-wrap">
-          {filtered.map((m) => {
-            const isExec = executives.some((e) => e.uid === m.uid);
-            return (
-              <View key={m.uid} className="bg-white rounded-3xl border border-slate-200 overflow-hidden md:w-[48%] lg:w-[31%]">
-                <View className={`h-3 w-full ${isExec ? 'bg-rotary-gold' : m.isPaulHarrisFellow ? 'bg-rotary-azure' : 'bg-slate-200'}`} />
-                <View className="p-5 gap-3">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-14 h-14 rounded-full bg-rotary-azure/10 items-center justify-center border-2 border-white">
-                      <Text className="font-extrabold text-rotary-azure">{initialsOf(m.name)}</Text>
-                    </View>
-                    <Text className="font-extrabold text-slate-800 text-sm flex-1">{m.name}</Text>
+        <>
+          {/* 2026-2027 Executive */}
+          <View className="gap-4">
+            <Text className="text-xl font-extrabold text-rotary-dark">2026&ndash;2027 Executive</Text>
+            <View className="gap-3 sm:flex-row sm:flex-wrap">
+              {president && (
+                <View className="bg-white border border-rotary-gold/40 rounded-2xl p-4 flex-row items-center gap-3 sm:w-[48%] lg:w-[31%]">
+                  <View className="w-12 h-12 rounded-full bg-rotary-gold/15 items-center justify-center">
+                    <Text className="font-extrabold text-rotary-gold">{initialsOf(president.name)}</Text>
                   </View>
-                  <View className="gap-2 border-t border-slate-100 pt-3">
-                    {m.classification && (
-                      <View className="flex-row items-center gap-2">
-                        <Shield size={13} color={colors.rotaryAzure} />
-                        <Text className="text-xs text-slate-600">{m.classification}</Text>
-                      </View>
-                    )}
-                    {m.committee && (
-                      <View className="flex-row items-center gap-2">
-                        <UserCheck size={13} color="#6366f1" />
-                        <Text className="text-xs text-slate-600">{m.committee}</Text>
-                      </View>
-                    )}
-                    {m.joinedDate && (
-                      <View className="flex-row items-center gap-2">
-                        <Calendar size={13} color={colors.slate400} />
-                        <Text className="text-[10px] text-slate-400">
-                          Joined Sunset: {new Date(m.joinedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
-                        </Text>
-                      </View>
-                    )}
+                  <View className="flex-1">
+                    <Text className="font-extrabold text-slate-800 text-sm">{president.name}</Text>
+                    <Text className="text-[10px] font-bold uppercase tracking-wide text-rotary-gold mt-0.5">President</Text>
                   </View>
-                  {m.isPaulHarrisFellow && (
-                    <View className="flex-row items-center gap-1.5 pt-2 border-t border-amber-100">
-                      <Award size={14} color={colors.rotaryGold} />
-                      <Text className="text-[10px] font-extrabold uppercase text-rotary-gold">{m.paulHarrisLevel || 'Paul Harris Fellow'}</Text>
-                    </View>
-                  )}
                 </View>
+              )}
+              {executiveBoard.map((m) => (
+                <View key={m.uid} className="bg-white border border-slate-200 rounded-2xl p-4 flex-row items-center gap-3 sm:w-[48%] lg:w-[31%]">
+                  <View className="w-12 h-12 rounded-full bg-rotary-azure/10 items-center justify-center">
+                    <Text className="font-extrabold text-rotary-azure">{initialsOf(m.name)}</Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-extrabold text-slate-800 text-sm">{m.name}</Text>
+                    <Text className="text-[10px] font-bold uppercase tracking-wide text-rotary-azure mt-0.5">Executive Board</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* General members -- names only */}
+          <View className="gap-4">
+            <Text className="text-xl font-extrabold text-rotary-dark">Our Members</Text>
+            <View className="flex-row items-center bg-slate-50 border border-slate-200 rounded-xl px-3">
+              <Search size={16} color={colors.slate400} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search by name..."
+                placeholderTextColor={colors.slate400}
+                className="flex-1 px-2 py-2.5 text-xs text-slate-700"
+              />
+            </View>
+            {generalMembers.length === 0 ? (
+              <EmptyBlock label={`No members matching "${search}" found.`} />
+            ) : (
+              <View className="flex-row flex-wrap gap-2.5">
+                {generalMembers.map((m) => (
+                  <View key={m.uid} className="bg-white border border-slate-200 rounded-full px-4 py-2.5">
+                    <Text className="text-xs font-semibold text-slate-700">{m.name}</Text>
+                  </View>
+                ))}
               </View>
-            );
-          })}
-        </View>
+            )}
+          </View>
+        </>
       )}
+
+      <Pressable
+        onPress={() => (navigation.getParent()?.getParent() as any)?.navigate('MemberAccount')}
+        className="flex-row items-center justify-center gap-2 bg-white border border-slate-300 rounded-xl py-3.5 hover:bg-slate-50"
+      >
+        <UserCircle2 size={16} color={colors.slate600} />
+        <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Member Sign In</Text>
+      </Pressable>
     </ScreenScroll>
   );
 }
