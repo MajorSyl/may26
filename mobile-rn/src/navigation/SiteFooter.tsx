@@ -1,15 +1,23 @@
-import React from 'react';
-import { View, Text, Pressable, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, Platform, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Facebook, Instagram } from 'lucide-react-native';
+import { getSiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
+import { colors } from '../theme';
 
-// Quiet, bottom-of-page home for the two links the brief wants out of the
-// header: Admin sign-in (no longer prominent top-right) and Privacy Policy
-// (no longer worth a "More" nav item of its own). Web-only, rendered once
-// at the end of Home's content, matching SiteHeader's getParent() hop
-// pattern (two hops to the root Stack for AdminLogin, one hop + nested
-// screen for the Privacy Policy page under MoreTab).
+// Two getParent() hops reach the root stack (AdminLogin); one hop reaches
+// a sibling tab (PrivacyPolicy under MoreTab).
 export default function SiteFooter() {
   const navigation = useNavigation<any>();
+  const [settings, setSettings] = useState(DEFAULT_SITE_SETTINGS);
+
+  useEffect(() => {
+    let active = true;
+    getSiteSettings().then((s) => active && setSettings(s));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (Platform.OS !== 'web') return null;
 
@@ -25,6 +33,24 @@ export default function SiteFooter() {
 
   return (
     <View className="items-center gap-3 pt-6 pb-2 border-t border-slate-200">
+      <View className="flex-row items-center gap-3">
+        <Pressable
+          onPress={() => Linking.openURL(settings.socialFacebookUrl)}
+          accessibilityLabel="Facebook"
+          accessibilityRole="link"
+          className="w-9 h-9 rounded-full bg-white border border-slate-200 items-center justify-center hover:border-slate-300"
+        >
+          <Facebook size={16} color={colors.slate600} />
+        </Pressable>
+        <Pressable
+          onPress={() => Linking.openURL(settings.socialInstagramUrl)}
+          accessibilityLabel="Instagram"
+          accessibilityRole="link"
+          className="w-9 h-9 rounded-full bg-white border border-slate-200 items-center justify-center hover:border-slate-300"
+        >
+          <Instagram size={16} color={colors.slate600} />
+        </Pressable>
+      </View>
       <Text className="text-[11px] text-slate-400 text-center">
         Rotary Club of Freetown-Sunset &middot; Rotary District 9101 &middot; Create Lasting Impact
       </Text>

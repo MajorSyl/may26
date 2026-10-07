@@ -135,6 +135,33 @@ export const GENERAL_FAQS = [
   }
 ];
 
+// Official Rotary International wording.
+export const OBJECTS_OF_ROTARY = [
+  'The development of acquaintance as an opportunity for service.',
+  'High ethical standards in business and professions; the recognition of the worthiness of all useful occupations; and the dignifying of each Rotarian’s occupation as an opportunity to serve society.',
+  'The application of the ideal of service in each Rotarian’s personal, business, and community life.',
+  'The advancement of international understanding, goodwill, and peace through a world fellowship of business and professional persons united in the ideal of service.'
+];
+
+export const FOUR_WAY_TEST = [
+  { num: 1, q: 'Is it the TRUTH?', desc: 'We advocate for honesty and clarity in our reporting and communications.' },
+  {
+    num: 2,
+    q: 'Is it FAIR to all concerned?',
+    desc: 'We consult, listen, and partner with local community committees to guarantee equal resource distribution without bias.'
+  },
+  {
+    num: 3,
+    q: 'Will it build GOODWILL and BETTER FRIENDSHIPS?',
+    desc: 'We bridge lines of profession and origin. Weekly meetings foster lifelong, collaborative friends unified by service.'
+  },
+  {
+    num: 4,
+    q: 'Will it be BENEFICIAL to all concerned?',
+    desc: 'Our projects must leave a permanent, self-sustaining positive health, economic, or physical impact in Sierra Leone.'
+  }
+];
+
 export const ROTARY_FOCUS_AREAS = [
   {
     title: 'Peacebuilding & Conflict Prevention',

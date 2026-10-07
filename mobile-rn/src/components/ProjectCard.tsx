@@ -5,25 +5,6 @@ import { Project } from '../types';
 import SafeImage from './SafeImage';
 import { colors } from '../theme';
 
-// Shared card used everywhere a Project renders as a tile -- Home's
-// "Recent Completed Projects" and the full Projects list (GalleryScreen).
-// One template, one set of rules, so the two never drift apart again:
-//
-// - Fixed-aspect image area (same ratio at every breakpoint -- only the
-//   card's overall width changes, via the parent's responsive flex-wrap
-//   layout) with a neutral backdrop so SafeImage's mandatory
-//   resizeMode="contain" (AGENTS.md: real photos are never cropped, to
-//   keep faces/subjects intact -- deliberately NOT object-fit: cover)
-//   never leaves a jarring empty gap; letterboxing reads as intentional
-//   matting instead.
-// - No photo at all (not "unverified", genuinely absent) gets a distinct
-//   brand-gradient placeholder, so every card is the same height whether
-//   or not a photo has been uploaded yet.
-// - Category + status pills share one row, same pill sizing/type scale.
-// - Title and description both line-clamp (numberOfLines), so card
-//   height never depends on how much copy an officer wrote.
-// - The whole card is one Pressable, with a real web hover lift and a
-//   pressed/active scale that works on both touch and mouse.
 const STATUS_TONE: Record<string, string> = {
   Completed: 'bg-emerald-600',
   Active: 'bg-indigo-600',
@@ -70,9 +51,22 @@ export default function ProjectCard({ project, onPress }: { project: Project; on
         <Text className="text-base font-extrabold text-rotary-dark leading-snug" numberOfLines={2}>
           {project.title}
         </Text>
-        <Text className="text-[13px] text-slate-500 leading-relaxed" numberOfLines={3}>
+        <Text className="text-[13px] text-slate-500 leading-relaxed" numberOfLines={2}>
           {project.description}
         </Text>
+        {project.impact ? (
+          <View className="bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+            <Text className="text-[11px] font-bold text-emerald-800 leading-snug" numberOfLines={2}>
+              {project.impact}
+            </Text>
+          </View>
+        ) : null}
+        {project.partners && project.partners.length > 0 ? (
+          <Text className="text-[11px] text-slate-500" numberOfLines={1}>
+            <Text className="font-bold text-slate-600">With </Text>
+            {project.partners.join(', ')}
+          </Text>
+        ) : null}
 
         <View className="flex-row items-center gap-1.5 pt-2.5 mt-0.5 border-t border-slate-100">
           <Text className="text-[11px] font-bold uppercase tracking-wide text-rotary-azure">Read More</Text>

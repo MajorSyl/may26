@@ -7,16 +7,12 @@ import { Project } from '../types';
 import { getProjects } from '../lib/service';
 import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
 import ProjectCard from '../components/ProjectCard';
+import SiteFooter from '../navigation/SiteFooter';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<ProjectsStackParamList, 'Gallery'>;
 
-// Grouped into two clear sections instead of a 4-option status filter --
-// "a cleaner, more cohesive presentation that allows visitors to see our
-// work at a glance" rather than a click-to-filter interaction, per the
-// club's revamp brief. Ongoing covers both Active and Planning statuses;
-// most clubs don't distinguish the two in casual conversation.
 export default function GalleryScreen({ navigation }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,8 +42,9 @@ export default function GalleryScreen({ navigation }: Props) {
       <View className="flex-row items-start justify-between gap-3">
         <View className="gap-2 flex-1">
           <Badge label="On-The-Ground Impact" tone="gold" />
+          <Text className="text-3xl font-extrabold text-rotary-dark">Our Projects</Text>
           <Text className="text-sm text-slate-500 leading-relaxed">
-            A look at our club's community service projects -- ongoing and completed.
+            What we do and the difference we make -- ongoing and completed.
           </Text>
         </View>
         <Pressable
@@ -90,6 +87,8 @@ export default function GalleryScreen({ navigation }: Props) {
         </View>
         <ArrowRight size={18} color={colors.white} />
       </Pressable>
+
+      <SiteFooter />
     </ScreenScroll>
   );
 }

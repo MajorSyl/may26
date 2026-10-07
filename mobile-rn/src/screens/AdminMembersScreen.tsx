@@ -19,7 +19,7 @@ export default function AdminMembersScreen({}: Props) {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [editingUid, setEditingUid] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', role: 'Rotarian' as UserProfile['role'], classification: '', committee: '', bio: '' });
+  const [form, setForm] = useState({ name: '', role: 'Rotarian' as UserProfile['role'], classification: '', committee: '', clubPosition: '', bio: '' });
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -38,7 +38,14 @@ export default function AdminMembersScreen({}: Props) {
   }, []);
 
   const startEdit = (m: UserProfile) => {
-    setForm({ name: m.name, role: m.role, classification: m.classification || '', committee: m.committee || '', bio: m.bio || '' });
+    setForm({
+      name: m.name,
+      role: m.role,
+      classification: m.classification || '',
+      committee: m.committee || '',
+      clubPosition: m.clubPosition || '',
+      bio: m.bio || ''
+    });
     setEditingUid(m.uid);
   };
 
@@ -102,6 +109,12 @@ export default function AdminMembersScreen({}: Props) {
           <TextField label="Name" value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} />
           <TextField label="Classification" value={form.classification} onChangeText={(v) => setForm({ ...form, classification: v })} />
           <TextField label="Committee" value={form.committee} onChangeText={(v) => setForm({ ...form, committee: v })} />
+          <TextField
+            label="Executive Position (shown on Members page)"
+            value={form.clubPosition}
+            onChangeText={(v) => setForm({ ...form, clubPosition: v })}
+            placeholder="e.g. Secretary, Treasurer"
+          />
           <TextField label="Bio" value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline />
           <View className="flex-row flex-wrap gap-2">
             {ROLES.map((r) => {

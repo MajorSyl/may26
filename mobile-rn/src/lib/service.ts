@@ -58,7 +58,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   involvedTitle: 'Help Us Empower Freetown Communities',
   involvedSubtitle:
     'Whether you are a local professional looking to give back or an international partner ready to fund systemic change, there are multiple avenues to work with Freetown Sunset.',
-  contactEmail: 'placeholder@rcfsunset.org',
+  contactEmail: 'info@rcfsunset.org',
   contactPhone: '000000000',
   socialFacebookUrl: 'https://www.facebook.com/profile.php?id=100071187714639',
   socialInstagramUrl: 'https://www.instagram.com/rcfsunset',
@@ -96,6 +96,7 @@ export const getProjects = async (): Promise<Project[]> => {
           .map((d: any) => ({
             ...d,
             imageUrl: d.imageUrl || d.imageurl,
+            partners: Array.isArray(d.partners) ? d.partners : [],
             wellsBuilt: d.wells_built || 0,
             studentsSponsored: d.students_sponsored || 0,
             fundsRaised: Number(d.funds_raised) || 0,
@@ -373,6 +374,7 @@ export const getUsers = async (): Promise<UserProfile[]> => {
         contributionGoals: d.contributiongoals,
         contributedAmount: d.contributedamount,
         committee: d.committee,
+        clubPosition: d.club_position || undefined,
         tasks: d.tasks || [],
         classification: d.classification,
         isPaulHarrisFellow: d.ispaulharrisfellow,
@@ -611,6 +613,7 @@ export const adminCreateProject = async (input: Omit<Project, 'id'>): Promise<st
     description: input.description,
     year: input.year,
     impact: input.impact || null,
+    partners: input.partners && input.partners.length > 0 ? input.partners : null,
     status: input.status,
     imageurl: input.imageUrl || null,
     wells_built: input.wellsBuilt || 0,
@@ -630,6 +633,7 @@ export const adminUpdateProject = async (id: string, patch: Partial<Project>): P
   if (patch.description !== undefined) payload.description = patch.description;
   if (patch.year !== undefined) payload.year = patch.year;
   if (patch.impact !== undefined) payload.impact = patch.impact;
+  if (patch.partners !== undefined) payload.partners = patch.partners.length > 0 ? patch.partners : null;
   if (patch.status !== undefined) payload.status = patch.status;
   if (patch.imageUrl !== undefined) payload.imageurl = patch.imageUrl;
   if (patch.wellsBuilt !== undefined) payload.wells_built = patch.wellsBuilt;
@@ -767,6 +771,7 @@ export const adminUpdateMember = async (uid: string, patch: Partial<UserProfile>
   if (patch.name !== undefined) payload.name = patch.name;
   if (patch.role !== undefined) payload.role = patch.role;
   if (patch.committee !== undefined) payload.committee = patch.committee;
+  if (patch.clubPosition !== undefined) payload.club_position = patch.clubPosition || null;
   if (patch.classification !== undefined) payload.classification = patch.classification;
   if (patch.bio !== undefined) payload.bio = patch.bio;
   if (patch.isPaulHarrisFellow !== undefined) payload.ispaulharrisfellow = patch.isPaulHarrisFellow;

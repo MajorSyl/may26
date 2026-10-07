@@ -68,17 +68,21 @@ export default function ProjectDetailsScreen({ route }: Props) {
         <View className="flex-row flex-wrap gap-4">
           <View className="flex-row items-center gap-1.5">
             <Calendar size={14} color={colors.rotaryAzure} />
-            <Text className="text-xs text-slate-500">Rotary Year {project.year} Program</Text>
+            <Text className="text-xs text-slate-500">
+              {project.status === 'Completed' ? 'Completed' : 'Ongoing'} &middot; {project.year}
+            </Text>
           </View>
-          <View className="flex-row items-center gap-1.5">
-            <MapPin size={14} color="#f43f5e" />
-            <Text className="text-xs text-slate-500">{project.locationName || 'Freetown District, Sierra Leone'}</Text>
-          </View>
+          {project.locationName ? (
+            <View className="flex-row items-center gap-1.5">
+              <MapPin size={14} color="#f43f5e" />
+              <Text className="text-xs text-slate-500">{project.locationName}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
       {project.imageUrl && (
-        <View className="w-full h-52 rounded-3xl overflow-hidden border border-slate-200">
+        <View className="w-full aspect-[4/3] sm:aspect-[16/9] rounded-3xl overflow-hidden border border-slate-200 bg-slate-100">
           <SafeImage src={project.imageUrl} alt={project.title} />
         </View>
       )}
@@ -86,22 +90,24 @@ export default function ProjectDetailsScreen({ route }: Props) {
       <Card className="gap-4">
         <View className="flex-row items-center gap-2 border-b border-slate-100 pb-3">
           <FileText size={16} color={colors.rotaryGold} />
-          <Text className="text-base font-bold text-slate-800">Detailed Operations Report</Text>
+          <Text className="text-base font-bold text-slate-800">The Story</Text>
         </View>
         <Text className="text-sm text-slate-700 leading-relaxed">{project.description}</Text>
-        {project.details ? (
-          project.details.split('\n\n').map((p, i) => (
-            <Text key={i} className="text-xs text-slate-600 leading-relaxed">{p}</Text>
-          ))
-        ) : (
-          <Text className="text-xs text-slate-400 leading-relaxed">
-            No further details have been added for this project yet. Contact a club officer to learn more.
-          </Text>
-        )}
+        {project.details
+          ? project.details.split('\n\n').map((p, i) => (
+              <Text key={i} className="text-xs text-slate-600 leading-relaxed">{p}</Text>
+            ))
+          : null}
         {project.impact && (
-          <View className="bg-slate-50 border border-slate-200 rounded-2xl p-4 gap-1">
-            <Text className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Target Monitoring Output</Text>
+          <View className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 gap-1">
+            <Text className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">Impact</Text>
             <Text className="text-sm font-extrabold text-slate-800">{project.impact}</Text>
+          </View>
+        )}
+        {project.partners && project.partners.length > 0 && (
+          <View className="bg-slate-50 border border-slate-200 rounded-2xl p-4 gap-1">
+            <Text className="text-[9px] font-bold uppercase tracking-widest text-slate-400">In Partnership With</Text>
+            <Text className="text-sm font-semibold text-slate-700">{project.partners.join(' · ')}</Text>
           </View>
         )}
         {((project.wellsBuilt || 0) > 0 || (project.studentsSponsored || 0) > 0 || (project.fundsRaised || 0) > 0 || (project.peopleImpacted || 0) > 0) && (

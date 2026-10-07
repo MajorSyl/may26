@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image } from 'react-native';
-import { Phone, Mail, MapPin, Clock, Globe, Facebook, Instagram, CheckCircle2, ShieldAlert } from 'lucide-react-native';
+import { View, Text, Image, Pressable, Linking } from 'react-native';
+import { Phone, Mail, Clock, Globe, Facebook, Instagram, CheckCircle2, ShieldAlert } from 'lucide-react-native';
+import SiteFooter from '../navigation/SiteFooter';
 import { ContactInquiry } from '../types';
 import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
@@ -64,13 +65,40 @@ export default function ContactScreen() {
     }
   };
 
+  const channels = [
+    { key: 'email', label: 'Email', value: settings.contactEmail, href: `mailto:${settings.contactEmail}`, Icon: Mail, color: colors.rotaryAzure },
+    { key: 'phone', label: 'Phone / WhatsApp', value: settings.contactPhone, href: `tel:${settings.contactPhone.replace(/\s/g, '')}`, Icon: Phone, color: colors.rotaryGold },
+    { key: 'facebook', label: 'Facebook', value: 'Rotary Club of Freetown-Sunset', href: settings.socialFacebookUrl, Icon: Facebook, color: '#1877F2' },
+    { key: 'instagram', label: 'Instagram', value: '@rcfsunset', href: settings.socialInstagramUrl, Icon: Instagram, color: '#DD2A7B' }
+  ];
+
   return (
     <ScreenScroll>
-      <View className="gap-2">
+      <View className="items-center gap-3 w-full sm:max-w-2xl mx-auto">
         <Badge label="Get in Touch" />
-        <Text className="text-sm text-slate-500 leading-relaxed">
+        <Text className="text-3xl font-extrabold text-rotary-dark text-center">Contact Us</Text>
+        <Text className="text-sm text-slate-500 text-center leading-relaxed">
           Have a question, want to partner on a project, or thinking about joining us? We'd love to hear from you.
         </Text>
+      </View>
+
+      <View className="gap-3 sm:flex-row sm:flex-wrap">
+        {channels.map(({ key, label, value, href, Icon, color }) => (
+          <Pressable
+            key={key}
+            onPress={() => Linking.openURL(href)}
+            accessibilityRole="link"
+            className="bg-white border border-slate-200 rounded-2xl p-4 flex-row items-center gap-3 hover:border-rotary-azure/40 hover:shadow-md sm:w-[48.5%]"
+          >
+            <View className="w-11 h-11 rounded-xl items-center justify-center" style={{ backgroundColor: `${color}1A` }}>
+              <Icon size={18} color={color} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</Text>
+              <Text className="text-sm font-bold text-slate-800" numberOfLines={1}>{value}</Text>
+            </View>
+          </Pressable>
+        ))}
       </View>
 
       <Card className="gap-4">
@@ -115,43 +143,6 @@ export default function ContactScreen() {
         </View>
       </Card>
 
-      <View className="bg-slate-900 rounded-3xl p-5 gap-4">
-        <Text className="text-xs font-extrabold text-white uppercase tracking-widest">Reach Us Directly</Text>
-        <View className="flex-row items-center gap-3">
-          <View className="p-2 rounded-xl bg-slate-800"><Phone size={16} color={colors.rotaryGold} /></View>
-          <View>
-            <Text className="text-[10px] font-bold uppercase text-slate-400">Voice / WhatsApp</Text>
-            <Text className="text-white font-extrabold">{settings.contactPhone}</Text>
-          </View>
-        </View>
-        <View className="flex-row items-center gap-3">
-          <View className="p-2 rounded-xl bg-slate-800"><Mail size={16} color={colors.rotaryAzure} /></View>
-          <View>
-            <Text className="text-[10px] font-bold uppercase text-slate-400">Administrative Email</Text>
-            <Text className="text-white font-semibold">{settings.contactEmail}</Text>
-          </View>
-        </View>
-        <View className="flex-row items-center gap-3">
-          <View className="p-2 rounded-xl bg-slate-800"><MapPin size={16} color={colors.emerald600} /></View>
-          <View>
-            <Text className="text-[10px] font-bold uppercase text-slate-400">Meeting Location</Text>
-            <Text className="text-white font-semibold">Lagoonda Hotel, Freetown</Text>
-          </View>
-        </View>
-      </View>
-
-      <Card className="gap-3">
-        <Text className="text-sm font-extrabold text-slate-800 uppercase tracking-wide">Follow Us Online</Text>
-        <View className="flex-row items-center gap-3">
-          <View className="p-2 rounded-xl bg-[#1877F2]/10"><Facebook size={16} color="#1877F2" /></View>
-          <Text className="text-xs font-semibold text-slate-700 flex-1">Rotary Club of Freetown Sunset</Text>
-        </View>
-        <View className="flex-row items-center gap-3">
-          <View className="p-2 rounded-xl bg-[#DD2A7B]/10"><Instagram size={16} color="#DD2A7B" /></View>
-          <Text className="text-xs font-semibold text-slate-700 flex-1">@rcfsunset</Text>
-        </View>
-      </Card>
-
       {blocks.length > 0 && (
         <View className="gap-4">
           {blocks.map((b) => (
@@ -167,6 +158,8 @@ export default function ContactScreen() {
           ))}
         </View>
       )}
+
+      <SiteFooter />
     </ScreenScroll>
   );
 }

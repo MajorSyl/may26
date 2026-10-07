@@ -6,6 +6,7 @@ import { UserProfile } from '../types';
 import { getUsers } from '../lib/service';
 import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
 import { logPageView } from '../lib/analytics';
+import SiteFooter from '../navigation/SiteFooter';
 import { colors } from '../theme';
 
 function initialsOf(name: string): string {
@@ -14,12 +15,6 @@ function initialsOf(name: string): string {
   return parts.map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 }
 
-// Simplified per the club's revamp brief: no individual "year joined" or
-// PHF status on public cards, no filter tabs. Just an intro ("60 vibrant
-// members"), the 2026-2027 Executive by name and role, then a clean,
-// name-only general roster -- plus Member Sign In, moved here from the
-// header per the brief's "login shouldn't be prominent in the top-right
-// corner" direction.
 export default function MembersDirectoryScreen() {
   const [members, setMembers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +75,9 @@ export default function MembersDirectoryScreen() {
                   </View>
                   <View className="flex-1">
                     <Text className="font-extrabold text-slate-800 text-sm">{m.name}</Text>
-                    <Text className="text-[10px] font-bold uppercase tracking-wide text-rotary-azure mt-0.5">Executive Board</Text>
+                    <Text className="text-[10px] font-bold uppercase tracking-wide text-rotary-azure mt-0.5">
+                      {m.clubPosition || 'Executive Board'}
+                    </Text>
                   </View>
                 </View>
               ))}
@@ -122,6 +119,8 @@ export default function MembersDirectoryScreen() {
         <UserCircle2 size={16} color={colors.slate600} />
         <Text className="text-slate-700 text-xs font-bold uppercase tracking-wider">Member Sign In</Text>
       </Pressable>
+
+      <SiteFooter />
     </ScreenScroll>
   );
 }

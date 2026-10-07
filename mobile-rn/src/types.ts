@@ -7,6 +7,7 @@ export interface UserProfile {
   contributionGoals?: number;
   contributedAmount?: number;
   committee?: string;
+  clubPosition?: string;
   tasks?: string[];
   isPaulHarrisFellow?: boolean;
   paulHarrisLevel?: 'PHF' | 'PHF+1' | 'PHF+2' | 'PHF+3' | 'PHF+4' | 'PHF+8' | 'Major Donor' | 'None';
@@ -57,6 +58,7 @@ export interface Project {
   description: string;
   year: number;
   impact?: string;
+  partners?: string[];
   status: 'Completed' | 'Active' | 'Planning';
   imageUrl?: string;
   details?: string;

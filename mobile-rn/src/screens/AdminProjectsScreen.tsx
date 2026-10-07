@@ -17,6 +17,7 @@ const BLANK = {
   description: '',
   year: String(new Date().getFullYear()),
   impact: '',
+  partners: '',
   status: 'Active' as Project['status'],
   imageUrl: '',
   wellsBuilt: '0',
@@ -60,6 +61,7 @@ export default function AdminProjectsScreen({}: Props) {
       description: p.description,
       year: String(p.year),
       impact: p.impact || '',
+      partners: (p.partners || []).join(', '),
       status: p.status,
       imageUrl: p.imageUrl || '',
       wellsBuilt: String(p.wellsBuilt || 0),
@@ -81,6 +83,7 @@ export default function AdminProjectsScreen({}: Props) {
         description: form.description,
         year: parseInt(form.year, 10) || new Date().getFullYear(),
         impact: form.impact,
+        partners: form.partners.split(',').map((s) => s.trim()).filter(Boolean),
         status: form.status,
         imageUrl: form.imageUrl,
         wellsBuilt: parseInt(form.wellsBuilt, 10) || 0,
@@ -147,6 +150,7 @@ export default function AdminProjectsScreen({}: Props) {
           <TextField label="Description" value={form.description} onChangeText={(v) => setForm({ ...form, description: v })} placeholder="Overview" multiline />
           <TextField label="Year" value={form.year} onChangeText={(v) => setForm({ ...form, year: v.replace(/\D/g, '').slice(0, 4) })} keyboardType="number-pad" />
           <TextField label="Impact" value={form.impact} onChangeText={(v) => setForm({ ...form, impact: v })} placeholder="e.g. 500+ beneficiaries" />
+          <TextField label="Partners (comma-separated)" value={form.partners} onChangeText={(v) => setForm({ ...form, partners: v })} placeholder="e.g. Rotary Club of Fishers, World Hope International" />
           <ImagePickerField label="Project Photo" imageUrl={form.imageUrl} onChange={(url) => setForm({ ...form, imageUrl: url })} folder="projects" />
 
           <Text className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Impact Numbers</Text>

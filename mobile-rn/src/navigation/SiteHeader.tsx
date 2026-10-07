@@ -4,21 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Menu, X } from 'lucide-react-native';
 import { colors } from '../theme';
 
-// The web-only public site header: full club wordmark left, nav links
-// right (tablet/desktop), collapsing into a hamburger + dropdown menu
-// below 640px. Rendered once per public stack navigator (Home, Projects,
-// Events, Members, More) via each one's `header` screenOption, so it sits
-// above that stack's own ScrollView -- structurally "sticky" for free.
-//
-// Per the club's Sept 2026 revamp brief: a simpler, cohesive nav --
-// Home | About | Projects | Members | Contact -- with Events and the old
-// "More" catch-all dropped from the primary bar (Events stays reachable
-// from Home's own meeting-info section; the old More sub-pages are now
-// reachable from the pages they're thematically closest to). Member/Admin
-// sign-in no longer live in the header at all -- Member sign-in now sits
-// on the Members page itself, Admin sign-in in the site footer -- both
-// per the brief's explicit "don't display login prominently in the
-// top-right corner" direction.
+// Web-only. Rendered by each public stack's `header` screenOption.
 const NAV_LINKS: { label: string; tab: string; screen?: string }[] = [
   { label: 'Home', tab: 'HomeTab' },
   { label: 'About', tab: 'HomeTab', screen: 'About' },
@@ -45,11 +31,18 @@ export default function SiteHeader() {
     <View style={{ position: 'relative', zIndex: 40 }}>
       <View className="bg-white border-b border-slate-200 shadow-sm">
         <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 flex-row items-center justify-between" style={{ height: 68 }}>
-          <Pressable onPress={() => goTab('HomeTab')} className="py-2">
-            <Text className="text-lg sm:text-xl font-extrabold text-rotary-azure tracking-tight leading-none">Rotary</Text>
-            <Text className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-rotary-dark leading-none mt-0.5">
-              Club of Freetown-Sunset
-            </Text>
+          <Pressable onPress={() => goTab('HomeTab')} className="py-2 flex-row items-center gap-3">
+            <View>
+              <Text className="text-lg sm:text-xl font-extrabold text-rotary-azure tracking-tight leading-none">Rotary</Text>
+              <Text className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-rotary-dark leading-none mt-0.5">
+                Club of Freetown-Sunset
+              </Text>
+            </View>
+            <View className="hidden md:flex border-l border-slate-300 pl-3 py-0.5">
+              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-dark leading-tight">Create</Text>
+              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-dark leading-tight">Lasting</Text>
+              <Text className="text-[9px] font-extrabold italic uppercase text-rotary-dark leading-tight">Impact</Text>
+            </View>
           </Pressable>
 
           <View className="hidden sm:flex flex-row items-center gap-1">

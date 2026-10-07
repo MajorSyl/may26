@@ -12,44 +12,14 @@ import {
   Sprout
 } from 'lucide-react-native';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
-import { ROTARY_FOCUS_AREAS } from '../data';
+import { ROTARY_FOCUS_AREAS, OBJECTS_OF_ROTARY, FOUR_WAY_TEST } from '../data';
 import { ScreenScroll, Badge } from '../components/ui';
+import SiteFooter from '../navigation/SiteFooter';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
-const OBJECTS_OF_ROTARY = [
-  'Building friendship as an opportunity for service.',
-  'High ethical standards in business, professions, and community life.',
-  'Applying the ideal of service in each Rotarian’s personal, business, and community life.',
-  'Advancing international understanding, goodwill, and peace through a world fellowship of professionals united in service.'
-];
-
-const FOUR_WAY_TEST = [
-  { num: 1, q: 'Is it the TRUTH?', desc: 'We advocate for honesty and clarity in our reporting and communications.' },
-  {
-    num: 2,
-    q: 'Is it FAIR to all concerned?',
-    desc: 'We consult, listen, and partner with local community committees to guarantee equal resource distribution without bias.'
-  },
-  {
-    num: 3,
-    q: 'Will it build GOODWILL and BETTER FRIENDSHIPS?',
-    desc: 'We bridge lines of profession and origin. Weekly meetings foster lifelong, collaborative friends unified by service.'
-  },
-  {
-    num: 4,
-    q: 'Will it be BENEFICIAL to all concerned?',
-    desc: 'Our projects must leave a permanent, self-sustaining positive health, economic, or physical impact in Sierra Leone.'
-  }
-];
-
 const FOCUS_ICONS = [ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout];
 
-// Who we are, in one place: founding, vision, a brief introduction to
-// Rotary, the Objects of Rotary, the Four-Way Test, and our areas of
-// work -- informative without being text-heavy, per the club's revamp
-// brief. Individual leadership bios moved to the Members page, which now
-// owns "names and positions" so this page isn't duplicating that list.
 export default function AboutScreen() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [openTest, setOpenTest] = useState<number | null>(0);
@@ -102,6 +72,10 @@ export default function AboutScreen() {
       {/* Objects of Rotary */}
       <View className="gap-4">
         <Text className="text-xl font-extrabold text-slate-800">The Objects of Rotary</Text>
+        <Text className="text-xs text-slate-500 leading-relaxed">
+          The Object of Rotary is to encourage and foster the ideal of service as a basis of worthy enterprise and, in
+          particular, to encourage and foster:
+        </Text>
         <View className="gap-2.5">
           {OBJECTS_OF_ROTARY.map((obj, i) => (
             <View key={i} className="flex-row items-start gap-3 bg-white border border-slate-100 rounded-2xl p-4">
@@ -118,6 +92,7 @@ export default function AboutScreen() {
       <View className="gap-4">
         <Badge label="Ethical Guardrails" tone="gold" />
         <Text className="text-2xl font-extrabold text-slate-800">The Four-Way Test</Text>
+        <Text className="text-xs text-slate-500">Of the things we think, say or do:</Text>
         <View className="gap-3">
           {FOUR_WAY_TEST.map((test, i) => {
             const isOpen = openTest === i;
@@ -160,6 +135,8 @@ export default function AboutScreen() {
           })}
         </View>
       </View>
+
+      <SiteFooter />
     </ScreenScroll>
   );
 }
