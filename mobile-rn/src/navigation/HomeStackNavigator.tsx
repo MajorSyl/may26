@@ -22,7 +22,7 @@ export default function HomeStackNavigator() {
           : { headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }
       }
     >
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'RCFS' }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Rotary Club of Freetown-Sunset' }} />
       <Stack.Screen name="About" component={AboutScreen} options={{ title: 'About Us' }} />
     </Stack.Navigator>
   );

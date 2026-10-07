@@ -100,17 +100,17 @@ self.addEventListener('fetch', (event) => {
 }
 
 const metaTags = `
-    <meta name="description" content="RCFS -- the official app for the Rotary Club of Freetown Sunset, Sierra Leone (Rotary District 9101)." />
+    <meta name="description" content="Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101). Create Lasting Impact." />
     <meta name="theme-color" content="#0F1E4D" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="RCFS" />
-    <meta property="og:title" content="RCFS" />
-    <meta property="og:description" content="RCFS -- the official app for the Rotary Club of Freetown Sunset, Sierra Leone (Rotary District 9101)." />
+    <meta property="og:site_name" content="Rotary Club of Freetown-Sunset" />
+    <meta property="og:title" content="Rotary Club of Freetown-Sunset" />
+    <meta property="og:description" content="Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101). Create Lasting Impact." />
     <meta property="og:url" content="https://www.rcfsunset.org" />
     <meta property="og:image" content="https://www.rcfsunset.org/favicon.ico" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="RCFS" />
-    <meta name="twitter:description" content="RCFS -- the official app for the Rotary Club of Freetown Sunset, Sierra Leone (Rotary District 9101)." />
+    <meta name="twitter:title" content="Rotary Club of Freetown-Sunset" />
+    <meta name="twitter:description" content="Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101). Create Lasting Impact." />
   </head>`;
 
 if (!fs.existsSync(distIndexPath)) {
@@ -123,6 +123,7 @@ let html = fs.readFileSync(distIndexPath, 'utf8');
 if (html.includes('og:site_name')) {
   console.log('inject-web-meta: tags already present, skipping.');
 } else {
+  html = html.replace(/<title>[^<]*<\/title>/, '<title>Rotary Club of Freetown-Sunset</title>');
   html = html.replace('</head>', metaTags);
   fs.writeFileSync(distIndexPath, html);
   console.log('inject-web-meta: injected description/Open Graph/Twitter tags into dist/index.html');

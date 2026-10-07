@@ -15,7 +15,7 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     icon: Sun,
-    title: 'Welcome to RCFS',
+    title: 'Welcome to Rotary Club of Freetown-Sunset',
     body: "Your home for the Rotary Club of Freetown Sunset -- news, service projects, and events, right on your phone."
   },
   {
