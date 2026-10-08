@@ -61,8 +61,22 @@ export default function AdminSettingsScreen({}: Props) {
 
       <Card className="gap-4">
         <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Home</Text>
-        <TextField label="Hero Title" value={settings.homeHeroTitle} onChangeText={(v) => set('homeHeroTitle', v)} />
-        <TextField label="Hero Subtitle" value={settings.homeHeroSubtitle} onChangeText={(v) => set('homeHeroSubtitle', v)} multiline />
+        <TextField label="Who We Are (intro under the club name)" value={settings.homeHeroSubtitle} onChangeText={(v) => set('homeHeroSubtitle', v)} multiline />
+        <TextField
+          label="Impact Highlights (one per line: figure | description)"
+          value={settings.impactHighlights}
+          onChangeText={(v) => set('impactHighlights', v)}
+          placeholder="100+ | boreholes delivered with the Rotary Club of Fishers"
+          multiline
+        />
+        <TextField
+          label="Instagram Post Links (one per line, optional)"
+          value={settings.instagramPostUrls}
+          onChangeText={(v) => set('instagramPostUrls', v)}
+          placeholder="https://www.instagram.com/p/..."
+          autoCapitalize="none"
+          multiline
+        />
         <TextField
           label="Featured Video URL"
           value={settings.homeVideoUrl}
@@ -74,10 +88,36 @@ export default function AdminSettingsScreen({}: Props) {
 
       <Card className="gap-4">
         <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">About</Text>
+        <TextField label="Year Founded" value={settings.foundedYear} onChangeText={(v) => set('foundedYear', v.replace(/\D/g, '').slice(0, 4))} keyboardType="number-pad" />
+        <TextField label="Rotary District" value={settings.districtLabel} onChangeText={(v) => set('districtLabel', v)} placeholder="Rotary District 9101" />
         <TextField label="Header Title" value={settings.aboutHeaderTitle} onChangeText={(v) => set('aboutHeaderTitle', v)} />
         <TextField label="Header Description" value={settings.aboutHeaderDesc} onChangeText={(v) => set('aboutHeaderDesc', v)} multiline />
         <TextField label="Vision" value={settings.aboutVisionBody} onChangeText={(v) => set('aboutVisionBody', v)} multiline />
         <TextField label="Mission" value={settings.aboutMissionBody} onChangeText={(v) => set('aboutMissionBody', v)} multiline />
+        <TextField label="Introduction to Rotary" value={settings.aboutRotaryIntro} onChangeText={(v) => set('aboutRotaryIntro', v)} multiline />
+        <TextField label="Our Main Areas of Work (one per line)" value={settings.aboutAreasOfWork} onChangeText={(v) => set('aboutAreasOfWork', v)} multiline />
+      </Card>
+
+      <Card className="gap-4">
+        <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Members</Text>
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <TextField label="Total Members" value={settings.membersTotal} onChangeText={(v) => set('membersTotal', v.replace(/\D/g, ''))} keyboardType="number-pad" />
+          </View>
+          <View className="flex-1">
+            <TextField label="Members in Diaspora" value={settings.membersDiaspora} onChangeText={(v) => set('membersDiaspora', v.replace(/\D/g, ''))} keyboardType="number-pad" />
+          </View>
+        </View>
+        <TextField label="Executive Term" value={settings.executiveTermLabel} onChangeText={(v) => set('executiveTermLabel', v)} placeholder="2026–2027" />
+        <Text className="text-[11px] text-slate-400">
+          Executive names, positions, photos and order are set per member under Admin → Members.
+        </Text>
+      </Card>
+
+      <Card className="gap-4">
+        <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Meetings</Text>
+        <TextField label="When" value={settings.meetingSchedule} onChangeText={(v) => set('meetingSchedule', v)} placeholder="Thursdays, 6:30 PM" />
+        <TextField label="Where" value={settings.meetingLocation} onChangeText={(v) => set('meetingLocation', v)} />
       </Card>
 
       <Card className="gap-4">
@@ -89,7 +129,7 @@ export default function AdminSettingsScreen({}: Props) {
       <Card className="gap-4">
         <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Contact</Text>
         <TextField label="Email" value={settings.contactEmail} onChangeText={(v) => set('contactEmail', v)} keyboardType="email-address" autoCapitalize="none" />
-        <TextField label="Phone" value={settings.contactPhone} onChangeText={(v) => set('contactPhone', v)} />
+        <TextField label="Phone (hidden on the site until a real number is entered)" value={settings.contactPhone} onChangeText={(v) => set('contactPhone', v)} />
         <TextField label="Facebook URL" value={settings.socialFacebookUrl} onChangeText={(v) => set('socialFacebookUrl', v)} autoCapitalize="none" />
         <TextField label="Instagram URL" value={settings.socialInstagramUrl} onChangeText={(v) => set('socialInstagramUrl', v)} autoCapitalize="none" />
       </Card>

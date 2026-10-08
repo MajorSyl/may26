@@ -1,142 +1,147 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import {
-  Compass,
-  Heart,
-  Calendar,
-  ShieldAlert,
-  Droplets,
-  Baby,
-  BookOpen,
-  TrendingUp,
-  Sprout
-} from 'lucide-react-native';
-import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
-import { ROTARY_FOCUS_AREAS, OBJECTS_OF_ROTARY, FOUR_WAY_TEST } from '../data';
-import { ScreenScroll, Badge } from '../components/ui';
-import SiteFooter from '../navigation/SiteFooter';
+import { View, Text } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Droplets, Baby, BookOpen, Heart, Users, Sprout, TrendingUp, ShieldAlert, Sparkles, CalendarDays, MapPin, Compass, Target } from 'lucide-react-native';
+import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, splitLines } from '../lib/service';
+import { OBJECTS_OF_ROTARY, FOUR_WAY_TEST } from '../data';
+import SafeImage from '../components/SafeImage';
+import { SitePage, Section, SectionHeading, CTAButton, IconTile, PlaceholderNote } from '../components/site';
 import { logPageView } from '../lib/analytics';
 import { colors } from '../theme';
 
-const FOCUS_ICONS = [ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout];
+function iconForArea(area: string) {
+  const a = area.toLowerCase();
+  if (a.includes('water') || a.includes('sanitation')) return Droplets;
+  if (a.includes('maternal') || a.includes('child')) return Baby;
+  if (a.includes('education') || a.includes('literacy')) return BookOpen;
+  if (a.includes('health') || a.includes('nutrition') || a.includes('disease')) return Heart;
+  if (a.includes('environment')) return Sprout;
+  if (a.includes('economic')) return TrendingUp;
+  if (a.includes('peace')) return ShieldAlert;
+  if (a.includes('community') || a.includes('welfare')) return Users;
+  return Sparkles;
+}
 
 export default function AboutScreen() {
+  const navigation = useNavigation<any>();
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
-  const [openTest, setOpenTest] = useState<number | null>(0);
 
   useEffect(() => {
     logPageView('about');
     getSiteSettings().then(setSettings);
   }, []);
 
+  const goTab = (tab: string, screen: string) => (navigation.getParent()?.navigate as any)?.(tab, { screen });
+  const areas = splitLines(settings.aboutAreasOfWork);
+
   return (
-    <ScreenScroll>
-      <View className="items-center gap-3 w-full sm:max-w-2xl mx-auto">
-        <Badge label={settings.aboutHeaderBadge} tone="gold" />
-        <Text className="text-3xl font-extrabold text-slate-800 text-center leading-snug">{settings.aboutHeaderTitle}</Text>
-        <Text className="text-sm text-slate-500 text-center leading-relaxed">{settings.aboutHeaderDesc}</Text>
-        <View className="flex-row items-center gap-2 bg-rotary-azure/10 rounded-full px-4 py-1.5 mt-1">
-          <Calendar size={13} color={colors.rotaryAzure} />
-          <Text className="text-[11px] font-bold text-rotary-azure">Founded 2014 &middot; Rotary District 9101</Text>
-        </View>
-      </View>
-
-      <View className="gap-4">
-        <View className="bg-white p-6 rounded-3xl border border-slate-200 gap-3">
-          <View className="p-3 bg-rotary-azure/10 rounded-2xl self-start">
-            <Compass size={22} color={colors.rotaryAzure} />
+    <SitePage>
+      <Section tone="cream">
+        <View className="gap-8 lg:flex-row lg:items-center lg:gap-14">
+          <View className="flex-1 gap-6 rcfs-rise">
+            <SectionHeading eyebrow="About us" title={settings.aboutHeaderTitle.replace(/\.$/, '')} intro={settings.aboutHeaderDesc} />
+            <View className="flex-row flex-wrap gap-x-6 gap-y-3">
+              {settings.foundedYear ? (
+                <View className="flex-row items-center gap-2">
+                  <CalendarDays size={18} color={colors.rotaryRoyal} />
+                  <Text className="text-[15px] font-semibold text-rotary-royal-deep">Founded {settings.foundedYear}</Text>
+                </View>
+              ) : (
+                <PlaceholderNote label="founding year" />
+              )}
+              {settings.districtLabel ? (
+                <View className="flex-row items-center gap-2 shrink max-w-full">
+                  <MapPin size={18} color={colors.rotaryRoyal} />
+                  <Text className="shrink text-[15px] font-semibold text-rotary-royal-deep">{settings.districtLabel} · Freetown, Sierra Leone</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
-          <Text className="text-lg font-bold text-slate-800">{settings.aboutVisionTitle}</Text>
-          <Text className="text-xs text-slate-500 leading-relaxed">{settings.aboutVisionBody}</Text>
-        </View>
-        <View className="bg-amber-50 p-6 rounded-3xl border border-amber-100 gap-3">
-          <View className="p-3 bg-rotary-gold/15 rounded-2xl self-start">
-            <Heart size={22} color={colors.rotaryGold} />
+          <View className="w-full lg:w-[46%] aspect-[16/10] rounded-3xl overflow-hidden bg-slate-100">
+            <SafeImage
+              src="https://rcfsunset.org/images/projects/russell-primary-school-partnership.jpg"
+              alt="Rotary Club of Freetown-Sunset members with pupils of Russell Primary School"
+              fit="cover"
+              eager
+            />
           </View>
-          <Text className="text-lg font-bold text-slate-800">{settings.aboutMissionTitle}</Text>
-          <Text className="text-xs text-slate-500 leading-relaxed">{settings.aboutMissionBody}</Text>
         </View>
-      </View>
+      </Section>
 
-      {/* What is Rotary, briefly */}
-      <View className="gap-4">
-        <Badge label="What Is Rotary?" />
-        <Text className="text-2xl font-extrabold text-slate-800">A Global Fellowship of Service</Text>
-        <Text className="text-sm text-slate-500 leading-relaxed">
-          Rotary is a global network of neighbors, friends, and problem-solvers who come together to take action and
-          create lasting change -- across communities and around the world. Our club is part of Rotary District 9101,
-          spanning West Africa.
-        </Text>
-      </View>
-
-      {/* Objects of Rotary */}
-      <View className="gap-4">
-        <Text className="text-xl font-extrabold text-slate-800">The Objects of Rotary</Text>
-        <Text className="text-xs text-slate-500 leading-relaxed">
-          The Object of Rotary is to encourage and foster the ideal of service as a basis of worthy enterprise and, in
-          particular, to encourage and foster:
-        </Text>
-        <View className="gap-2.5">
-          {OBJECTS_OF_ROTARY.map((obj, i) => (
-            <View key={i} className="flex-row items-start gap-3 bg-white border border-slate-100 rounded-2xl p-4">
-              <View className="w-6 h-6 rounded-full bg-rotary-azure items-center justify-center mt-0.5">
-                <Text className="text-white text-[11px] font-extrabold">{i + 1}</Text>
+      <Section>
+        <View className="gap-5 md:flex-row">
+          {[
+            { Icon: Compass, title: settings.aboutVisionTitle, body: settings.aboutVisionBody },
+            { Icon: Target, title: settings.aboutMissionTitle, body: settings.aboutMissionBody }
+          ].map(({ Icon, title, body }) => (
+            <View key={title} className="flex-1 border border-slate-200 rounded-3xl p-6 sm:p-8 gap-4">
+              <View className="w-12 h-12 rounded-xl bg-rotary-gold-soft items-center justify-center">
+                <Icon size={22} color={colors.rotaryRoyal} />
               </View>
-              <Text className="text-xs text-slate-600 leading-relaxed flex-1">{obj}</Text>
+              <Text className="font-display text-2xl font-bold text-rotary-royal-deep">{title}</Text>
+              <Text className="text-base leading-7 text-slate-600">{body}</Text>
             </View>
           ))}
         </View>
-      </View>
+      </Section>
 
-      {/* Four-Way Test */}
-      <View className="gap-4">
-        <Badge label="Ethical Guardrails" tone="gold" />
-        <Text className="text-2xl font-extrabold text-slate-800">The Four-Way Test</Text>
-        <Text className="text-xs text-slate-500">Of the things we think, say or do:</Text>
-        <View className="gap-3">
-          {FOUR_WAY_TEST.map((test, i) => {
-            const isOpen = openTest === i;
-            return (
-              <Pressable
-                key={test.num}
-                onPress={() => setOpenTest(isOpen ? null : i)}
-                className={`rounded-2xl border p-4 ${isOpen ? 'bg-slate-100 border-slate-300' : 'bg-white border-slate-200'}`}
-              >
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3 flex-1 pr-2">
-                    <View className="w-8 h-8 rounded-xl bg-slate-800 items-center justify-center">
-                      <Text className="text-rotary-gold font-bold text-xs">{test.num}</Text>
-                    </View>
-                    <Text className="font-extrabold text-slate-800 text-xs flex-1">{test.q}</Text>
-                  </View>
-                  <Text className="text-rotary-gold text-xl">{isOpen ? '−' : '+'}</Text>
-                </View>
-                {isOpen && <Text className="text-xs text-slate-600 leading-relaxed mt-3">{test.desc}</Text>}
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Areas of work */}
-      <View className="gap-4">
-        <Text className="text-xl font-extrabold text-slate-800">Our Main Areas of Work</Text>
-        <View className="gap-3 sm:flex-row sm:flex-wrap">
-          {ROTARY_FOCUS_AREAS.map((area, i) => {
-            const Icon = FOCUS_ICONS[i];
-            return (
-              <View key={area.title} className="bg-white border border-slate-100 rounded-2xl p-4 gap-2 sm:w-[48%] lg:w-[31%]">
-                <View className="w-9 h-9 rounded-xl bg-rotary-azure/10 items-center justify-center">
-                  <Icon size={17} color={colors.rotaryAzure} />
-                </View>
-                <Text className="text-sm font-bold text-slate-800">{area.title}</Text>
+      <Section tone="cream">
+        <View className="gap-10 lg:flex-row lg:gap-16">
+          <View className="lg:w-[40%]">
+            <SectionHeading eyebrow="What is Rotary?" title="People of action, around the world" intro={settings.aboutRotaryIntro || undefined} />
+          </View>
+          <View className="flex-1 gap-5">
+            <Text className="font-display text-xl font-bold text-rotary-royal-deep">The Objects of Rotary</Text>
+            <Text className="text-base leading-7 text-slate-600">
+              The Object of Rotary is to encourage and foster the ideal of service as a basis of worthy enterprise and, in particular, to
+              encourage and foster:
+            </Text>
+            {OBJECTS_OF_ROTARY.map((obj, i) => (
+              <View key={obj} className="flex-row items-start gap-4 bg-white rounded-2xl p-5">
+                <Text className="font-display text-2xl font-extrabold text-rotary-gold w-6">{i + 1}</Text>
+                <Text className="flex-1 text-base leading-7 text-slate-700">{obj}</Text>
               </View>
-            );
-          })}
+            ))}
+          </View>
         </View>
-      </View>
+      </Section>
 
-      <SiteFooter />
-    </ScreenScroll>
+      <Section tone="royal">
+        <View className="gap-10">
+          <SectionHeading eyebrow="Our compass" title="The Four-Way Test" intro="Of the things we think, say or do:" onDark />
+          <View className="flex-row flex-wrap -mx-3">
+            {FOUR_WAY_TEST.map((t) => (
+              <View key={t.num} className="w-full sm:w-1/2 lg:w-1/4 p-3">
+                <View className="border-t-2 border-rotary-gold pt-4 gap-2">
+                  <Text className="font-display text-4xl font-extrabold text-rotary-gold">{t.num}</Text>
+                  <Text className="font-display text-xl leading-7 font-bold text-white">{t.q}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Section>
+
+      <Section>
+        <View className="gap-8">
+          <SectionHeading eyebrow="Our work" title="Our main areas of work" />
+          {areas.length > 0 ? (
+            <View className="flex-row flex-wrap -mx-2">
+              {areas.map((area) => (
+                <View key={area} className="w-1/2 md:w-1/3 lg:w-1/5 p-2">
+                  <IconTile icon={iconForArea(area)} label={area} />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <PlaceholderNote label="main areas of work" />
+          )}
+          <View className="flex-col sm:flex-row gap-3">
+            <CTAButton label="See our projects" onPress={() => goTab('ProjectsTab', 'Gallery')} />
+            <CTAButton label="Get in Touch" variant="secondary" onPress={() => goTab('MoreTab', 'Contact')} />
+          </View>
+        </View>
+      </Section>
+    </SitePage>
   );
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image } from 'react-native';
 import { Users, Check } from 'lucide-react-native';
 import { ContactInquiry } from '../types';
-import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
+import { getSiteSettings, submitInquiry, SiteSettings, DEFAULT_SITE_SETTINGS, isPlaceholderPhone } from '../lib/service';
 import { ScreenScroll, Badge, Card, PrimaryButton, TextField } from '../components/ui';
 import { logPageView } from '../lib/analytics';
 import { ContentBlock, getContentBlocks } from '../lib/cms';
@@ -65,7 +65,7 @@ export default function GetInvolvedScreen() {
   };
 
   return (
-    <ScreenScroll>
+    <ScreenScroll footer>
       <View className="items-center gap-3">
         <Badge label="Get Involved & Fellowships" />
         <Text className="text-3xl font-extrabold text-rotary-dark text-center">Explore Membership</Text>
@@ -111,7 +111,9 @@ export default function GetInvolvedScreen() {
       <View className="items-center gap-1.5">
         <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Prefer to reach us directly?</Text>
         <Text className="text-xs text-rotary-azure font-semibold">{settings.contactEmail}</Text>
-        <Text className="text-xs text-rotary-azure font-semibold">{settings.contactPhone}</Text>
+        {!isPlaceholderPhone(settings.contactPhone) ? (
+          <Text className="text-xs text-rotary-azure font-semibold">{settings.contactPhone}</Text>
+        ) : null}
       </View>
 
       {blocks.length > 0 && (

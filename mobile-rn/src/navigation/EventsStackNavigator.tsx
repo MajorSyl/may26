@@ -13,7 +13,7 @@ export default function EventsStackNavigator() {
     <Stack.Navigator
       screenOptions={
         Platform.OS === 'web'
-          ? { header: () => <SiteHeader /> }
+          ? { header: ({ route }) => <SiteHeader routeName={route.name} /> }
           : { headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }
       }
     >

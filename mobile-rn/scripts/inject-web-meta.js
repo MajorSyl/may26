@@ -99,18 +99,38 @@ self.addEventListener('fetch', (event) => {
   console.log(`inject-web-meta: generated dist/sw.js (BUILD_ID ${buildId})`);
 }
 
+const DESCRIPTION =
+  'Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101): professionals united in service, creating lasting impact through clean water, health, education and community projects.';
+
 const metaTags = `
-    <meta name="description" content="Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101). Create Lasting Impact." />
-    <meta name="theme-color" content="#0F1E4D" />
+    <meta name="description" content="${DESCRIPTION}" />
+    <meta name="theme-color" content="#17458F" />
+    <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/jakarta-var.woff2" as="font" type="font/woff2" crossorigin />
+    <style id="rcfs-type">
+      @font-face { font-family: 'Inter'; src: url('/fonts/inter-var.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+      @font-face { font-family: 'Plus Jakarta Sans'; src: url('/fonts/jakarta-var.woff2') format('woff2'); font-weight: 200 800; font-style: normal; font-display: swap; }
+      html, body, #root, #root * { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
+      #root .font-display, #root .font-display * { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important; letter-spacing: -0.015em; }
+      body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+      @media (prefers-reduced-motion: no-preference) {
+        @keyframes rcfs-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        #root .rcfs-rise { animation: rcfs-rise 600ms cubic-bezier(.2,.7,.2,1) both; }
+      }
+    </style>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Rotary Club of Freetown-Sunset" />
-    <meta property="og:title" content="Rotary Club of Freetown-Sunset" />
-    <meta property="og:description" content="Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101). Create Lasting Impact." />
+    <meta property="og:title" content="Rotary Club of Freetown-Sunset · Create Lasting Impact" />
+    <meta property="og:description" content="${DESCRIPTION}" />
     <meta property="og:url" content="https://www.rcfsunset.org" />
-    <meta property="og:image" content="https://www.rcfsunset.org/favicon.ico" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Rotary Club of Freetown-Sunset" />
-    <meta name="twitter:description" content="Rotary Club of Freetown-Sunset, Sierra Leone (Rotary District 9101). Create Lasting Impact." />
+    <meta property="og:image" content="https://www.rcfsunset.org/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Rotary Club of Freetown-Sunset members and community at the Kerefay Loko MCHP community well handover" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Rotary Club of Freetown-Sunset · Create Lasting Impact" />
+    <meta name="twitter:description" content="${DESCRIPTION}" />
+    <meta name="twitter:image" content="https://www.rcfsunset.org/og-image.jpg" />
   </head>`;
 
 if (!fs.existsSync(distIndexPath)) {

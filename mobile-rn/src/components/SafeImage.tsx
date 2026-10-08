@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Image, Text, StyleSheet, ImageStyle, StyleProp, ViewStyle } from 'react-native';
+import React, { useState } from 'react';
+import { View, Image, Text, StyleSheet, ImageStyle, StyleProp, ViewStyle, Platform } from 'react-native';
 import { ImageOff } from 'lucide-react-native';
 
 interface SafeImageProps {
@@ -7,6 +7,10 @@ interface SafeImageProps {
   alt: string;
   style?: StyleProp<ImageStyle>;
   containerStyle?: StyleProp<ViewStyle>;
+  // 'cover' is only for fixed-aspect card thumbnails (AGENTS.md); full-detail
+  // views keep the default 'contain'.
+  fit?: 'contain' | 'cover';
+  eager?: boolean;
 }
 
 // Ported from the web app's SafeImage: any external/unsplash URL is treated
@@ -28,8 +32,37 @@ interface SafeImageProps {
 // (pasted external URLs, unsplash, etc.) still gets the placeholder treatment.
 const SUPABASE_STORAGE_PREFIX = process.env.EXPO_PUBLIC_SUPABASE_URL ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/` : null;
 const OWN_SITE_PREFIXES = ['https://rcfsunset.org/', 'https://www.rcfsunset.org/'];
+const OWN_SITE_IMAGE = /^https:\/\/(?:www\.)?rcfsunset\.org(\/images\/.+)\.(?:jpe?g|png)$/i;
 
-export default function SafeImage({ src, alt, style, containerStyle }: SafeImageProps) {
+// Same-origin WebP copy of a photo committed under public/images, so every
+// deploy (including previews) serves its own optimized file.
+function webpFor(src: string): string {
+  const m = src.match(OWN_SITE_IMAGE);
+  return m ? `${m[1]}.webp` : src;
+}
+
+function WebImage({ src, alt, fit, eager }: { src: string; alt: string; fit: 'contain' | 'cover'; eager?: boolean }) {
+  const [current, setCurrent] = useState(webpFor(src));
+  return (
+    <img
+      src={current}
+      alt={alt}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      onError={() => current !== src && setCurrent(src)}
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'block',
+        objectFit: fit,
+        objectPosition: fit === 'cover' ? 'center 40%' : 'center',
+        backgroundColor: '#f1f5f9'
+      }}
+    />
+  );
+}
+
+export default function SafeImage({ src, alt, style, containerStyle, fit = 'contain', eager }: SafeImageProps) {
   const isOwnUpload =
     !!src &&
     ((!!SUPABASE_STORAGE_PREFIX && src.startsWith(SUPABASE_STORAGE_PREFIX)) || OWN_SITE_PREFIXES.some((p) => src.startsWith(p)));
@@ -45,6 +78,10 @@ export default function SafeImage({ src, alt, style, containerStyle }: SafeImage
         <Text style={styles.placeholderAlt} numberOfLines={2}>{alt}</Text>
       </View>
     );
+  }
+
+  if (Platform.OS === 'web') {
+    return <WebImage key={src} src={src as string} alt={alt} fit={fit} eager={eager} />;
   }
 
   return (

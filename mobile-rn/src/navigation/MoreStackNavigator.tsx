@@ -19,12 +19,12 @@ export default function MoreStackNavigator() {
     <Stack.Navigator
       screenOptions={
         Platform.OS === 'web'
-          ? { header: () => <SiteHeader /> }
+          ? { header: ({ route }) => <SiteHeader routeName={route.name} /> }
           : { headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }
       }
     >
       <Stack.Screen name="More" component={MoreScreen} options={{ title: 'More' }} />
-      <Stack.Screen name="ClubGallery" component={ClubGalleryScreen} options={{ title: 'Club Gallery' }} />
+      <Stack.Screen name="ClubGallery" component={ClubGalleryScreen} options={{ title: 'Photo Gallery' }} />
       <Stack.Screen name="GetInvolved" component={GetInvolvedScreen} options={{ title: 'Get Involved' }} />
       <Stack.Screen name="Contact" component={ContactScreen} options={{ title: 'Contact' }} />
       <Stack.Screen name="WhatIsRotary" component={WhatIsRotaryScreen} options={{ title: 'What is Rotary' }} />

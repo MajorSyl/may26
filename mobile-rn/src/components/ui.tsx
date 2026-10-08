@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { ChevronRight, Image as ImageIcon, FileText, LucideIcon } from 'lucide-react-native';
 import { uploadSiteImage, uploadNewsletterPdf } from '../lib/storage';
 import { colors } from '../theme';
+import SiteFooter from '../navigation/SiteFooter';
 
 // Shared building blocks used across every ported screen, so each screen
 // file stays focused on its own content instead of re-declaring the same
@@ -29,19 +30,26 @@ import { colors } from '../theme';
 // viewport edge, clipping the bled content instead of bleeding it).
 export function ScreenScroll({
   children,
-  edgeToEdge
+  edgeToEdge,
+  footer
 }: {
   children: React.ReactNode;
   edgeToEdge?: React.ReactNode;
+  footer?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-rotary-light">
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: insets.bottom + 32 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={footer ? { flexGrow: 1 } : { paddingBottom: insets.bottom + 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {edgeToEdge}
-        <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10" style={{ paddingTop: 20, gap: 28 }}>
+        <View className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-10" style={{ paddingTop: 20, paddingBottom: footer ? 48 : 0, gap: 28 }}>
           {children}
         </View>
+        {footer ? <SiteFooter /> : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -91,14 +99,14 @@ export function PrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      className={`py-3.5 rounded-xl items-center justify-center flex-row gap-2 ${
-        variant === 'solid' ? 'bg-rotary-azure' : 'bg-white border border-slate-300'
+      className={`min-h-[48px] px-6 rounded-full items-center justify-center flex-row gap-2 ${
+        variant === 'solid' ? 'bg-rotary-royal hover:bg-rotary-royal-deep' : 'bg-white border border-slate-300 hover:border-rotary-royal'
       } ${isDisabled ? 'opacity-50' : ''}`}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'solid' ? colors.white : colors.rotaryAzure} />
+        <ActivityIndicator color={variant === 'solid' ? colors.white : colors.rotaryRoyal} />
       ) : (
-        <Text className={`font-bold uppercase text-xs tracking-wider ${variant === 'solid' ? 'text-white' : 'text-slate-700'}`}>
+        <Text className={`text-[15px] font-semibold ${variant === 'solid' ? 'text-white' : 'text-rotary-royal-deep'}`}>
           {label}
         </Text>
       )}

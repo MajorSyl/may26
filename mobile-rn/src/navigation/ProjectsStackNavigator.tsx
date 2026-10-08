@@ -14,11 +14,11 @@ export default function ProjectsStackNavigator() {
     <Stack.Navigator
       screenOptions={
         Platform.OS === 'web'
-          ? { header: () => <SiteHeader /> }
+          ? { header: ({ route }) => <SiteHeader routeName={route.name} /> }
           : { headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }
       }
     >
-      <Stack.Screen name="Gallery" component={GalleryScreen} options={{ title: 'Service Gallery' }} />
+      <Stack.Screen name="Gallery" component={GalleryScreen} options={{ title: 'Projects' }} />
       <Stack.Screen name="ProjectDetails" component={ProjectDetailsScreen} options={{ title: 'Project Details' }} />
     </Stack.Navigator>
   );

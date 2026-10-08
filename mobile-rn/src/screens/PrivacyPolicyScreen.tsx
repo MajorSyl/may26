@@ -11,7 +11,7 @@ export default function PrivacyPolicyScreen() {
   }, []);
 
   return (
-    <ScreenScroll>
+    <ScreenScroll footer>
       <View className="gap-2">
         <Badge label="Privacy" />
         <Text className="text-sm text-slate-500 leading-relaxed">

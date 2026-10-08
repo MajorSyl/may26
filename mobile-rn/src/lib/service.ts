@@ -41,6 +41,20 @@ export interface SiteSettings {
   socialFacebookUrl: string;
   socialInstagramUrl: string;
   homeVideoUrl: string;
+  foundedYear: string;
+  membersTotal: string;
+  membersDiaspora: string;
+  executiveTermLabel: string;
+  meetingSchedule: string;
+  meetingLocation: string;
+  districtLabel: string;
+  aboutRotaryIntro: string;
+  // One area per line.
+  aboutAreasOfWork: string;
+  // One per line: "figure | label".
+  impactHighlights: string;
+  // One Instagram post URL per line.
+  instagramPostUrls: string;
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -59,11 +73,39 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   involvedSubtitle:
     'Whether you are a local professional looking to give back or an international partner ready to fund systemic change, there are multiple avenues to work with Freetown Sunset.',
   contactEmail: 'info@rcfsunset.org',
-  contactPhone: '000000000',
+  contactPhone: '',
   socialFacebookUrl: 'https://www.facebook.com/profile.php?id=100071187714639',
   socialInstagramUrl: 'https://www.instagram.com/rcfsunset',
-  homeVideoUrl: ''
+  homeVideoUrl: '',
+  foundedYear: '',
+  membersTotal: '',
+  membersDiaspora: '',
+  executiveTermLabel: '',
+  meetingSchedule: '',
+  meetingLocation: '',
+  districtLabel: '',
+  aboutRotaryIntro: '',
+  aboutAreasOfWork: '',
+  impactHighlights: '',
+  instagramPostUrls: ''
 };
+
+export const splitLines = (value: string): string[] =>
+  value
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+export const parseImpactHighlights = (value: string): { figure: string; label: string }[] =>
+  splitLines(value)
+    .map((line) => {
+      const [figure, ...rest] = line.split('|');
+      return { figure: figure.trim(), label: rest.join('|').trim() };
+    })
+    .filter((h) => h.figure && h.label);
+
+// A phone made mostly of zeros is the seeded placeholder, not a real number.
+export const isPlaceholderPhone = (phone: string): boolean => !phone.trim() || /0{5,}/.test(phone.replace(/\D/g, ''));
 
 // Mirrors the web app: settings live as a JSON blob in the `description`
 // column of a disguised row (id = 'settings_site_config') in `projects`.
@@ -97,16 +139,17 @@ export const getProjects = async (): Promise<Project[]> => {
             ...d,
             imageUrl: d.imageUrl || d.imageurl,
             partners: Array.isArray(d.partners) ? d.partners : [],
+            isFeatured: !!d.is_featured,
             wellsBuilt: d.wells_built || 0,
             studentsSponsored: d.students_sponsored || 0,
             fundsRaised: Number(d.funds_raised) || 0,
             peopleImpacted: d.people_impacted || 0
           })) as Project[];
       }
-      return INITIAL_PROJECTS;
+      return [];
     } catch (err) {
-      console.error('Supabase query error (projects), falling back:', err);
-      return INITIAL_PROJECTS;
+      console.error('Supabase query error (projects):', err);
+      return [];
     }
   }
   return getLocalData('rn_projects', INITIAL_PROJECTS);
@@ -360,6 +403,35 @@ export const getGalleryPhotos = async (): Promise<GalleryPhoto[]> => {
 // Members directory (public roster fields only)
 // -----------------------------------------------------------------------
 
+// Public pages only ever request these columns, so join dates, PHF status,
+// attendance, contributions and login fields never leave the database for
+// anonymous visitors.
+const PUBLIC_MEMBER_COLUMNS = 'uid,name,role,committee,club_position,exec_order,avatarurl';
+
+export const getPublicMembers = async (): Promise<UserProfile[]> => {
+  const fallback = INITIAL_MEMBER_DIRECTORY.map(({ uid, name, role, committee }) => ({ uid, name, role, committee }));
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('users').select(PUBLIC_MEMBER_COLUMNS).order('name');
+      if (error) throw error;
+      if (!data || data.length === 0) return fallback;
+      return data.map((d: any) => ({
+        uid: d.uid,
+        name: d.name,
+        role: d.role,
+        committee: d.committee || undefined,
+        clubPosition: d.club_position || undefined,
+        execOrder: d.exec_order ?? undefined,
+        avatarUrl: d.avatarurl || undefined
+      }));
+    } catch (err) {
+      console.error('Supabase query error (public members), falling back:', err);
+      return fallback;
+    }
+  }
+  return getLocalData('rn_users', fallback);
+};
+
 export const getUsers = async (): Promise<UserProfile[]> => {
   if (isSupabaseConfigured && supabase) {
     try {
@@ -375,6 +447,7 @@ export const getUsers = async (): Promise<UserProfile[]> => {
         contributedAmount: d.contributedamount,
         committee: d.committee,
         clubPosition: d.club_position || undefined,
+        execOrder: d.exec_order ?? undefined,
         tasks: d.tasks || [],
         classification: d.classification,
         isPaulHarrisFellow: d.ispaulharrisfellow,
@@ -625,6 +698,17 @@ export const adminCreateProject = async (input: Omit<Project, 'id'>): Promise<st
   return id;
 };
 
+// A partial unique index allows only one featured project, so clear the
+// current one before setting the new one.
+export const adminSetFeaturedProject = async (id: string | null): Promise<void> => {
+  const db = requireSupabase();
+  const { error: clearError } = await db.from('projects').update({ is_featured: false }).eq('is_featured', true);
+  if (clearError) throw clearError;
+  if (!id) return;
+  const { error } = await db.from('projects').update({ is_featured: true }).eq('id', id);
+  if (error) throw error;
+};
+
 export const adminUpdateProject = async (id: string, patch: Partial<Project>): Promise<void> => {
   const db = requireSupabase();
   const payload: any = {};
@@ -772,6 +856,8 @@ export const adminUpdateMember = async (uid: string, patch: Partial<UserProfile>
   if (patch.role !== undefined) payload.role = patch.role;
   if (patch.committee !== undefined) payload.committee = patch.committee;
   if (patch.clubPosition !== undefined) payload.club_position = patch.clubPosition || null;
+  if (patch.execOrder !== undefined) payload.exec_order = patch.execOrder ?? null;
+  if (patch.avatarUrl !== undefined) payload.avatarurl = patch.avatarUrl || null;
   if (patch.classification !== undefined) payload.classification = patch.classification;
   if (patch.bio !== undefined) payload.bio = patch.bio;
   if (patch.isPaulHarrisFellow !== undefined) payload.ispaulharrisfellow = patch.isPaulHarrisFellow;

@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Images, ArrowRight } from 'lucide-react-native';
 import { ProjectsStackParamList } from '../navigation/types';
 import { Project } from '../types';
 import { getProjects } from '../lib/service';
-import { ScreenScroll, Badge, LoadingBlock, EmptyBlock } from '../components/ui';
+import { LoadingBlock, EmptyBlock } from '../components/ui';
 import ProjectCard from '../components/ProjectCard';
-import SiteFooter from '../navigation/SiteFooter';
+import { SitePage, Section, SectionHeading, CTAButton, TextLink } from '../components/site';
 import { logPageView } from '../lib/analytics';
-import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<ProjectsStackParamList, 'Gallery'>;
 
@@ -24,71 +22,69 @@ export default function GalleryScreen({ navigation }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
-  const ongoing = projects.filter((p) => p.status === 'Active' || p.status === 'Planning');
+  const goMore = (screen: string) => (navigation.getParent()?.navigate as any)?.('MoreTab', { screen });
+  const ongoing = projects.filter((p) => p.status !== 'Completed');
   const completed = projects.filter((p) => p.status === 'Completed');
 
-  const renderGrid = (list: Project[]) => (
-    <View className="gap-4 sm:flex-row sm:flex-wrap">
-      {list.map((project) => (
-        <View key={project.id} className="sm:w-[48%] lg:w-[31.5%]">
-          <ProjectCard project={project} onPress={() => navigation.navigate('ProjectDetails', { project })} />
+  const group = (title: string, list: Project[], tone: 'white' | 'cream') =>
+    list.length > 0 ? (
+      <Section tone={tone}>
+        <View className="gap-8">
+          <View className="flex-row items-baseline gap-3">
+            <Text accessibilityRole="header" className="font-display text-2xl sm:text-3xl font-extrabold text-rotary-royal-deep">
+              {title}
+            </Text>
+            <Text className="text-base font-semibold text-slate-500">{list.length}</Text>
+          </View>
+          <View className="flex-row flex-wrap -mx-3">
+            {list.map((project) => (
+              <View key={project.id} className="w-full sm:w-1/2 lg:w-1/3 p-3">
+                <ProjectCard project={project} onPress={() => navigation.navigate('ProjectDetails', { project })} />
+              </View>
+            ))}
+          </View>
         </View>
-      ))}
-    </View>
-  );
+      </Section>
+    ) : null;
 
   return (
-    <ScreenScroll>
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="gap-2 flex-1">
-          <Badge label="On-The-Ground Impact" tone="gold" />
-          <Text className="text-3xl font-extrabold text-rotary-dark">Our Projects</Text>
-          <Text className="text-sm text-slate-500 leading-relaxed">
-            What we do and the difference we make -- ongoing and completed.
-          </Text>
+    <SitePage>
+      <Section tone="cream" tight>
+        <View className="gap-4 rcfs-rise">
+          <SectionHeading
+            eyebrow="Our projects"
+            title="What we do, and the difference it makes"
+            intro="From safe water at rural health posts to classrooms, scholarships and community welfare: service projects delivered with partners at home and abroad."
+          />
+          <TextLink label="Browse the photo gallery" onPress={() => goMore('ClubGallery')} />
         </View>
-        <Pressable
-          onPress={() => (navigation.getParent() as any)?.navigate('MoreTab', { screen: 'ClubGallery' })}
-          className="flex-row items-center gap-1.5 border border-slate-300 bg-white rounded-xl px-3 py-2 hover:bg-slate-50 shrink-0"
-        >
-          <Images size={13} color={colors.slate600} />
-          <Text className="text-[10px] font-bold uppercase text-slate-700">Photo Gallery</Text>
-        </Pressable>
-      </View>
+      </Section>
 
       {loading ? (
-        <LoadingBlock label="Retrieving Club ventures..." />
+        <Section>
+          <LoadingBlock label="Loading projects..." />
+        </Section>
       ) : projects.length === 0 ? (
-        <EmptyBlock label="Our project portfolio is being updated. Contact a club officer to learn about our current initiatives." />
+        <Section>
+          <EmptyBlock label="Our project stories are being updated. Please check back soon." />
+        </Section>
       ) : (
         <>
-          {ongoing.length > 0 && (
-            <View className="gap-4">
-              <Text className="text-xl font-extrabold text-rotary-dark">Ongoing Projects</Text>
-              {renderGrid(ongoing)}
-            </View>
-          )}
-          {completed.length > 0 && (
-            <View className="gap-4">
-              <Text className="text-xl font-extrabold text-rotary-dark">Completed Projects</Text>
-              {renderGrid(completed)}
-            </View>
-          )}
+          {group('Ongoing projects', ongoing, 'white')}
+          {group('Completed projects', completed, ongoing.length > 0 ? 'cream' : 'white')}
         </>
       )}
 
-      <Pressable
-        onPress={() => (navigation.getParent() as any)?.navigate('MoreTab', { screen: 'GetInvolved' })}
-        className="bg-rotary-dark rounded-3xl p-6 flex-row items-center justify-between gap-3"
-      >
-        <View className="flex-1">
-          <Text className="text-white font-extrabold text-base">Want to get involved?</Text>
-          <Text className="text-slate-300 text-xs mt-1">We welcome partners, donors, and new members.</Text>
+      <Section tone="royal" tight>
+        <View className="gap-6 md:flex-row md:items-center md:justify-between">
+          <View className="md:flex-1">
+            <SectionHeading title="Partner with us" intro="We welcome partners, donors and new members who share our commitment to service." onDark />
+          </View>
+          <View className="flex-row">
+            <CTAButton label="Get in Touch" variant="light" onPress={() => goMore('Contact')} />
+          </View>
         </View>
-        <ArrowRight size={18} color={colors.white} />
-      </Pressable>
-
-      <SiteFooter />
-    </ScreenScroll>
+      </Section>
+    </SitePage>
   );
 }

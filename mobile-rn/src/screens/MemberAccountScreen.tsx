@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { User as UserIcon, Clock, XCircle, ShieldCheck, Camera, AlertTriangle, Check, ImagePlus, CalendarDays, Award, Send } from 'lucide-react-native';
+import { User as UserIcon, Clock, XCircle, ShieldCheck, Camera, AlertTriangle, Check, ImagePlus, CalendarDays, Award, Send, Images, HandHeart, Newspaper } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import {
   MemberProfile,
@@ -21,7 +21,7 @@ import {
 import { getMyAttendanceHistory, getEvents, hasMemberRsvped, requestOfficerRole, getMyRoleRequest, OFFICER_ROLE_LABELS } from '../lib/service';
 import { AttendanceRecord, ClubEvent, RoleRequest } from '../types';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { ScreenScroll, PrimaryButton, TextField, Card, Badge, LoadingBlock } from '../components/ui';
+import { ScreenScroll, PrimaryButton, TextField, Card, Badge, LoadingBlock, LinkRow } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MemberAccount'>;
@@ -31,7 +31,7 @@ type ViewState = 'loading' | 'auth' | 'choose-kind' | 'dashboard';
 // routed by membership_status (pending/approved/rejected/guest). Separate
 // from the existing Rotary-ID+PIN Member Portal (MemberLoginScreen) --
 // this is an additive, parallel system per the brief, not a replacement.
-export default function MemberAccountScreen({}: Props) {
+export default function MemberAccountScreen({ navigation }: Props) {
   const [view, setView] = useState<ViewState>('loading');
   const [profile, setProfile] = useState<MemberProfile | null>(null);
 
@@ -417,6 +417,14 @@ export default function MemberAccountScreen({}: Props) {
                 available.
               </Text>
             )}
+          </View>
+
+          {/* Member features that are no longer in the public site navigation. */}
+          <View className="gap-2">
+            <LinkRow icon={CalendarDays} label="Meetings & events" sublabel="Calendar, RSVPs and meeting check-in" onPress={() => navigation.navigate('Tabs', { screen: 'EventsTab' } as any)} />
+            <LinkRow icon={Images} label="Photo gallery" onPress={() => navigation.navigate('Tabs', { screen: 'MoreTab', params: { screen: 'ClubGallery' } } as any)} />
+            <LinkRow icon={HandHeart} label="Get involved" sublabel="Volunteer and partner opportunities" onPress={() => navigation.navigate('Tabs', { screen: 'MoreTab', params: { screen: 'GetInvolved' } } as any)} />
+            <LinkRow icon={Newspaper} label="Club news feed" onPress={() => navigation.navigate('Tabs', { screen: 'MoreTab', params: { screen: 'SocialFeed' } } as any)} />
           </View>
 
           {error ? (

@@ -8,6 +8,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import OnboardingModal from './src/components/OnboardingModal';
 import UpdateAvailableBanner from './src/components/UpdateAvailableBanner';
 import { RootStackParamList } from './src/navigation/types';
+import { CLUB_NAME } from './src/theme';
 import './global.css';
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -38,10 +39,18 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <NavigationContainer ref={navigationRef}>
+      <NavigationContainer
+        ref={navigationRef}
+        documentTitle={{
+          formatter: (options, route) => {
+            const title = options?.title ?? route?.name;
+            return !title || title === CLUB_NAME ? CLUB_NAME : `${title} · ${CLUB_NAME}`;
+          }
+        }}
+      >
         <RootNavigator />
       </NavigationContainer>
-      <OnboardingModal />
+      {Platform.OS !== 'web' && <OnboardingModal />}
       <UpdateAvailableBanner />
     </SafeAreaProvider>
   );

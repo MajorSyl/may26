@@ -5,6 +5,9 @@ export const colors = {
   rotaryAzureDark: '#1D6FE0',
   rotaryGold: '#F7A81B',
   rotaryDark: '#0F1E4D',
+  rotaryRoyal: '#17458F',
+  rotaryRoyalDeep: '#0E2F63',
+  rotaryLink: '#0067C8',
   rotaryLight: '#F3F4F6',
   slate50: '#f8fafc',
   slate100: '#f1f5f9',
@@ -19,3 +22,5 @@ export const colors = {
   amber500: '#f59e0b',
   white: '#ffffff'
 };
+
+export const CLUB_NAME = 'Rotary Club of Freetown-Sunset';

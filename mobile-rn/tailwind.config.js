@@ -11,7 +11,14 @@ module.exports = {
         'rotary-gold': '#F7A81B',
         'rotary-dark': '#0F1E4D',
         'rotary-royal': '#17458F',
+        'rotary-royal-deep': '#0E2F63',
+        'rotary-link': '#0067C8',
+        'rotary-cream': '#FBF8F3',
+        'rotary-gold-soft': '#FEF3DC',
         'rotary-light': '#F3F4F6'
+      },
+      fontFamily: {
+        display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif']
       }
     }
   },

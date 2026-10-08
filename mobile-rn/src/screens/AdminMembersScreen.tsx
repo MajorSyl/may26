@@ -6,7 +6,7 @@ import { Search, X, Pencil, Trash2, AlertTriangle } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { UserProfile } from '../types';
 import { getUsers, adminUpdateMember, adminDeleteMember } from '../lib/service';
-import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton } from '../components/ui';
+import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminMembers'>;
@@ -19,7 +19,16 @@ export default function AdminMembersScreen({}: Props) {
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [editingUid, setEditingUid] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', role: 'Rotarian' as UserProfile['role'], classification: '', committee: '', clubPosition: '', bio: '' });
+  const [form, setForm] = useState({
+    name: '',
+    role: 'Rotarian' as UserProfile['role'],
+    classification: '',
+    committee: '',
+    clubPosition: '',
+    execOrder: '',
+    avatarUrl: '',
+    bio: ''
+  });
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -44,6 +53,8 @@ export default function AdminMembersScreen({}: Props) {
       classification: m.classification || '',
       committee: m.committee || '',
       clubPosition: m.clubPosition || '',
+      execOrder: m.execOrder != null ? String(m.execOrder) : '',
+      avatarUrl: m.avatarUrl || '',
       bio: m.bio || ''
     });
     setEditingUid(m.uid);
@@ -54,7 +65,8 @@ export default function AdminMembersScreen({}: Props) {
     setSaving(true);
     setError('');
     try {
-      await adminUpdateMember(editingUid, form);
+      const { execOrder, ...rest } = form;
+      await adminUpdateMember(editingUid, { ...rest, execOrder: execOrder ? parseInt(execOrder, 10) : null });
       setEditingUid(null);
       await load();
     } catch (err: any) {
@@ -114,6 +126,18 @@ export default function AdminMembersScreen({}: Props) {
             value={form.clubPosition}
             onChangeText={(v) => setForm({ ...form, clubPosition: v })}
             placeholder="e.g. Secretary, Treasurer"
+          />
+          <TextField
+            label="Executive Display Order (1 = first)"
+            value={form.execOrder}
+            onChangeText={(v) => setForm({ ...form, execOrder: v.replace(/\D/g, '').slice(0, 3) })}
+            keyboardType="number-pad"
+          />
+          <ImagePickerField
+            label="Photo (optional, shown for Executive members)"
+            imageUrl={form.avatarUrl}
+            onChange={(url) => setForm({ ...form, avatarUrl: url })}
+            folder="members"
           />
           <TextField label="Bio" value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline />
           <View className="flex-row flex-wrap gap-2">

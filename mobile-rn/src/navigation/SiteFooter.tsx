@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Platform, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Facebook, Instagram } from 'lucide-react-native';
+import { Facebook, Instagram, Mail } from 'lucide-react-native';
 import { getSiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
+import { ClubLockup } from './SiteHeader';
 import { colors } from '../theme';
 
+const LINKS: { label: string; tab: string; screen: string }[] = [
+  { label: 'Home', tab: 'HomeTab', screen: 'Home' },
+  { label: 'About', tab: 'HomeTab', screen: 'About' },
+  { label: 'Projects', tab: 'ProjectsTab', screen: 'Gallery' },
+  { label: 'Members', tab: 'MembersTab', screen: 'MembersDirectory' },
+  { label: 'Contact', tab: 'MoreTab', screen: 'Contact' }
+];
+
 // Two getParent() hops reach the root stack (AdminLogin); one hop reaches
-// a sibling tab (PrivacyPolicy under MoreTab).
+// the tab navigator.
 export default function SiteFooter() {
   const navigation = useNavigation<any>();
   const [settings, setSettings] = useState(DEFAULT_SITE_SETTINGS);
@@ -21,47 +30,81 @@ export default function SiteFooter() {
 
   if (Platform.OS !== 'web') return null;
 
-  const goAdminLogin = () => {
-    (navigation.getParent()?.getParent() as any)?.navigate('AdminLogin');
-  };
+  const goTab = (tab: string, screen: string) => (navigation.getParent()?.navigate as any)?.(tab, { screen });
+  const goAdminLogin = () => (navigation.getParent()?.getParent() as any)?.navigate('AdminLogin');
 
-  const goPrivacy = () => {
-    const parent = navigation.getParent();
-    if (!parent) return;
-    (parent.navigate as any)('MoreTab', { screen: 'PrivacyPolicy' });
-  };
+  const social = [
+    { label: 'Facebook', url: settings.socialFacebookUrl, Icon: Facebook },
+    { label: 'Instagram', url: settings.socialInstagramUrl, Icon: Instagram }
+  ].filter((s) => !!s.url);
 
   return (
-    <View className="items-center gap-3 pt-6 pb-2 border-t border-slate-200">
-      <View className="flex-row items-center gap-3">
-        <Pressable
-          onPress={() => Linking.openURL(settings.socialFacebookUrl)}
-          accessibilityLabel="Facebook"
-          accessibilityRole="link"
-          className="w-9 h-9 rounded-full bg-white border border-slate-200 items-center justify-center hover:border-slate-300"
-        >
-          <Facebook size={16} color={colors.slate600} />
-        </Pressable>
-        <Pressable
-          onPress={() => Linking.openURL(settings.socialInstagramUrl)}
-          accessibilityLabel="Instagram"
-          accessibilityRole="link"
-          className="w-9 h-9 rounded-full bg-white border border-slate-200 items-center justify-center hover:border-slate-300"
-        >
-          <Instagram size={16} color={colors.slate600} />
-        </Pressable>
-      </View>
-      <Text className="text-[11px] text-slate-400 text-center">
-        Rotary Club of Freetown-Sunset &middot; Rotary District 9101 &middot; Create Lasting Impact
-      </Text>
-      <View className="flex-row items-center gap-4">
-        <Pressable onPress={goPrivacy}>
-          <Text className="text-[11px] font-semibold text-slate-400 hover:text-slate-600">Privacy Policy</Text>
-        </Pressable>
-        <View className="w-1 h-1 rounded-full bg-slate-300" />
-        <Pressable onPress={goAdminLogin}>
-          <Text className="text-[11px] font-semibold text-slate-400 hover:text-slate-600">Admin</Text>
-        </Pressable>
+    <View className="w-full bg-rotary-royal-deep mt-auto">
+      <View className="w-full max-w-6xl mx-auto px-5 sm:px-8 pt-14 pb-8 gap-10">
+        <View className="gap-10 md:flex-row md:flex-wrap md:justify-between md:gap-x-12">
+          <View className="gap-4 md:max-w-xs">
+            <ClubLockup onDark />
+            <Text className="text-sm leading-6 text-white/75">
+              Professionals united in service, creating lasting impact in Freetown and across Sierra Leone.
+            </Text>
+            <View className="flex-row gap-3">
+              {social.map(({ label, url, Icon }) => (
+                <Pressable
+                  key={label}
+                  onPress={() => Linking.openURL(url)}
+                  accessibilityRole="link"
+                  accessibilityLabel={label}
+                  className="w-11 h-11 rounded-full border border-white/30 items-center justify-center hover:bg-white/10"
+                >
+                  <Icon size={18} color={colors.white} />
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View className="gap-3">
+            <Text className="text-xs font-bold uppercase tracking-[0.16em] text-rotary-gold">Explore</Text>
+            {LINKS.map((l) => (
+              <Pressable key={l.label} onPress={() => goTab(l.tab, l.screen)} accessibilityRole="link" className="min-h-[32px] justify-center">
+                <Text className="text-[15px] text-white/85 hover:text-white">{l.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View className="gap-3 md:max-w-xs">
+            <Text className="text-xs font-bold uppercase tracking-[0.16em] text-rotary-gold">Get in touch</Text>
+            {settings.contactEmail ? (
+              <Pressable
+                onPress={() => Linking.openURL(`mailto:${settings.contactEmail}`)}
+                accessibilityRole="link"
+                className="flex-row items-center gap-2 min-h-[32px]"
+              >
+                <Mail size={16} color={colors.white} />
+                <Text className="text-[15px] text-white/85">{settings.contactEmail}</Text>
+              </Pressable>
+            ) : null}
+            {settings.meetingSchedule ? (
+              <Text className="text-sm leading-6 text-white/75">
+                We meet {settings.meetingSchedule}
+                {settings.meetingLocation ? ` at ${settings.meetingLocation}` : ''}.
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        <View className="border-t border-white/15 pt-6 gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Text className="text-xs text-white/60">
+            © {new Date().getFullYear()} Rotary Club of Freetown-Sunset{settings.districtLabel ? ` · ${settings.districtLabel}` : ''}
+          </Text>
+          <View className="flex-row items-center gap-5">
+            <Pressable onPress={() => goTab('MoreTab', 'PrivacyPolicy')} accessibilityRole="link" className="min-h-[44px] justify-center">
+              <Text className="text-xs text-white/60 hover:text-white">Privacy Policy</Text>
+            </Pressable>
+            <Pressable onPress={goAdminLogin} accessibilityRole="link" className="min-h-[44px] justify-center">
+              <Text className="text-xs text-white/60 hover:text-white">Admin sign in</Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     </View>
   );

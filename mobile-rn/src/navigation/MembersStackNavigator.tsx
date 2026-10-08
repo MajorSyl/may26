@@ -13,11 +13,11 @@ export default function MembersStackNavigator() {
     <Stack.Navigator
       screenOptions={
         Platform.OS === 'web'
-          ? { header: () => <SiteHeader /> }
+          ? { header: ({ route }) => <SiteHeader routeName={route.name} /> }
           : { headerTintColor: colors.rotaryAzure, headerTitleStyle: { fontWeight: '700' } }
       }
     >
-      <Stack.Screen name="MembersDirectory" component={MembersDirectoryScreen} options={{ title: 'Members Directory' }} />
+      <Stack.Screen name="MembersDirectory" component={MembersDirectoryScreen} options={{ title: 'Members' }} />
     </Stack.Navigator>
   );
 }

@@ -18,7 +18,7 @@ export default function WhatIsRotaryScreen() {
   }, []);
 
   return (
-    <ScreenScroll>
+    <ScreenScroll footer>
       <View className="items-center gap-3">
         <Badge label="Global Movement" />
         <Text className="text-3xl font-extrabold text-slate-800 text-center">The 7 Areas of Focus</Text>

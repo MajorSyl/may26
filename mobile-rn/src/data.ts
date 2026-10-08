@@ -143,23 +143,19 @@ export const OBJECTS_OF_ROTARY = [
   'The advancement of international understanding, goodwill, and peace through a world fellowship of business and professional persons united in the ideal of service.'
 ];
 
+// Short labels for compact layouts; the official wording is OBJECTS_OF_ROTARY.
+export const OBJECTS_SHORT = [
+  'Acquaintance as an opportunity for service',
+  'High ethical standards in business and professions',
+  'Service in personal, business and community life',
+  'International understanding, goodwill and peace'
+];
+
 export const FOUR_WAY_TEST = [
-  { num: 1, q: 'Is it the TRUTH?', desc: 'We advocate for honesty and clarity in our reporting and communications.' },
-  {
-    num: 2,
-    q: 'Is it FAIR to all concerned?',
-    desc: 'We consult, listen, and partner with local community committees to guarantee equal resource distribution without bias.'
-  },
-  {
-    num: 3,
-    q: 'Will it build GOODWILL and BETTER FRIENDSHIPS?',
-    desc: 'We bridge lines of profession and origin. Weekly meetings foster lifelong, collaborative friends unified by service.'
-  },
-  {
-    num: 4,
-    q: 'Will it be BENEFICIAL to all concerned?',
-    desc: 'Our projects must leave a permanent, self-sustaining positive health, economic, or physical impact in Sierra Leone.'
-  }
+  { num: 1, q: 'Is it the TRUTH?' },
+  { num: 2, q: 'Is it FAIR to all concerned?' },
+  { num: 3, q: 'Will it build GOODWILL and BETTER FRIENDSHIPS?' },
+  { num: 4, q: 'Will it be BENEFICIAL to all concerned?' }
 ];
 
 export const ROTARY_FOCUS_AREAS = [

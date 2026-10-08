@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Alert } from '../lib/alert';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { X, Pencil, Trash2, AlertTriangle } from 'lucide-react-native';
+import { X, Pencil, Trash2, AlertTriangle, Star } from 'lucide-react-native';
 import { RootStackParamList } from '../navigation/types';
 import { Project } from '../types';
-import { getProjects, adminCreateProject, adminUpdateProject, adminDeleteProject, triggerNewsletterSend } from '../lib/service';
+import { getProjects, adminCreateProject, adminUpdateProject, adminDeleteProject, adminSetFeaturedProject, triggerNewsletterSend } from '../lib/service';
 import { ScreenScroll, ScreenTitle, Card, Badge, LoadingBlock, EmptyBlock, PrimaryButton, TextField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
@@ -106,6 +106,16 @@ export default function AdminProjectsScreen({}: Props) {
     }
   };
 
+  const handleToggleFeatured = async (p: Project) => {
+    setError('');
+    try {
+      await adminSetFeaturedProject(p.isFeatured ? null : p.id);
+      await load();
+    } catch (err: any) {
+      setError(err?.message || 'Could not update the featured project.');
+    }
+  };
+
   const handleDelete = (p: Project) => {
     Alert.alert('Delete Project', `Remove "${p.title}"? This can't be undone.`, [
       { text: 'Cancel', style: 'cancel' },
@@ -126,7 +136,10 @@ export default function AdminProjectsScreen({}: Props) {
 
   return (
     <ScreenScroll>
-      <ScreenTitle title="Projects" subtitle="Create, edit, or remove club projects." />
+      <ScreenTitle
+        title="Projects"
+        subtitle="Create, edit, or remove club projects. Tap the star to choose the one flagship project shown large on the homepage."
+      />
 
       {error ? (
         <View className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex-row items-center gap-2">
@@ -199,11 +212,15 @@ export default function AdminProjectsScreen({}: Props) {
             <Card key={p.id} className="gap-2">
               <View className="flex-row items-start justify-between gap-2">
                 <View className="flex-1 gap-1">
-                  <Badge label={p.status} />
+                  <View className="flex-row flex-wrap gap-1.5">
+                    <Badge label={p.status} />
+                    {p.isFeatured ? <Badge label="Featured on homepage" tone="gold" /> : null}
+                  </View>
                   <Text className="text-sm font-bold text-slate-800">{p.title}</Text>
                   <Text className="text-[11px] text-slate-400">{p.category} -- {p.year}</Text>
                 </View>
                 <View className="flex-row gap-2">
+                  <IconButton icon={Star} onPress={() => handleToggleFeatured(p)} color={p.isFeatured ? colors.rotaryGold : colors.slate400} />
                   <IconButton icon={Pencil} onPress={() => startEdit(p)} />
                   <IconButton icon={Trash2} onPress={() => handleDelete(p)} color={colors.rose600} />
                 </View>
