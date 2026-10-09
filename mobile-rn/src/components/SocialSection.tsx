@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, Linking, Platform } from 'react-native';
 import { Facebook, Instagram, ArrowUpRight } from 'lucide-react-native';
 import { SiteSettings, splitLines } from '../lib/service';
+import { SocialPost, getSocialPosts } from '../lib/social';
+import InstagramFeed from './InstagramFeed';
 import { colors } from '../theme';
 
 // Embeds need no access token: Facebook's Page Plugin renders the page
@@ -61,6 +63,16 @@ function FollowCard({
 }
 
 export default function SocialSection({ settings }: { settings: SiteSettings }) {
+  const [igPosts, setIgPosts] = useState<SocialPost[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    getSocialPosts(6, 'instagram').then((p) => active && setIgPosts(p));
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const fb = settings.socialFacebookUrl;
   const ig = settings.socialInstagramUrl;
   const igHandle = ig ? `@${ig.replace(/\/+$/, '').split('/').pop()}` : '';
@@ -71,6 +83,21 @@ export default function SocialSection({ settings }: { settings: SiteSettings }) 
   const fbEmbed = fb
     ? `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(fb)}&tabs=timeline&width=500&height=560&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`
     : null;
+
+  // Live Instagram posts take over the section once the sync has run;
+  // until then, embeds and follow cards stand in.
+  if (igPosts.length > 0) {
+    return (
+      <View className="gap-8">
+        <InstagramFeed posts={igPosts} profileUrl={ig} />
+        {fb ? (
+          <View className="md:w-1/2">
+            <FollowCard label="Facebook" handle="Rotary Club of Freetown-Sunset" url={fb} Icon={Facebook} color="#1877F2" />
+          </View>
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <View className="gap-6 lg:flex-row lg:items-start">

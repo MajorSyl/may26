@@ -91,7 +91,12 @@ export default function AdminSocialFeedScreen({}: Props) {
         facebookAccessToken: fbToken,
         facebookPageId: fbPageId
       });
-      setNotice('Credentials saved. Tap "Sync Now" to pull posts immediately.');
+      if (igToken || (fbToken && fbPageId)) {
+        await adminTriggerSocialSync();
+        setNotice('Saved and synced. New posts now appear on the website and refresh every hour.');
+      } else {
+        setNotice('Credentials saved.');
+      }
       await load();
     } catch (err: any) {
       setError(err?.message || 'Could not save credentials.');
@@ -173,10 +178,15 @@ export default function AdminSocialFeedScreen({}: Props) {
       <Card className="gap-4">
         <View className="flex-row items-center gap-2">
           <Instagram size={14} color={colors.rotaryAzure} />
-          <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Instagram (Business Account)</Text>
+          <Text className="text-xs font-bold uppercase tracking-wider text-slate-400">Instagram</Text>
         </View>
-        <TextField label="Access Token" value={igToken} onChangeText={setIgToken} placeholder="Long-lived access token" secureTextEntry />
-        <TextField label="Business Account ID" value={igAccountId} onChangeText={setIgAccountId} placeholder="17841400..." autoCapitalize="none" />
+        <Text className="text-[11px] text-slate-500 leading-relaxed -mt-2">
+          The club's Instagram must be a Professional (Business or Creator) account. In a Meta Developer app, add the
+          "Instagram API with Instagram login" product, add @rcfsunset as an Instagram tester or log in with it, and generate
+          an access token. Paste it here; it's renewed automatically every day after that.
+        </Text>
+        <TextField label="Access Token" value={igToken} onChangeText={setIgToken} placeholder="IGAA..." secureTextEntry />
+        <TextField label="Account ID (optional)" value={igAccountId} onChangeText={setIgAccountId} placeholder="Leave blank to use the token's own account" autoCapitalize="none" />
       </Card>
 
       <Card className="gap-4">

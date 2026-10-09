@@ -12,6 +12,8 @@ export interface SocialPost {
   permalink: string;
   mediaType: string | null;
   postedAt: string | null;
+  // A copy stored in the club's own storage; for videos this is the thumbnail.
+  imageUrl: string | null;
 }
 
 function mapPostRow(d: any): SocialPost {
@@ -22,7 +24,8 @@ function mapPostRow(d: any): SocialPost {
     mediaUrl: d.media_url,
     permalink: d.permalink,
     mediaType: d.media_type,
-    postedAt: d.posted_at
+    postedAt: d.posted_at,
+    imageUrl: d.image_url || (d.media_type !== 'VIDEO' ? d.media_url : null)
   };
 }
 

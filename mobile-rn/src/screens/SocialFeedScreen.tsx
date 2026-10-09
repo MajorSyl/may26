@@ -60,9 +60,9 @@ export default function SocialFeedScreen() {
               onPress={() => Linking.openURL(p.permalink)}
               className="bg-white border border-slate-200 rounded-3xl overflow-hidden md:w-[48%] lg:w-[31%]"
             >
-              {p.mediaUrl ? (
+              {p.imageUrl ? (
                 <View className="w-full h-48 bg-slate-100">
-                  <Image source={{ uri: p.mediaUrl }} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
+                  <Image source={{ uri: p.imageUrl }} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
                 </View>
               ) : null}
               <View className="p-4 gap-2">
