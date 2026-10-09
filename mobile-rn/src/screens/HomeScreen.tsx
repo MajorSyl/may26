@@ -70,23 +70,26 @@ export default function HomeScreen({ navigation }: Props) {
         />
       </View>
 
-      <Section tight className="rcfs-rise">
-        <View className="gap-6 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
-          <View className="gap-4 lg:flex-1">
-            <Text
-              accessibilityRole="header"
-              className="font-display text-[36px] leading-[42px] sm:text-5xl sm:leading-[56px] lg:text-[56px] lg:leading-[64px] font-extrabold text-rotary-royal-deep"
-            >
-              Rotary Club of Freetown{'‑'}Sunset
+      <Section tight>
+        <View className="items-center gap-7 sm:gap-8 w-full max-w-3xl mx-auto py-2 sm:py-4">
+          <Text accessibilityRole="header" className="text-center">
+            <Text className="rcfs-line rcfs-welcome font-display text-lg leading-7 sm:text-2xl sm:leading-9 font-medium text-slate-500">
+              Welcome to the
+            </Text>{' '}
+            <Text className="rcfs-line rcfs-title font-display mt-1 text-[34px] leading-[40px] sm:text-5xl sm:leading-[58px] lg:text-[60px] lg:leading-[68px] font-extrabold text-rotary-royal-deep">
+              Rotary Club of Freetown{'\u2011'}Sunset
             </Text>
-            <View className="flex-row items-center gap-3">
-              <View className="w-10 h-1 rounded-full bg-rotary-gold" />
-              <Text className="font-display text-lg sm:text-xl font-extrabold italic uppercase tracking-wide text-rotary-royal">
-                Create Lasting Impact
-              </Text>
-            </View>
+          </Text>
+
+          <View className="flex-row items-center justify-center gap-3 sm:gap-4">
+            <View className="rcfs-rule-l w-6 sm:w-12 h-[3px] rounded-full bg-rotary-gold" />
+            <Text className="rcfs-theme shrink text-sm sm:text-lg font-bold italic uppercase tracking-[0.12em] sm:tracking-[0.2em] text-rotary-royal text-center">
+              Create Lasting Impact
+            </Text>
+            <View className="rcfs-rule-r w-6 sm:w-12 h-[3px] rounded-full bg-rotary-gold" />
           </View>
-          <View className="flex-col sm:flex-row gap-3">
+
+          <View className="rcfs-ctas w-full sm:w-auto flex-col sm:flex-row gap-3 pt-1">
             <CTAButton label="Our Projects" onPress={() => goTab('ProjectsTab', 'Gallery')} />
             <CTAButton label="Get in Touch" variant="secondary" onPress={() => goTab('MoreTab', 'Contact')} />
           </View>

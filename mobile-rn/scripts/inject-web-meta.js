@@ -113,9 +113,18 @@ const metaTags = `
       html, body, #root, #root * { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
       #root .font-display, #root .font-display * { font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif !important; letter-spacing: -0.015em; }
       body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+      #root .rcfs-line { display: block; }
       @media (prefers-reduced-motion: no-preference) {
         @keyframes rcfs-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        @keyframes rcfs-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes rcfs-slide { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: none; } }
         #root .rcfs-rise { animation: rcfs-rise 600ms cubic-bezier(.2,.7,.2,1) both; }
+        #root .rcfs-welcome { animation: rcfs-rise 600ms cubic-bezier(.2,.7,.2,1) 100ms both; }
+        #root .rcfs-title { animation: rcfs-rise 700ms cubic-bezier(.2,.7,.2,1) 250ms both; }
+        #root .rcfs-rule-l { transform-origin: right center; animation: rcfs-grow 600ms cubic-bezier(.2,.7,.2,1) 800ms both; }
+        #root .rcfs-rule-r { transform-origin: left center; animation: rcfs-grow 600ms cubic-bezier(.2,.7,.2,1) 800ms both; }
+        #root .rcfs-theme { animation: rcfs-slide 800ms cubic-bezier(.2,.7,.2,1) 900ms both; }
+        #root .rcfs-ctas { animation: rcfs-rise 600ms cubic-bezier(.2,.7,.2,1) 1300ms both; }
       }
     </style>
     <meta property="og:type" content="website" />
