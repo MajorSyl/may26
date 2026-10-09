@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Droplets, Baby, BookOpen, Heart, Users, Sprout, TrendingUp, ShieldAlert, Sparkles, CalendarDays, MapPin, Compass, Target } from 'lucide-react-native';
+import { Droplets, Baby, BookOpen, Heart, Users, Sprout, TrendingUp, ShieldAlert, HandHeart, CalendarDays, MapPin, Compass, Target } from 'lucide-react-native';
 import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, splitLines } from '../lib/service';
 import { OBJECTS_OF_ROTARY, FOUR_WAY_TEST } from '../data';
 import SafeImage from '../components/SafeImage';
@@ -19,7 +19,7 @@ function iconForArea(area: string) {
   if (a.includes('economic')) return TrendingUp;
   if (a.includes('peace')) return ShieldAlert;
   if (a.includes('community') || a.includes('welfare')) return Users;
-  return Sparkles;
+  return HandHeart;
 }
 
 export default function AboutScreen() {

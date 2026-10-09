@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { ArrowRight, FolderKanban, Sparkles } from 'lucide-react-native';
+import { ArrowRight, FolderKanban } from 'lucide-react-native';
 import { Project } from '../types';
 import SafeImage from './SafeImage';
 import { colors } from '../theme';
@@ -51,9 +51,8 @@ export default function ProjectCard({ project, onPress, compact }: { project: Pr
           </Text>
         ) : null}
         {project.impact ? (
-          <View className="flex-row gap-2">
-            <Sparkles size={15} color={colors.rotaryRoyal} style={{ marginTop: 3 }} />
-            <Text className="flex-1 text-sm leading-6 font-medium text-rotary-royal-deep" numberOfLines={2}>
+          <View className="border-l-2 border-rotary-gold pl-3">
+            <Text className="text-sm leading-6 font-medium text-rotary-royal-deep" numberOfLines={2}>
               {project.impact}
             </Text>
           </View>
