@@ -38,7 +38,7 @@ function useRestoreMemberAccountAfterGoogleRedirect() {
 // from this private path. The URL is reset to "/" right away so the path
 // doesn't linger in the address bar or history. Access is still enforced
 // by Supabase auth plus the admins table, not by this path.
-const ADMIN_PATH = '/rcfs-admin-8e21fba8';
+const ADMIN_PATH = '/backend';
 
 function useOpenAdminLoginFromPrivatePath() {
   useEffect(() => {
