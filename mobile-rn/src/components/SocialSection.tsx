@@ -6,10 +6,9 @@ import { SocialPost, getSocialPosts } from '../lib/social';
 import InstagramFeed from './InstagramFeed';
 import { colors } from '../theme';
 
-// Embeds need no access token: Facebook's Page Plugin renders the page
-// timeline, and Instagram's per-post embed renders any public post an admin
-// lists in Settings. A live auto-updating Instagram grid would need a Meta
-// API token.
+// No Facebook timeline embed: the club's Facebook is a profile, and
+// Facebook's Page Plugin only renders Pages (profiles show a broken frame).
+// Instagram's per-post embed needs no token for posts listed in Settings.
 function instagramEmbedUrl(url: string): string | null {
   const m = url.match(/instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
   return m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed` : null;
@@ -53,7 +52,7 @@ function FollowCard({
       </View>
       <View className="flex-1">
         <Text className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</Text>
-        <Text className="text-base font-semibold text-rotary-royal-deep" numberOfLines={1}>
+        <Text className="text-base font-semibold text-rotary-royal-deep" numberOfLines={2}>
           {handle}
         </Text>
       </View>
@@ -80,9 +79,6 @@ export default function SocialSection({ settings }: { settings: SiteSettings }) 
     .map(instagramEmbedUrl)
     .filter((u): u is string => !!u)
     .slice(0, 3);
-  const fbEmbed = fb
-    ? `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(fb)}&tabs=timeline&width=500&height=560&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`
-    : null;
 
   // Live Instagram posts take over the section once the sync has run;
   // until then, embeds and follow cards stand in.
@@ -100,16 +96,20 @@ export default function SocialSection({ settings }: { settings: SiteSettings }) 
   }
 
   return (
-    <View className="gap-6 lg:flex-row lg:items-start">
-      {fbEmbed && Platform.OS === 'web' ? (
-        <View className="w-full lg:w-[500px] bg-white border border-slate-200 rounded-2xl overflow-hidden">
-          <Frame src={fbEmbed} title="Rotary Club of Freetown-Sunset on Facebook" height={560} />
-        </View>
-      ) : null}
-
-      <View className="flex-1 gap-4">
-        {fb ? <FollowCard label="Facebook" handle="Rotary Club of Freetown-Sunset" url={fb} Icon={Facebook} color="#1877F2" /> : null}
-        {ig ? <FollowCard label="Instagram" handle={igHandle} url={ig} Icon={Instagram} color="#C13584" /> : null}
+    <View className="gap-6">
+      <View className="gap-4 md:flex-row">
+        {fb ? (
+          <View className="md:flex-1">
+            <FollowCard label="Facebook" handle="Rotary Club of Freetown-Sunset" url={fb} Icon={Facebook} color="#1877F2" />
+          </View>
+        ) : null}
+        {ig ? (
+          <View className="md:flex-1">
+            <FollowCard label="Instagram" handle={igHandle} url={ig} Icon={Instagram} color="#C13584" />
+          </View>
+        ) : null}
+      </View>
+      <View className="gap-4">
         {igEmbeds.length > 0 ? (
           <View className="gap-4 sm:flex-row sm:flex-wrap">
             {igEmbeds.map((src) => (
