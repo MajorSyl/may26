@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -47,7 +47,9 @@ export default function MoreScreen({ navigation }: Props) {
       <View className="h-px bg-slate-200 my-2" />
 
       <MenuRow icon={UserPlus} label="Member Sign In" onPress={() => goToRootScreen('MemberAccount')} />
-      <MenuRow icon={ShieldCheck} label="Admin Sign In" onPress={() => goToRootScreen('AdminLogin')} />
+      {Platform.OS !== 'web' ? (
+        <MenuRow icon={ShieldCheck} label="Admin Sign In" onPress={() => goToRootScreen('AdminLogin')} />
+      ) : null}
     </ScrollView>
   );
 }

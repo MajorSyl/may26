@@ -14,8 +14,8 @@ const LINKS: { label: string; tab: string; screen: string }[] = [
   { label: 'Contact', tab: 'MoreTab', screen: 'Contact' }
 ];
 
-// Two getParent() hops reach the root stack (AdminLogin); one hop reaches
-// the tab navigator.
+// One getParent() hop reaches the tab navigator. Admin sign-in is
+// deliberately not linked here (see ADMIN_PATH in App.tsx).
 export default function SiteFooter() {
   const navigation = useNavigation<any>();
   const [settings, setSettings] = useState(DEFAULT_SITE_SETTINGS);
@@ -31,7 +31,6 @@ export default function SiteFooter() {
   if (Platform.OS !== 'web') return null;
 
   const goTab = (tab: string, screen: string) => (navigation.getParent()?.navigate as any)?.(tab, { screen });
-  const goAdminLogin = () => (navigation.getParent()?.getParent() as any)?.navigate('AdminLogin');
 
   const social = [
     { label: 'Facebook', url: settings.socialFacebookUrl, Icon: Facebook },
@@ -99,9 +98,6 @@ export default function SiteFooter() {
           <View className="flex-row items-center gap-5">
             <Pressable onPress={() => goTab('MoreTab', 'PrivacyPolicy')} accessibilityRole="link" className="min-h-[44px] justify-center">
               <Text className="text-xs text-white/60 hover:text-white">Privacy Policy</Text>
-            </Pressable>
-            <Pressable onPress={goAdminLogin} accessibilityRole="link" className="min-h-[44px] justify-center">
-              <Text className="text-xs text-white/60 hover:text-white">Admin sign in</Text>
             </Pressable>
           </View>
         </View>

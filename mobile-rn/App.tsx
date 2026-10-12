@@ -34,8 +34,31 @@ function useRestoreMemberAccountAfterGoogleRedirect() {
   }, []);
 }
 
+// Admin sign-in is not linked anywhere on the public site; it opens only
+// from this private path. The URL is reset to "/" right away so the path
+// doesn't linger in the address bar or history. Access is still enforced
+// by Supabase auth plus the admins table, not by this path.
+const ADMIN_PATH = '/rcfs-admin-8e21fba8';
+
+function useOpenAdminLoginFromPrivatePath() {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (window.location.pathname.replace(/\/+$/, '') !== ADMIN_PATH) return;
+    window.history.replaceState(null, '', '/');
+    const tryNavigate = () => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('AdminLogin');
+      } else {
+        setTimeout(tryNavigate, 50);
+      }
+    };
+    tryNavigate();
+  }, []);
+}
+
 export default function App() {
   useRestoreMemberAccountAfterGoogleRedirect();
+  useOpenAdminLoginFromPrivatePath();
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
