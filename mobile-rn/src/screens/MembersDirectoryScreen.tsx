@@ -20,11 +20,52 @@ function initialsOf(name: string): string {
     .toUpperCase();
 }
 
-const isExecutive = (m: UserProfile) => !!m.clubPosition || m.role === 'President' || m.committee === 'Executive Board';
+// exec_order 1-9 is the Board of Directors, 10+ the Committee Chairs.
+const CHAIRS_FROM = 10;
+const isExecutive = (m: UserProfile) => !!m.clubPosition;
+const isBoard = (m: UserProfile) => (m.execOrder ?? 999) < CHAIRS_FROM;
 
 function execSort(a: UserProfile, b: UserProfile): number {
-  const rank = (m: UserProfile) => (m.execOrder != null ? m.execOrder : m.role === 'President' ? 0 : 999);
-  return rank(a) - rank(b) || a.name.localeCompare(b.name);
+  return (a.execOrder ?? 999) - (b.execOrder ?? 999) || a.name.localeCompare(b.name);
+}
+
+function LeaderCard({ member }: { member: UserProfile }) {
+  return (
+    <View className="h-full items-center gap-3 bg-white border border-slate-200 rounded-2xl p-5">
+      {member.avatarUrl ? (
+        <Image
+          source={{ uri: member.avatarUrl }}
+          accessibilityLabel={member.name}
+          style={{ width: 112, height: 112, borderRadius: 56 }}
+          resizeMode="cover"
+        />
+      ) : (
+        <View className="w-28 h-28 rounded-full bg-rotary-royal items-center justify-center">
+          <Text className="font-display text-2xl font-bold text-white">{initialsOf(member.name)}</Text>
+        </View>
+      )}
+      <View className="items-center gap-1">
+        <Text className="text-base font-semibold text-rotary-royal-deep text-center">{member.name}</Text>
+        <Text className="text-sm font-medium text-rotary-link text-center">{member.clubPosition}</Text>
+      </View>
+    </View>
+  );
+}
+
+function LeaderGroup({ title, members }: { title: string; members: UserProfile[] }) {
+  if (members.length === 0) return null;
+  return (
+    <View className="gap-4">
+      <Text className="font-display text-xl font-bold text-rotary-royal-deep">{title}</Text>
+      <View className="flex-row flex-wrap -mx-2">
+        {members.map((m) => (
+          <View key={m.uid} className="w-1/2 md:w-1/3 lg:w-1/4 p-2">
+            <LeaderCard member={m} />
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 function MemberLoginButton({ onPress }: { onPress: () => void }) {
@@ -103,31 +144,8 @@ export default function MembersDirectoryScreen() {
             <View className="gap-8">
               <SectionHeading eyebrow="Leadership" title={term ? `${term} Executive` : 'Club Executive'} />
               {!term ? <PlaceholderNote label="executive term (set in Admin → Settings)" /> : null}
-              <View className="flex-row flex-wrap -mx-2">
-                {executive.map((m) => (
-                  <View key={m.uid} className="w-full sm:w-1/2 lg:w-1/3 p-2">
-                    <View className="h-full flex-row items-center gap-4 bg-white border border-slate-200 rounded-2xl p-4">
-                      {m.avatarUrl ? (
-                        <Image source={{ uri: m.avatarUrl }} accessibilityLabel={m.name} style={{ width: 56, height: 56, borderRadius: 28 }} resizeMode="cover" />
-                      ) : (
-                        <View className="w-14 h-14 rounded-full bg-rotary-royal items-center justify-center">
-                          <Text className="font-display text-base font-bold text-white">{initialsOf(m.name)}</Text>
-                        </View>
-                      )}
-                      <View className="flex-1 gap-1">
-                        <Text className="text-base font-semibold text-rotary-royal-deep">{m.name}</Text>
-                        {m.clubPosition ? (
-                          <Text className="text-sm font-medium text-rotary-link">{m.clubPosition}</Text>
-                        ) : m.role === 'President' ? (
-                          <Text className="text-sm font-medium text-rotary-link">President</Text>
-                        ) : (
-                          <PlaceholderNote label="position" />
-                        )}
-                      </View>
-                    </View>
-                  </View>
-                ))}
-              </View>
+              <LeaderGroup title="Board of Directors" members={executive.filter(isBoard)} />
+              <LeaderGroup title="Committee Chairs" members={executive.filter((m) => !isBoard(m))} />
             </View>
           </Section>
 

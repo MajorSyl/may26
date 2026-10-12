@@ -128,7 +128,7 @@ export default function AdminMembersScreen({}: Props) {
             placeholder="e.g. Secretary, Treasurer"
           />
           <TextField
-            label="Executive Display Order (1 = first)"
+            label="Executive Display Order (1–9 = Board of Directors, 10+ = Committee Chairs)"
             value={form.execOrder}
             onChangeText={(v) => setForm({ ...form, execOrder: v.replace(/\D/g, '').slice(0, 3) })}
             keyboardType="number-pad"
