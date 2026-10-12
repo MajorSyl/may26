@@ -35,35 +35,26 @@ function useRestoreMemberAccountAfterGoogleRedirect() {
 }
 
 // Admin sign-in is not linked anywhere on the public site; it opens only
-// from this private path. The URL is reset to "/" right away so the path
-// doesn't linger in the address bar or history. Access is still enforced
-// by Supabase auth plus the admins table, not by this path.
+// from this private path, straight onto the sign-in screen (Back returns to
+// the homepage). Access is still enforced by Supabase auth plus the admins
+// table, not by this path.
 const ADMIN_PATH = '/rcfs-backend';
 
-function useOpenAdminLoginFromPrivatePath() {
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-    if (window.location.pathname.replace(/\/+$/, '') !== ADMIN_PATH) return;
-    window.history.replaceState(null, '', '/');
-    const tryNavigate = () => {
-      if (navigationRef.isReady()) {
-        navigationRef.navigate('AdminLogin');
-      } else {
-        setTimeout(tryNavigate, 50);
-      }
-    };
-    tryNavigate();
-  }, []);
-}
+const opensAdminLogin =
+  Platform.OS === 'web' && typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === ADMIN_PATH;
+
+const adminLoginInitialState = opensAdminLogin
+  ? { index: 1, routes: [{ name: 'Tabs' as const }, { name: 'AdminLogin' as const }] }
+  : undefined;
 
 export default function App() {
   useRestoreMemberAccountAfterGoogleRedirect();
-  useOpenAdminLoginFromPrivatePath();
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <NavigationContainer
         ref={navigationRef}
+        initialState={adminLoginInitialState}
         documentTitle={{
           formatter: (options, route) => {
             const title = options?.title ?? route?.name;
