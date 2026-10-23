@@ -25,27 +25,34 @@ export default function GalleryScreen({ navigation }: Props) {
   const goMore = (screen: string) => (navigation.getParent()?.navigate as any)?.('MoreTab', { screen });
   const ongoing = projects.filter((p) => p.status !== 'Completed');
   const completed = projects.filter((p) => p.status === 'Completed');
+  const years = Array.from(new Set(completed.map((p) => p.year))).sort((a, b) => b - a);
 
-  const group = (title: string, list: Project[], tone: 'white' | 'cream') =>
-    list.length > 0 ? (
-      <Section tone={tone}>
-        <View className="gap-8">
-          <View className="flex-row items-baseline gap-3">
-            <Text accessibilityRole="header" className="font-display text-2xl sm:text-3xl font-extrabold text-rotary-royal-deep">
-              {title}
-            </Text>
-            <Text className="text-base font-semibold text-slate-500">{list.length}</Text>
-          </View>
-          <View className="flex-row flex-wrap -mx-3">
-            {list.map((project) => (
-              <View key={project.id} className="w-full sm:w-1/2 lg:w-1/3 p-3">
-                <ProjectCard project={project} onPress={() => navigation.navigate('ProjectDetails', { project })} />
-              </View>
-            ))}
-          </View>
+  const grid = (list: Project[]) => (
+    <View className="flex-row flex-wrap -mx-3">
+      {list.map((project) => (
+        <View key={project.id} className="w-full sm:w-1/2 lg:w-1/3 p-3">
+          <ProjectCard project={project} onPress={() => navigation.navigate('ProjectDetails', { project })} />
         </View>
-      </Section>
-    ) : null;
+      ))}
+    </View>
+  );
+
+  const heading = (title: string, count: number, size: 'lg' | 'md' = 'lg') => (
+    <View className="flex-row items-center gap-3">
+      <Text
+        accessibilityRole="header"
+        className={`font-display font-extrabold text-rotary-royal-deep ${size === 'lg' ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'}`}
+      >
+        {title}
+      </Text>
+      <View className="px-2.5 py-0.5 rounded-full bg-slate-100">
+        <Text className="text-xs font-bold text-slate-600">
+          {count} {count === 1 ? 'project' : 'projects'}
+        </Text>
+      </View>
+      <View className="flex-1 h-px bg-slate-200" />
+    </View>
+  );
 
   return (
     <SitePage>
@@ -70,8 +77,35 @@ export default function GalleryScreen({ navigation }: Props) {
         </Section>
       ) : (
         <>
-          {group('Ongoing projects', ongoing, 'white')}
-          {group('Completed projects', completed, ongoing.length > 0 ? 'cream' : 'white')}
+          {ongoing.length > 0 ? (
+            <Section>
+              <View className="gap-8">
+                {heading('Ongoing projects', ongoing.length)}
+                {grid(ongoing)}
+              </View>
+            </Section>
+          ) : null}
+          {completed.length > 0 ? (
+            <Section tone={ongoing.length > 0 ? 'cream' : 'white'}>
+              <View className="gap-12">
+                <View className="gap-4">
+                  {heading('Completed projects', completed.length)}
+                  {years.length > 1 ? (
+                    <Text className="text-sm text-slate-500">Newest first · {years.join(' · ')}</Text>
+                  ) : null}
+                </View>
+                {years.map((year) => {
+                  const list = completed.filter((p) => p.year === year);
+                  return (
+                    <View key={year} className="gap-6">
+                      {heading(String(year), list.length, 'md')}
+                      {grid(list)}
+                    </View>
+                  );
+                })}
+              </View>
+            </Section>
+          ) : null}
         </>
       )}
 

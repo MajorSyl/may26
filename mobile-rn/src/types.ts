@@ -58,6 +58,7 @@ export interface Project {
   category: string;
   description: string;
   year: number;
+  eventDate?: string;
   impact?: string;
   partners?: string[];
   isFeatured?: boolean;

@@ -137,6 +137,7 @@ export const getProjects = async (): Promise<Project[]> => {
           .filter((d: any) => d.id !== 'settings_site_config')
           .map((d: any) => ({
             ...d,
+            eventDate: d.event_date || undefined,
             imageUrl: d.imageUrl || d.imageurl,
             partners: Array.isArray(d.partners) ? d.partners : [],
             isFeatured: !!d.is_featured,
@@ -144,7 +145,9 @@ export const getProjects = async (): Promise<Project[]> => {
             studentsSponsored: d.students_sponsored || 0,
             fundsRaised: Number(d.funds_raised) || 0,
             peopleImpacted: d.people_impacted || 0
-          })) as Project[];
+          }))
+          // Newest first: by year, then by event date within the year (undated last).
+          .sort((a: any, b: any) => b.year - a.year || (b.eventDate || '').localeCompare(a.eventDate || '')) as Project[];
       }
       return [];
     } catch (err) {
