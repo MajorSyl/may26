@@ -14,21 +14,22 @@ const NAV_LINKS: { label: string; tab: string; screen?: string; routes: string[]
 
 const DRAWER_WIDTH = 300;
 
+// Official club logo (Rotary wordmark + "Club of Freetown-Sunset" + wheel),
+// supplied Oct 2026. The white variant swaps the blue text to white for dark
+// backgrounds (footer); the gold wheel is unchanged.
+const LOGO_ASPECT = 1181 / 286;
+
 export function ClubLockup({ compact, onDark }: { compact?: boolean; onDark?: boolean }) {
   const text = onDark ? 'text-white' : 'text-rotary-royal';
+  const height = compact ? 34 : 42;
   return (
     <View className="flex-row items-center gap-3">
-      <View>
-        <View className="flex-row items-center gap-1.5">
-          <Text className={`font-display text-[22px] leading-[24px] font-extrabold ${text}`}>Rotary</Text>
-          <Image
-            source={require('../assets/rotary-wheel.png')}
-            style={{ width: 24, height: 24 }}
-            accessibilityLabel="Rotary wheel"
-          />
-        </View>
-        <Text className={`text-[11px] leading-[14px] font-semibold tracking-wide mt-0.5 ${text}`}>Club of Freetown-Sunset</Text>
-      </View>
+      <Image
+        source={onDark ? require('../assets/rcfs-logo-white.png') : require('../assets/rcfs-logo.png')}
+        style={{ height, width: Math.round(height * LOGO_ASPECT) }}
+        resizeMode="contain"
+        accessibilityLabel="Rotary Club of Freetown-Sunset"
+      />
       {!compact ? (
         <View className={`hidden md:flex border-l pl-3 ${onDark ? 'border-white/40' : 'border-slate-300'}`}>
           {['Create', 'Lasting', 'Impact'].map((w) => (
