@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
-import { PublicNewsletterIssue, getNewsletterIssues } from '../lib/service';
+import { PublicNewsletterIssue, getNewsletterIssues, getSiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
+import SupportClub from '../components/SupportClub';
 import { LoadingBlock } from '../components/ui';
 import { SitePage, Section, SectionHeading } from '../components/site';
 import { FeaturedIssue, IssueRow, SubscribeBox } from '../components/Newsletter';
@@ -9,9 +10,11 @@ import { logPageView } from '../lib/analytics';
 export default function NewsletterScreen() {
   const [issues, setIssues] = useState<PublicNewsletterIssue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState(DEFAULT_SITE_SETTINGS);
 
   useEffect(() => {
     logPageView('newsletter');
+    getSiteSettings().then(setSettings);
     getNewsletterIssues()
       .then(setIssues)
       .finally(() => setLoading(false));
@@ -68,6 +71,10 @@ export default function NewsletterScreen() {
             </View>
           ) : null}
         </View>
+      </Section>
+
+      <Section tone="cream">
+        <SupportClub contactEmail={settings.contactEmail} />
       </Section>
     </SitePage>
   );
