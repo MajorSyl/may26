@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AlertTriangle, CheckCircle, FileText, Clock } from 'lucide-react-native';
+import { AlertTriangle, CheckCircle, FileText, Clock, Trash2 } from 'lucide-react-native';
+import { Alert } from '../lib/alert';
 import { RootStackParamList } from '../navigation/types';
-import { NewsletterIssue, adminListNewsletterIssues, adminCreateNewsletterIssue, adminSendNewsletterIssue } from '../lib/service';
-import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, PdfPickerField } from '../components/ui';
+import { NewsletterIssue, adminListNewsletterIssues, adminCreateNewsletterIssue, adminSendNewsletterIssue, adminDeleteNewsletterIssue } from '../lib/service';
+import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, PdfPickerField, IconButton } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminNewsletter'>;
@@ -79,9 +80,27 @@ export default function AdminNewsletterScreen({}: Props) {
     }
   };
 
+  const handleDelete = (issue: NewsletterIssue) => {
+    Alert.alert('Delete Issue', `Remove "${issue.title}" from the website? This can't be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await adminDeleteNewsletterIssue(issue.id);
+            await load();
+          } catch (err: any) {
+            setError(err?.message || 'Could not delete this issue.');
+          }
+        }
+      }
+    ]);
+  };
+
   return (
     <ScreenScroll>
-      <ScreenTitle title="Newsletter" subtitle="Upload a PDF newsletter and send it to subscribers and members." />
+      <ScreenTitle title="Newsletter" subtitle="Upload a PDF newsletter. It appears on the website's Newsletter page and is emailed to members and subscribers." />
 
       {error ? (
         <View className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex-row items-center gap-2">
@@ -127,6 +146,7 @@ export default function AdminNewsletterScreen({}: Props) {
               <View className="flex-row items-center gap-2">
                 <FileText size={16} color={colors.rotaryAzure} />
                 <Text className="text-sm font-extrabold text-slate-800 flex-1">{issue.title}</Text>
+                <IconButton icon={Trash2} onPress={() => handleDelete(issue)} color={colors.rose600} />
               </View>
               <View className="flex-row items-center gap-1.5">
                 <Clock size={12} color={colors.slate400} />

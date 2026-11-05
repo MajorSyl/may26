@@ -9,6 +9,7 @@ const NAV_LINKS: { label: string; tab: string; screen?: string; routes: string[]
   { label: 'About', tab: 'HomeTab', screen: 'About', routes: ['About'] },
   { label: 'Projects', tab: 'ProjectsTab', screen: 'Gallery', routes: ['Gallery', 'ProjectDetails'] },
   { label: 'Members', tab: 'MembersTab', screen: 'MembersDirectory', routes: ['MembersDirectory'] },
+  { label: 'Newsletter', tab: 'MoreTab', screen: 'Newsletter', routes: ['Newsletter'] },
   { label: 'Contact', tab: 'MoreTab', screen: 'Contact', routes: ['Contact'] }
 ];
 

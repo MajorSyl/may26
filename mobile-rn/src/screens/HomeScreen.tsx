@@ -3,7 +3,8 @@ import { View, Text, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, Sprout, Users, MapPin, CalendarDays, Globe2 } from 'lucide-react-native';
 import { HomeStackParamList } from '../navigation/types';
-import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, getProjects, parseImpactHighlights } from '../lib/service';
+import { getSiteSettings, SiteSettings, DEFAULT_SITE_SETTINGS, getProjects, parseImpactHighlights, getNewsletterIssues, PublicNewsletterIssue } from '../lib/service';
+import { FeaturedIssue } from '../components/Newsletter';
 import { Project } from '../types';
 import { ROTARY_FOCUS_AREAS, FOUR_WAY_TEST, OBJECTS_SHORT } from '../data';
 import ProjectCard, { StatusChip } from '../components/ProjectCard';
@@ -20,12 +21,14 @@ const FOCUS_ICONS = [ShieldAlert, Heart, Droplets, Baby, BookOpen, TrendingUp, S
 export default function HomeScreen({ navigation }: Props) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SITE_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [latestIssue, setLatestIssue] = useState<PublicNewsletterIssue | null>(null);
 
   useEffect(() => {
     let active = true;
     logPageView('home');
     getSiteSettings().then((s) => active && setSettings(s));
     getProjects().then((p) => active && setProjects(p));
+    getNewsletterIssues().then((n) => active && setLatestIssue(n[0] || null));
     return () => {
       active = false;
     };
@@ -239,6 +242,19 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
               ))}
             </View>
+          </View>
+        </Section>
+      ) : null}
+
+      {/* NEWSLETTER: only once an issue has been published */}
+      {latestIssue ? (
+        <Section>
+          <View className="gap-8">
+            <View className="gap-4 md:flex-row md:items-end md:justify-between">
+              <SectionHeading eyebrow="Newsletter" title="Read our latest newsletter" />
+              <TextLink label="All issues and subscribe" onPress={() => goTab('MoreTab', 'Newsletter')} />
+            </View>
+            <FeaturedIssue issue={latestIssue} />
           </View>
         </Section>
       ) : null}

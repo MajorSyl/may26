@@ -47,6 +47,23 @@ const adminLoginInitialState = opensAdminLogin
   ? { index: 1, routes: [{ name: 'Tabs' as const }, { name: 'AdminLogin' as const }] }
   : undefined;
 
+// rcfsunset.org/newsletter opens straight onto the Newsletter page, so the
+// link can go in emails and WhatsApp messages.
+const NEWSLETTER_PATH = '/newsletter';
+const opensNewsletter =
+  Platform.OS === 'web' && typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '').toLowerCase() === NEWSLETTER_PATH;
+
+const newsletterInitialState = opensNewsletter
+  ? {
+      routes: [
+        {
+          name: 'Tabs' as const,
+          state: { routes: [{ name: 'MoreTab' as const, state: { index: 1, routes: [{ name: 'More' as const }, { name: 'Newsletter' as const }] } }] }
+        }
+      ]
+    }
+  : undefined;
+
 export default function App() {
   useRestoreMemberAccountAfterGoogleRedirect();
   return (
@@ -54,7 +71,7 @@ export default function App() {
       <StatusBar style="dark" />
       <NavigationContainer
         ref={navigationRef}
-        initialState={adminLoginInitialState}
+        initialState={(adminLoginInitialState ?? newsletterInitialState) as any}
         documentTitle={{
           formatter: (options, route) => {
             const title = options?.title ?? route?.name;

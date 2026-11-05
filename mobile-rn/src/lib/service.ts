@@ -761,6 +761,52 @@ export const adminListNewsletterIssues = async (): Promise<NewsletterIssue[]> =>
   });
 };
 
+export interface PublicNewsletterIssue {
+  id: string;
+  title: string;
+  message: string;
+  pdfUrl: string;
+  createdAt: string;
+}
+
+// Public list for the Newsletter page and the homepage feature. RLS allows
+// anyone to read newsletter_issues; send status stays admin-only.
+export const getNewsletterIssues = async (): Promise<PublicNewsletterIssue[]> => {
+  if (!isSupabaseConfigured || !supabase) return [];
+  const { data, error } = await supabase
+    .from('newsletter_issues')
+    .select('id, title, message, pdf_url, created_at')
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    title: (row.title || '').trim(),
+    message: (row.message || '').trim(),
+    pdfUrl: row.pdf_url,
+    createdAt: row.created_at
+  }));
+};
+
+// Anonymous insert is allowed by RLS; email is unique, so a repeat sign-up
+// is reported as already subscribed rather than an error.
+export const subscribeToNewsletter = async (email: string): Promise<'subscribed' | 'already'> => {
+  const db = requireSupabase();
+  const clean = email.trim().toLowerCase();
+  const id = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const { error } = await db.from('newsletter_subscribers').insert({ id, email: clean });
+  if (error) {
+    if ((error as any).code === '23505') return 'already';
+    throw error;
+  }
+  return 'subscribed';
+};
+
+export const adminDeleteNewsletterIssue = async (id: string): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db.from('newsletter_issues').delete().eq('id', id);
+  if (error) throw error;
+};
+
 // Uploads happen client-side (uploadNewsletterPdf in storage.ts) straight to
 // the `newsletters` Storage bucket under the signed-in officer's own RLS-
 // checked session -- this just records the resulting issue row.
