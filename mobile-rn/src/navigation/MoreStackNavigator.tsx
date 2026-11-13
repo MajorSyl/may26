@@ -8,6 +8,7 @@ import GetInvolvedScreen from '../screens/GetInvolvedScreen';
 import ContactScreen from '../screens/ContactScreen';
 import WhatIsRotaryScreen from '../screens/WhatIsRotaryScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import TermsScreen from '../screens/TermsScreen';
 import SocialFeedScreen from '../screens/SocialFeedScreen';
 import NewsletterScreen from '../screens/NewsletterScreen';
 import SupportScreen from '../screens/SupportScreen';
@@ -31,6 +32,7 @@ export default function MoreStackNavigator() {
       <Stack.Screen name="Contact" component={ContactScreen} options={{ title: 'Contact' }} />
       <Stack.Screen name="WhatIsRotary" component={WhatIsRotaryScreen} options={{ title: 'What is Rotary' }} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy' }} />
+      <Stack.Screen name="Terms" component={TermsScreen} options={{ title: 'Terms of Use' }} />
       <Stack.Screen name="SocialFeed" component={SocialFeedScreen} options={{ title: 'Social Feed' }} />
       <Stack.Screen name="Newsletter" component={NewsletterScreen} options={{ title: 'Newsletter' }} />
       <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Support Us' }} />

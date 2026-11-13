@@ -25,6 +25,7 @@ export type MoreStackParamList = {
   Contact: undefined;
   WhatIsRotary: undefined;
   PrivacyPolicy: undefined;
+  Terms: undefined;
   SocialFeed: undefined;
   Newsletter: undefined;
   Support: undefined;

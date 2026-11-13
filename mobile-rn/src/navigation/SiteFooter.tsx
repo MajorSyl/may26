@@ -101,6 +101,9 @@ export default function SiteFooter() {
             <Pressable onPress={() => goTab('MoreTab', 'PrivacyPolicy')} accessibilityRole="link" className="min-h-[44px] justify-center">
               <Text className="text-xs text-white/60 hover:text-white">Privacy Policy</Text>
             </Pressable>
+            <Pressable onPress={() => goTab('MoreTab', 'Terms')} accessibilityRole="link" className="min-h-[44px] justify-center">
+              <Text className="text-xs text-white/60 hover:text-white">Terms of Use</Text>
+            </Pressable>
           </View>
         </View>
       </View>

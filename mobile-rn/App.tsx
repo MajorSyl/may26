@@ -56,6 +56,7 @@ const PAGES: Record<string, StartPoint> = {
   '/get-involved': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'GetInvolved' }] },
   '/what-is-rotary': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'WhatIsRotary' }] },
   '/privacy': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'PrivacyPolicy' }] },
+  '/terms': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'Terms' }] },
   '/social': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'SocialFeed' }] },
   '/member': { root: 'MemberAccount' },
   [ADMIN_PATH]: { root: 'AdminLogin' }

@@ -435,12 +435,28 @@ export const getPublicMembers = async (): Promise<UserProfile[]> => {
   return getLocalData('rn_users', fallback);
 };
 
+// Reads full member records from the users_private view (officers: all
+// rows; a member: only their own). Until that view exists in the database,
+// falls back to the users table so admin screens keep working either way.
+const isMissingRelation = (error: any) =>
+  !!error && (error.code === 'PGRST205' || error.code === '42P01' || /users_private/.test(error.message || ''));
+
+async function selectFullMembers(db: NonNullable<typeof supabase>, authUserId?: string): Promise<{ data: any; error: any }> {
+  const run = (table: 'users_private' | 'users') => {
+    const q = db.from(table).select('*');
+    return authUserId ? q.eq('auth_user_id', authUserId).single() : q;
+  };
+  const first = await run('users_private');
+  if (!isMissingRelation(first.error)) return first;
+  return run('users');
+}
+
 export const getUsers = async (): Promise<UserProfile[]> => {
   if (isSupabaseConfigured && supabase) {
     try {
       // Full records (contributions, attendance, Rotary ID) are only exposed
       // through users_private: officers see every row, a member only their own.
-      const { data, error } = await supabase.from('users_private').select('*');
+      const { data, error } = await selectFullMembers(supabase);
       if (error) throw error;
       if (!data || data.length === 0) return INITIAL_MEMBER_DIRECTORY;
       return data.map((d: any) => ({
@@ -573,7 +589,7 @@ async function currentAuthUser() {
 export const getMyProfile = async (): Promise<UserProfile> => {
   const db = requireSupabase();
   const user = await currentAuthUser();
-  const { data, error } = await db.from('users_private').select('*').eq('auth_user_id', user.id).single();
+  const { data, error } = await selectFullMembers(db, user.id);
   if (error || !data) throw new Error('Could not load your profile.');
   return {
     uid: data.uid,

@@ -3,7 +3,7 @@ import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Image as ImageIcon, Heart, Mail, ShieldCheck, ChevronRight, Sun, Shield, UserPlus, Instagram, Newspaper } from 'lucide-react-native';
+import { Image as ImageIcon, Heart, Mail, ShieldCheck, ChevronRight, Sun, Shield, UserPlus, Instagram, Newspaper, FileText } from 'lucide-react-native';
 import { MoreStackParamList, TabParamList } from '../navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
@@ -44,6 +44,7 @@ export default function MoreScreen({ navigation }: Props) {
       <MenuRow icon={Mail} label="Contact" onPress={() => navigation.navigate('Contact')} />
       <MenuRow icon={Sun} label="What is Rotary" onPress={() => navigation.navigate('WhatIsRotary')} />
       <MenuRow icon={Shield} label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
+      <MenuRow icon={FileText} label="Terms of Use" onPress={() => navigation.navigate('Terms')} />
 
       <View className="h-px bg-slate-200 my-2" />
 
