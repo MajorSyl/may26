@@ -115,7 +115,7 @@ jobs:
       # never has to change -- each successful build just replaces the
       # asset behind the same permanent URL.
       - name: Publish to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: android-latest
           name: "RCFS Android Preview (build #${{ github.run_number }}, versionCode ${{ steps.version_info.outputs.version_code }})"
