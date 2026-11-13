@@ -7,6 +7,7 @@ import { Image as ImageIcon, Heart, Mail, ShieldCheck, ChevronRight, Sun, Shield
 import { MoreStackParamList, TabParamList } from '../navigation/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
+import { SHOW_LEGAL_LINKS } from '../content/legalStatus';
 
 type Props = CompositeScreenProps<
   NativeStackScreenProps<MoreStackParamList, 'More'>,
@@ -43,8 +44,12 @@ export default function MoreScreen({ navigation }: Props) {
       <MenuRow icon={Heart} label="Get Involved" onPress={() => navigation.navigate('GetInvolved')} />
       <MenuRow icon={Mail} label="Contact" onPress={() => navigation.navigate('Contact')} />
       <MenuRow icon={Sun} label="What is Rotary" onPress={() => navigation.navigate('WhatIsRotary')} />
-      <MenuRow icon={Shield} label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
-      <MenuRow icon={FileText} label="Terms of Use" onPress={() => navigation.navigate('Terms')} />
+      {SHOW_LEGAL_LINKS ? (
+        <>
+          <MenuRow icon={Shield} label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
+          <MenuRow icon={FileText} label="Terms of Use" onPress={() => navigation.navigate('Terms')} />
+        </>
+      ) : null}
 
       <View className="h-px bg-slate-200 my-2" />
 

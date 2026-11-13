@@ -5,6 +5,7 @@ import { Facebook, Instagram, Mail } from 'lucide-react-native';
 import { getSiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import { ClubLockup } from './SiteHeader';
 import { colors } from '../theme';
+import { SHOW_LEGAL_LINKS } from '../content/legalStatus';
 
 const LINKS: { label: string; tab: string; screen: string }[] = [
   { label: 'Home', tab: 'HomeTab', screen: 'Home' },
@@ -97,14 +98,19 @@ export default function SiteFooter() {
           <Text className="text-xs text-white/60">
             © {new Date().getFullYear()} Rotary Club of Freetown-Sunset{settings.districtLabel ? ` · ${settings.districtLabel}` : ''}
           </Text>
-          <View className="flex-row items-center gap-5">
-            <Pressable onPress={() => goTab('MoreTab', 'PrivacyPolicy')} accessibilityRole="link" className="min-h-[44px] justify-center">
-              <Text className="text-xs text-white/60 hover:text-white">Privacy Policy</Text>
-            </Pressable>
-            <Pressable onPress={() => goTab('MoreTab', 'Terms')} accessibilityRole="link" className="min-h-[44px] justify-center">
-              <Text className="text-xs text-white/60 hover:text-white">Terms of Use</Text>
-            </Pressable>
-          </View>
+          {/* Privacy Policy and Terms of Use links are hidden until the Club's
+              legal sign-off (the pages stay at /privacy and /terms for review).
+              Set SHOW_LEGAL_LINKS to true once approved. */}
+          {SHOW_LEGAL_LINKS ? (
+            <View className="flex-row items-center gap-5">
+              <Pressable onPress={() => goTab('MoreTab', 'PrivacyPolicy')} accessibilityRole="link" className="min-h-[44px] justify-center">
+                <Text className="text-xs text-white/60 hover:text-white">Privacy Policy</Text>
+              </Pressable>
+              <Pressable onPress={() => goTab('MoreTab', 'Terms')} accessibilityRole="link" className="min-h-[44px] justify-center">
+                <Text className="text-xs text-white/60 hover:text-white">Terms of Use</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
       </View>
     </View>
