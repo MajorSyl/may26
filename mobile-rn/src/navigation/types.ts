@@ -64,4 +64,5 @@ export type RootStackParamList = {
   AdminVisitorLog: undefined;
   AdminSocialFeed: undefined;
   AdminNewsletter: undefined;
+  AdminSupportReceipts: undefined;
 };

@@ -1122,3 +1122,86 @@ export const adminGetAnalytics = async (): Promise<AnalyticsSnapshot> => {
   ]);
   return { members, projects, events, inquiries, applications, rsvps, pendingSubmissions, admins };
 };
+
+// ---- Orange Money support receipts (public Support page) ----
+// The receipt file goes to the private `support-receipts` bucket (anyone
+// can add, only admins can read); the row records who sent it.
+export interface SupportReceipt {
+  id: string;
+  name: string;
+  contact: string;
+  amount: string;
+  note: string;
+  receiptUrl: string;
+  status: 'pending' | 'received';
+  createdAt: string;
+}
+
+const RECEIPT_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'application/pdf': 'pdf'
+};
+
+export const submitSupportReceipt = async (input: {
+  name: string;
+  contact?: string;
+  amount?: string;
+  note?: string;
+  file?: { uri: string; mimeType: string } | null;
+}): Promise<void> => {
+  const db = requireSupabase();
+  let receiptPath: string | null = null;
+  if (input.file) {
+    const ext = RECEIPT_EXT[input.file.mimeType];
+    if (!ext) throw new Error('Please attach a photo, screenshot or PDF of your receipt.');
+    const blob = await (await fetch(input.file.uri)).blob();
+    if (blob.size > 5 * 1024 * 1024) throw new Error('That file is larger than 5 MB. Please attach a smaller photo or screenshot.');
+    receiptPath = `receipts/${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${ext}`;
+    const { error: upErr } = await db.storage.from('support-receipts').upload(receiptPath, blob, { contentType: input.file.mimeType, upsert: false });
+    if (upErr) throw new Error('Could not upload the receipt. Please try again.');
+  }
+  const clean = (v?: string) => (v && v.trim() ? v.trim() : null);
+  const { error } = await db.from('support_receipts').insert({
+    name: input.name.trim(),
+    contact: clean(input.contact),
+    amount: clean(input.amount),
+    note: clean(input.note),
+    receipt_path: receiptPath
+  });
+  if (error) throw new Error('Could not send your details. Please try again.');
+};
+
+export const adminListSupportReceipts = async (): Promise<SupportReceipt[]> => {
+  const db = requireSupabase();
+  const { data, error } = await db.from('support_receipts').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const paths = (data || []).map((r: any) => r.receipt_path).filter(Boolean);
+  const urls = new Map<string, string>();
+  if (paths.length) {
+    const { data: signed } = await db.storage.from('support-receipts').createSignedUrls(paths, 60 * 60);
+    (signed || []).forEach((s: any) => s.signedUrl && s.path && urls.set(s.path, s.signedUrl));
+  }
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    contact: r.contact || '',
+    amount: r.amount || '',
+    note: r.note || '',
+    receiptUrl: r.receipt_path ? urls.get(r.receipt_path) || '' : '',
+    status: r.status,
+    createdAt: r.created_at
+  }));
+};
+
+export const adminSetSupportReceiptStatus = async (id: string, status: 'pending' | 'received'): Promise<void> => {
+  const db = requireSupabase();
+  const { error } = await db
+    .from('support_receipts')
+    .update({ status, reviewed_at: status === 'received' ? new Date().toISOString() : null })
+    .eq('id', id);
+  if (error) throw error;
+};
