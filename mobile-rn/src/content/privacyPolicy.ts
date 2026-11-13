@@ -140,7 +140,7 @@ export const privacySections = (email: string): LegalSection[] => [
     blocks: [
       {
         list: [
-          ['Enquiries, RSVPs and applications', 'for as long as needed to deal with them. We review and delete old records at least once a year.'],
+          ['Enquiries, RSVPs and applications', 'for as long as needed to deal with them.'],
           ['Newsletter subscriptions', 'until you unsubscribe.'],
           ['Support receipts and contribution records', "for as long as needed for the Club's financial records."],
           ['Member accounts and membership records', 'while you are a member, and afterwards only as needed for Club records.'],
@@ -175,7 +175,7 @@ export const privacySections = (email: string): LegalSection[] => [
         ]
       },
       {
-        p: `Write to ${email}. We will reply within 30 days and may need to confirm your identity first. If you ask us to delete a member account, your basic entry in the Club roster (name and position) may remain, because Club membership is administered separately; tell us if you would like that removed too.`
+        p: `Write to ${email}. We will reply as soon as we reasonably can and may need to confirm your identity first. If you ask us to delete a member account, your basic entry in the Club roster (name and position) may remain, because Club membership is administered separately; tell us if you would like that removed too.`
       },
       { p: 'If you live in the European Union or the United Kingdom, you also have the right to complain to your local data protection authority.' }
     ]
