@@ -13,7 +13,7 @@ const corsHeaders = {
 };
 
 const SITE_URL = "https://www.rcfsunset.org";
-const REPLY_TO = "info@rcfsunset.org";
+const REPLY_TO = "rcfspublicimage@gmail.com";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });

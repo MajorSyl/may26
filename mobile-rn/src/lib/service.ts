@@ -72,7 +72,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   involvedTitle: 'Help Us Empower Freetown Communities',
   involvedSubtitle:
     'Whether you are a local professional looking to give back or an international partner ready to fund systemic change, there are multiple avenues to work with Freetown Sunset.',
-  contactEmail: 'info@rcfsunset.org',
+  contactEmail: 'rcfspublicimage@gmail.com',
   contactPhone: '',
   socialFacebookUrl: 'https://www.facebook.com/profile.php?id=100071187714639',
   socialInstagramUrl: 'https://www.instagram.com/rcfsunset',
