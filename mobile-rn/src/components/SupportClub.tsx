@@ -79,10 +79,10 @@ export default function SupportClub({ contactEmail }: { contactEmail?: string })
           </View>
         </View>
 
-        <View className="bg-rotary-cream rounded-2xl px-5 py-4 flex-row items-center gap-3">
-          <View className="flex-1 gap-0.5">
+        <View className="bg-rotary-cream rounded-2xl px-5 py-4 flex-row flex-wrap items-center justify-between gap-3">
+          <View className="gap-0.5">
             <Text className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Merchant code</Text>
-            <Text selectable className="font-display text-3xl font-extrabold text-rotary-royal-deep" style={{ letterSpacing: 2 }}>
+            <Text selectable numberOfLines={1} className="font-display text-3xl font-extrabold text-rotary-royal-deep" style={{ letterSpacing: 2 }}>
               {ORANGE_MERCHANT_CODE}
             </Text>
           </View>

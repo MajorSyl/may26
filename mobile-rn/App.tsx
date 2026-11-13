@@ -47,18 +47,30 @@ const adminLoginInitialState = opensAdminLogin
   ? { index: 1, routes: [{ name: 'Tabs' as const }, { name: 'AdminLogin' as const }] }
   : undefined;
 
-// rcfsunset.org/newsletter opens straight onto the Newsletter page, so the
-// link can go in emails and WhatsApp messages.
-const NEWSLETTER_PATH = '/newsletter';
-const opensNewsletter =
-  Platform.OS === 'web' && typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '').toLowerCase() === NEWSLETTER_PATH;
+// Short public links (used in the printed newsletter, its QR code, emails
+// and WhatsApp) open straight onto the matching page instead of the
+// homepage. /support jumps to the Newsletter page's support section.
+const PUBLIC_PATHS: Record<string, { tab: string; routes: { name: string; params?: object }[] }> = {
+  '/newsletter': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'Newsletter' }] },
+  '/support': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'Newsletter', params: { section: 'support' } }] },
+  '/about': { tab: 'HomeTab', routes: [{ name: 'Home' }, { name: 'About' }] },
+  '/projects': { tab: 'ProjectsTab', routes: [{ name: 'Gallery' }] },
+  '/events': { tab: 'EventsTab', routes: [{ name: 'Events' }] },
+  '/members': { tab: 'MembersTab', routes: [{ name: 'MembersDirectory' }] },
+  '/contact': { tab: 'MoreTab', routes: [{ name: 'More' }, { name: 'Contact' }] }
+};
 
-const newsletterInitialState = opensNewsletter
+const publicPath =
+  Platform.OS === 'web' && typeof window !== 'undefined'
+    ? PUBLIC_PATHS[window.location.pathname.replace(/\/+$/, '').toLowerCase()]
+    : undefined;
+
+const publicPathInitialState = publicPath
   ? {
       routes: [
         {
-          name: 'Tabs' as const,
-          state: { routes: [{ name: 'MoreTab' as const, state: { index: 1, routes: [{ name: 'More' as const }, { name: 'Newsletter' as const }] } }] }
+          name: 'Tabs',
+          state: { routes: [{ name: publicPath.tab, state: { index: publicPath.routes.length - 1, routes: publicPath.routes } }] }
         }
       ]
     }
@@ -71,7 +83,7 @@ export default function App() {
       <StatusBar style="dark" />
       <NavigationContainer
         ref={navigationRef}
-        initialState={(adminLoginInitialState ?? newsletterInitialState) as any}
+        initialState={(adminLoginInitialState ?? publicPathInitialState) as any}
         documentTitle={{
           formatter: (options, route) => {
             const title = options?.title ?? route?.name;

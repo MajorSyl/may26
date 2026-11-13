@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Platform } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { MoreStackParamList } from '../navigation/types';
 import { PublicNewsletterIssue, getNewsletterIssues, getSiteSettings, DEFAULT_SITE_SETTINGS } from '../lib/service';
 import SupportClub from '../components/SupportClub';
 import { LoadingBlock } from '../components/ui';
@@ -7,7 +9,10 @@ import { SitePage, Section, SectionHeading } from '../components/site';
 import { FeaturedIssue, IssueRow, SubscribeBox } from '../components/Newsletter';
 import { logPageView } from '../lib/analytics';
 
-export default function NewsletterScreen() {
+type Props = NativeStackScreenProps<MoreStackParamList, 'Newsletter'>;
+
+export default function NewsletterScreen({ route }: Props) {
+  const jumpToSupport = route.params?.section === 'support';
   const [issues, setIssues] = useState<PublicNewsletterIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState(DEFAULT_SITE_SETTINGS);
@@ -19,6 +24,15 @@ export default function NewsletterScreen() {
       .then(setIssues)
       .finally(() => setLoading(false));
   }, []);
+
+  // rcfsunset.org/support (the newsletter's QR code) lands on this page;
+  // once the issues have loaded and the layout is settled, bring the
+  // support section into view.
+  useEffect(() => {
+    if (!jumpToSupport || loading || Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const t = setTimeout(() => document.getElementById('support')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    return () => clearTimeout(t);
+  }, [jumpToSupport, loading]);
 
   const [latest, ...past] = issues;
   const years = Array.from(new Set(past.map((i) => new Date(i.createdAt).getFullYear()))).sort((a, b) => b - a);
@@ -74,7 +88,9 @@ export default function NewsletterScreen() {
       </Section>
 
       <Section tone="cream">
-        <SupportClub contactEmail={settings.contactEmail} />
+        <View nativeID="support">
+          <SupportClub contactEmail={settings.contactEmail} />
+        </View>
       </Section>
     </SitePage>
   );
