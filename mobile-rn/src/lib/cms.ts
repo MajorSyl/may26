@@ -6,7 +6,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 // (see service.ts); this covers Home/About/WhatIsRotary/GetInvolved/Contact.
 
 function requireSupabase() {
-  if (!isSupabaseConfigured || !supabase) throw new Error('This action requires a configured Supabase project.');
+  if (!isSupabaseConfigured || !supabase) throw new Error('This service is temporarily unavailable. Please try again later.');
   return supabase;
 }
 
@@ -46,7 +46,7 @@ export const getContentBlocks = async (page: ContentPage): Promise<ContentBlock[
     if (error) throw error;
     return (data || []).map(mapBlockRow);
   } catch (err) {
-    console.error('Supabase query error (content_blocks):', err);
+    console.error('Data load error (content_blocks):', err);
     return [];
   }
 };

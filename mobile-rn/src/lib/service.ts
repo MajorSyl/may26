@@ -10,7 +10,7 @@ export function randomId(prefix: string): string {
 }
 
 function requireSupabase() {
-  if (!isSupabaseConfigured || !supabase) throw new Error('This action requires a configured Supabase project.');
+  if (!isSupabaseConfigured || !supabase) throw new Error('This service is temporarily unavailable. Please try again later.');
   return supabase;
 }
 
@@ -151,7 +151,7 @@ export const getProjects = async (): Promise<Project[]> => {
       }
       return [];
     } catch (err) {
-      console.error('Supabase query error (projects):', err);
+      console.error('Data load error (projects):', err);
       return [];
     }
   }
@@ -169,7 +169,7 @@ export const getEvents = async (): Promise<ClubEvent[]> => {
       if (error) throw error;
       return (data || []) as ClubEvent[];
     } catch (err) {
-      console.error('Supabase query error (events), falling back:', err);
+      console.error('Data load error (events), falling back:', err);
       return INITIAL_EVENTS;
     }
   }
@@ -395,7 +395,7 @@ export const getGalleryPhotos = async (): Promise<GalleryPhoto[]> => {
         location: d.location
       }));
     } catch (err) {
-      console.error('Supabase query error (gallery_photos):', err);
+      console.error('Data load error (gallery_photos):', err);
       return [];
     }
   }
@@ -428,7 +428,7 @@ export const getPublicMembers = async (): Promise<UserProfile[]> => {
         avatarUrl: d.avatarurl || undefined
       }));
     } catch (err) {
-      console.error('Supabase query error (public members), falling back:', err);
+      console.error('Data load error (public members), falling back:', err);
       return fallback;
     }
   }
@@ -480,7 +480,7 @@ export const getUsers = async (): Promise<UserProfile[]> => {
         authUserId: d.auth_user_id
       }));
     } catch (err) {
-      console.error('Supabase query error (users), falling back:', err);
+      console.error('Data load error (users), falling back:', err);
       return INITIAL_MEMBER_DIRECTORY;
     }
   }
@@ -545,7 +545,7 @@ export const checkIsAdmin = async (userId: string): Promise<boolean> => {
 
 export const loginAdmin = async (email: string, password: string): Promise<void> => {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Admin login requires a configured Supabase project.');
+    throw new Error('Sign-in is temporarily unavailable. Please try again later.');
   }
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw error;

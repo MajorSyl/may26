@@ -59,7 +59,7 @@ export interface PageView {
 }
 
 function requireSupabase() {
-  if (!isSupabaseConfigured || !supabase) throw new Error('This action requires a configured Supabase project.');
+  if (!isSupabaseConfigured || !supabase) throw new Error('This service is temporarily unavailable. Please try again later.');
   return supabase;
 }
 

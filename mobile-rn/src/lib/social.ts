@@ -40,7 +40,7 @@ export const getSocialPosts = async (limit = 12, platform?: 'instagram' | 'faceb
     if (error) throw error;
     return (data || []).map(mapPostRow);
   } catch (err) {
-    console.error('Supabase query error (social_posts):', err);
+    console.error('Data load error (social_posts):', err);
     return [];
   }
 };
@@ -65,7 +65,7 @@ export interface SocialConfig {
 }
 
 function requireSupabase() {
-  if (!isSupabaseConfigured || !supabase) throw new Error('This action requires a configured Supabase project.');
+  if (!isSupabaseConfigured || !supabase) throw new Error('This service is temporarily unavailable. Please try again later.');
   return supabase;
 }
 
@@ -124,7 +124,7 @@ export const adminSaveSocialCredentials = async (input: {
 // this goes through supabase.functions.invoke, which sends the officer's own
 // session token.
 export const adminTriggerSocialSync = async (): Promise<void> => {
-  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase is not configured.');
+  if (!isSupabaseConfigured || !supabase) throw new Error('This service is temporarily unavailable. Please try again later.');
   const { error } = await supabase.functions.invoke('sync-social-feed', { body: {} });
   if (error) {
     const status = (error as any)?.context?.status;
