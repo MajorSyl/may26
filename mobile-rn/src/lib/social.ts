@@ -120,11 +120,14 @@ export const adminSaveSocialCredentials = async (input: {
 // Manual "Sync Now" from the admin screen -- calls the same Edge Function
 // the cron job calls, so an admin doesn't have to wait up to 4 hours to
 // confirm freshly-pasted credentials actually work.
+// The function only accepts the scheduled job or a signed-in officer, so
+// this goes through supabase.functions.invoke, which sends the officer's own
+// session token.
 export const adminTriggerSocialSync = async (): Promise<void> => {
-  if (!isSupabaseConfigured) throw new Error('Supabase is not configured.');
-  const res = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/sync-social-feed`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}` }
-  });
-  if (!res.ok) throw new Error(`Sync failed (${res.status})`);
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase is not configured.');
+  const { error } = await supabase.functions.invoke('sync-social-feed', { body: {} });
+  if (error) {
+    const status = (error as any)?.context?.status;
+    throw new Error(status === 401 ? 'Sync failed: your session has no access to the social feed.' : 'Sync failed. Please try again.');
+  }
 };

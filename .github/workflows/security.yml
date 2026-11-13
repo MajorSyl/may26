@@ -1,0 +1,60 @@
+name: Security checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 4 * * 1' # weekly, Monday 04:23 UTC: catches newly published advisories
+  workflow_dispatch: {}
+
+# Least privilege: these jobs only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Secret scan (full git history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks git . --config .gitleaks.toml --redact --no-banner --exit-code 1
+
+  security-headers:
+    name: Security headers (vercel.json)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node .github/scripts/check-security-headers.mjs
+
+  dependencies:
+    name: Dependency audit + typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile-rn
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile-rn/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
+      # The remaining known advisories are in build-time Expo tooling that only
+      # clears with an Expo SDK major upgrade, so the full audit is reported
+      # (job summary) rather than blocking. Dependabot opens the fix PRs.
+      - name: npm audit (report)
+        run: |
+          npm audit --omit=dev > audit.txt || true
+          { echo '### npm audit (production dependencies)'; echo '```'; tail -n 40 audit.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

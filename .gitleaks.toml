@@ -1,0 +1,9 @@
+# Secret scanning config (used locally and by .github/workflows/security.yml).
+title = "rcfsunset gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Supabase publishable (anon) keys are public by design: they ship in every visitor's browser and grant only what Row Level Security allows. Secret keys (sb_secret_..., service_role JWTs) are still detected."
+regexes = ['''sb_publishable_[A-Za-z0-9_-]+''']

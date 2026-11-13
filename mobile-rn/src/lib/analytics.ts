@@ -25,8 +25,8 @@ export const logPageView = async (page: string): Promise<void> => {
   if (!isSupabaseConfigured || !supabase) return;
   try {
     const {
-      data: { user }
-    } = await supabase.auth.getUser();
+      data: { session }
+    } = await supabase.auth.getSession();
     const visitorId = await getOrCreateVisitorId();
     const device = Platform.OS;
     const browser = Platform.OS === 'web' && typeof navigator !== 'undefined' ? navigator.userAgent : null;
@@ -35,9 +35,12 @@ export const logPageView = async (page: string): Promise<void> => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`
+        apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+        // A signed-in visitor's session token lets the server attribute the
+        // view to them; anonymous visitors send only the public key.
+        Authorization: `Bearer ${session?.access_token || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`
       },
-      body: JSON.stringify({ page, visitorId, userId: user?.id || null, device, browser })
+      body: JSON.stringify({ page, visitorId, device, browser })
     });
   } catch {
     // Best-effort only.

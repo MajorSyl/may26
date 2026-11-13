@@ -1,9 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { json, preflight } from "../_shared/cors.ts";
+import { isCronOrOfficer } from "../_shared/auth.ts";
 
 // Mirrors the latest Instagram and Facebook posts into social_posts. Run
 // hourly by pg_cron and on demand from Admin -> Social Feed; never called
 // by the public site, so the Graph API never affects page loads.
+//
+// Callers must be the scheduled job (Vault secret) or a signed-in officer
+// who manages the social feed; anything else gets 401.
 //
 // Each post's image (a video's thumbnail for Reels) is copied into the
 // public site-images bucket: Meta's CDN links expire after a few days and
@@ -71,12 +76,18 @@ async function mirror(supabase: SupabaseClient, platform: "instagram" | "faceboo
   return upserts.length;
 }
 
-Deno.serve(async (_req: Request) => {
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return preflight(req);
+  if (req.method !== "POST") return json(req, { error: "Method not allowed" }, 405);
+
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  if (!(await isCronOrOfficer(req, supabase, ["admin", "president", "secretary", "media"]))) {
+    return json(req, { error: "Unauthorized" }, 401);
+  }
 
   const { data: config, error: configErr } = await supabase.from("social_config").select("*").eq("id", "default").single();
   if (configErr || !config) {
-    return new Response(JSON.stringify({ error: "Could not load social_config" }), { status: 500 });
+    return json(req, { error: "Could not load social_config" }, 500);
   }
 
   const results: Record<string, { ok: boolean; count?: number; error?: string }> = {};
@@ -149,5 +160,5 @@ Deno.serve(async (_req: Request) => {
     })
     .eq("id", "default");
 
-  return new Response(JSON.stringify({ results }), { status: 200, headers: { "Content-Type": "application/json" } });
+  return json(req, { results });
 });

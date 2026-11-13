@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /mobile-rn
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Expo SDK packages must move together; batch them into one PR.
+      expo:
+        patterns: ['expo', 'expo-*', '@expo/*', 'react-native', 'react-native-*', '@react-native/*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

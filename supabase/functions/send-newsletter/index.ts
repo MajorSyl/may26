@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { json as jsonFor, preflight } from "../_shared/cors.ts";
 
 // Sends an announcement email to the subscriber list for three kinds of
 // content: a new project, a new event, or an admin-authored PDF newsletter
@@ -7,17 +8,9 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // RESEND_API_KEY secret -- no-ops with a clear error until it's set.
 // Idempotent per (kind, recordId) via the newsletter_sends unique
 // constraint, so a retry/double-call never double-sends.
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
-};
-
 const SITE_URL = "https://www.rcfsunset.org";
 const REPLY_TO = "rcfspublicimage@gmail.com";
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-}
 
 function esc(value: unknown): string {
   return String(value ?? "")
@@ -38,7 +31,8 @@ const footer = `
   </p>`;
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return preflight(req);
+  const json = (body: unknown, status = 200) => jsonFor(req, body, status);
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -137,6 +131,7 @@ Deno.serve(async (req: Request) => {
     await adminClient.from("newsletter_sends").upsert({ kind, record_id: recordId, recipient_count: emails.length, status: "sent" });
     return json({ success: true, recipientCount: emails.length });
   } catch (err) {
-    return json({ error: err instanceof Error ? err.message : "Unexpected error" }, 500);
+    console.error("send-newsletter error:", err);
+    return json({ error: "Unexpected error. Please try again." }, 500);
   }
 });

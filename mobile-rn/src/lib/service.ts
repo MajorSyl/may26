@@ -438,7 +438,9 @@ export const getPublicMembers = async (): Promise<UserProfile[]> => {
 export const getUsers = async (): Promise<UserProfile[]> => {
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase.from('users').select('*');
+      // Full records (contributions, attendance, Rotary ID) are only exposed
+      // through users_private: officers see every row, a member only their own.
+      const { data, error } = await supabase.from('users_private').select('*');
       if (error) throw error;
       if (!data || data.length === 0) return INITIAL_MEMBER_DIRECTORY;
       return data.map((d: any) => ({
@@ -571,7 +573,7 @@ async function currentAuthUser() {
 export const getMyProfile = async (): Promise<UserProfile> => {
   const db = requireSupabase();
   const user = await currentAuthUser();
-  const { data, error } = await db.from('users').select('*').eq('auth_user_id', user.id).single();
+  const { data, error } = await db.from('users_private').select('*').eq('auth_user_id', user.id).single();
   if (error || !data) throw new Error('Could not load your profile.');
   return {
     uid: data.uid,
