@@ -100,10 +100,10 @@ Deno.serve(async (req: Request) => {
         `https://graph.instagram.com/v21.0/${encodeURIComponent(account)}/media` +
         `?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=${LIMIT}` +
         `&access_token=${encodeURIComponent(config.instagram_access_token)}`;
-      const json = await (await fetch(url)).json();
-      if (json.error) throw new Error(json.error.message || "Instagram API error");
+      const body = await (await fetch(url)).json();
+      if (body.error) throw new Error(body.error.message || "Instagram API error");
 
-      const rows = (json.data || []).map((p: any) => ({
+      const rows = (body.data || []).map((p: any) => ({
         platform: "instagram" as const,
         post_id: p.id,
         caption: p.caption || null,
@@ -128,10 +128,10 @@ Deno.serve(async (req: Request) => {
         `https://graph.facebook.com/v21.0/${encodeURIComponent(config.facebook_page_id)}/posts` +
         `?fields=id,message,full_picture,permalink_url,created_time&limit=${LIMIT}` +
         `&access_token=${encodeURIComponent(config.facebook_access_token)}`;
-      const json = await (await fetch(url)).json();
-      if (json.error) throw new Error(json.error.message || "Facebook API error");
+      const body = await (await fetch(url)).json();
+      if (body.error) throw new Error(body.error.message || "Facebook API error");
 
-      const rows = (json.data || []).map((p: any) => ({
+      const rows = (body.data || []).map((p: any) => ({
         platform: "facebook" as const,
         post_id: p.id,
         caption: p.message || null,

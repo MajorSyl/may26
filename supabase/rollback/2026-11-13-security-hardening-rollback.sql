@@ -5,7 +5,7 @@
 
 begin;
 
--- 1. users: restore full SELECT for signed-in users, drop the private view.
+-- 1. users: restore full SELECT for signed-in users (undoes step B), drop the private view.
 drop view if exists public.users_private;
 grant select on public.users to authenticated;
 
