@@ -12,7 +12,6 @@ const LINKS: { label: string; tab: string; screen: string }[] = [
   { label: 'Projects', tab: 'ProjectsTab', screen: 'Gallery' },
   { label: 'Members', tab: 'MembersTab', screen: 'MembersDirectory' },
   { label: 'Newsletter', tab: 'MoreTab', screen: 'Newsletter' },
-  { label: 'Support us', tab: 'MoreTab', screen: 'Support' },
   { label: 'Contact', tab: 'MoreTab', screen: 'Contact' }
 ];
 
