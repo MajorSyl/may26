@@ -10,6 +10,7 @@ import WhatIsRotaryScreen from '../screens/WhatIsRotaryScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import SocialFeedScreen from '../screens/SocialFeedScreen';
 import NewsletterScreen from '../screens/NewsletterScreen';
+import SupportScreen from '../screens/SupportScreen';
 import SiteHeader from './SiteHeader';
 import { colors } from '../theme';
 
@@ -32,6 +33,7 @@ export default function MoreStackNavigator() {
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ title: 'Privacy Policy' }} />
       <Stack.Screen name="SocialFeed" component={SocialFeedScreen} options={{ title: 'Social Feed' }} />
       <Stack.Screen name="Newsletter" component={NewsletterScreen} options={{ title: 'Newsletter' }} />
+      <Stack.Screen name="Support" component={SupportScreen} options={{ title: 'Support Us' }} />
     </Stack.Navigator>
   );
 }

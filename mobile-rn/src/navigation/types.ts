@@ -26,7 +26,8 @@ export type MoreStackParamList = {
   WhatIsRotary: undefined;
   PrivacyPolicy: undefined;
   SocialFeed: undefined;
-  Newsletter: { section?: 'support' } | undefined;
+  Newsletter: undefined;
+  Support: undefined;
 };
 
 export type TabParamList = {
