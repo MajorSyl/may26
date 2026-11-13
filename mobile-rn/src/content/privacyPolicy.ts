@@ -31,7 +31,7 @@ export const privacySections = (email: string): LegalSection[] => [
           ['Newsletter subscription', 'your email address.'],
           [
             'Support receipts (optional)',
-            'if you choose to send us confirmation of an Orange Money contribution: your name, phone number or email address, the amount, a short note and the receipt image or PDF you upload.'
+            'if you choose to send us confirmation of a contribution: your name, phone number or email address, the amount, a short note and the receipt image or PDF you upload.'
           ],
           [
             'Member accounts',
@@ -101,7 +101,7 @@ export const privacySections = (email: string): LegalSection[] => [
           ['Email delivery provider', 'sends newsletters and announcements to subscribers and members, when email sending is enabled.'],
           [
             'Payment providers',
-            'contributions made with Orange Money are processed by Orange under its own terms. If card donations are offered, they are processed by a card payment provider; the Club never sees your full card details.'
+            'contributions made through a mobile money or card payment service are processed by that provider under its own terms. The Club never sees your PIN or full card details.'
           ],
           [
             'Embedded content',

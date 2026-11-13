@@ -72,9 +72,9 @@ export const termsSections = (email: string): LegalSection[] => [
     blocks: [
       {
         list: [
-          'Contributions to the Club, including support for the newsletter through Orange Money, are voluntary.',
-          'Before confirming any payment, check that the name shown is the Rotary Club of Freetown Sunset. The Club is not responsible for payments sent to the wrong number or merchant code.',
-          'Orange Money payments are processed by Orange under its own terms. Uploading a receipt is optional and only helps us confirm and acknowledge your contribution.',
+          'Contributions to the Club, made through any payment method shown on the website, are voluntary.',
+          'Before confirming any payment, check that the recipient name shown is the Rotary Club of Freetown Sunset. The Club is not responsible for payments sent to the wrong number, account or merchant code.',
+          'Payments are processed by the payment provider you use, under its own terms. Uploading a receipt is optional and only helps us confirm and acknowledge your contribution.',
           `Contributions are not normally refundable. If you made a mistake, such as paying the wrong amount, contact ${email} within 14 days and we will look into it.`,
           'Membership dues are separate from voluntary contributions and are communicated to members directly.'
         ]
@@ -98,7 +98,7 @@ export const termsSections = (email: string): LegalSection[] => [
     title: 'Links and embedded content',
     blocks: [
       {
-        p: 'The website links to, and embeds content from, other services such as Instagram, Facebook, YouTube, Google and Orange. We are not responsible for those services, their content or their privacy practices, and your use of them is governed by their own terms.'
+        p: 'The website links to, and embeds content from, other services such as Instagram, Facebook, YouTube, Google and payment providers. We are not responsible for those services, their content or their privacy practices, and your use of them is governed by their own terms.'
       }
     ]
   },
