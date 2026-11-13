@@ -94,15 +94,14 @@ export const privacySections = (email: string): LegalSection[] => [
       { p: 'We use trusted service providers to run the website. They process information only on our behalf and under their own security and privacy commitments:' },
       {
         list: [
-          ['Supabase', 'database, member sign-in and file storage.'],
-          ['Vercel', 'website hosting.'],
-          ['Cloudflare', 'domain name services.'],
+          ['Hosting and database providers', 'securely host the website, its database, member sign-in and file storage.'],
+          ['Network and domain services', 'deliver the website and manage its domain name.'],
           ['Google', 'sign-in, only if you choose "Sign in with Google".'],
-          ['ipapi.co', 'converts the IP address of a visit into an approximate city and country.'],
+          ['Location lookup service', 'converts the IP address of a visit into an approximate city and country.'],
           ['Email delivery provider', 'sends newsletters and announcements to subscribers and members, when email sending is enabled.'],
           [
             'Payment providers',
-            'contributions made with Orange Money are processed by Orange under its own terms. If card donations are offered, they are processed by Stripe; the Club never sees your full card details.'
+            'contributions made with Orange Money are processed by Orange under its own terms. If card donations are offered, they are processed by a card payment provider; the Club never sees your full card details.'
           ],
           [
             'Embedded content',
@@ -115,7 +114,8 @@ export const privacySections = (email: string): LegalSection[] => [
       },
       {
         p: 'Some of these providers store data outside Sierra Leone, for example in the European Union or the United States. We choose established providers that protect data with encryption and access controls.'
-      }
+      },
+      { p: `If you would like details of the providers we use, write to ${email}.` }
     ]
   },
   {
