@@ -766,6 +766,7 @@ export interface PublicNewsletterIssue {
   title: string;
   message: string;
   pdfUrl: string;
+  coverUrl: string;
   createdAt: string;
 }
 
@@ -775,7 +776,7 @@ export const getNewsletterIssues = async (): Promise<PublicNewsletterIssue[]> =>
   if (!isSupabaseConfigured || !supabase) return [];
   const { data, error } = await supabase
     .from('newsletter_issues')
-    .select('id, title, message, pdf_url, created_at')
+    .select('id, title, message, pdf_url, cover_url, created_at')
     .order('created_at', { ascending: false });
   if (error) return [];
   return (data || []).map((row: any) => ({
@@ -783,6 +784,7 @@ export const getNewsletterIssues = async (): Promise<PublicNewsletterIssue[]> =>
     title: (row.title || '').trim(),
     message: (row.message || '').trim(),
     pdfUrl: row.pdf_url,
+    coverUrl: row.cover_url || '',
     createdAt: row.created_at
   }));
 };
@@ -810,9 +812,13 @@ export const adminDeleteNewsletterIssue = async (id: string): Promise<void> => {
 // Uploads happen client-side (uploadNewsletterPdf in storage.ts) straight to
 // the `newsletters` Storage bucket under the signed-in officer's own RLS-
 // checked session -- this just records the resulting issue row.
-export const adminCreateNewsletterIssue = async (title: string, message: string, pdfUrl: string): Promise<string> => {
+export const adminCreateNewsletterIssue = async (title: string, message: string, pdfUrl: string, coverUrl = ''): Promise<string> => {
   const db = requireSupabase();
-  const { data, error } = await db.from('newsletter_issues').insert({ title, message: message || null, pdf_url: pdfUrl }).select('id').single();
+  const { data, error } = await db
+    .from('newsletter_issues')
+    .insert({ title, message: message || null, pdf_url: pdfUrl, cover_url: coverUrl || null })
+    .select('id')
+    .single();
   if (error) throw error;
   return data.id;
 };

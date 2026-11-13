@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, TextInput, Linking, ActivityIndicator, Platform } from 'react-native';
+import SafeImage from './SafeImage';
 import { FileText, Download, BookOpen, CheckCircle, Mail } from 'lucide-react-native';
 import { PublicNewsletterIssue, subscribeToNewsletter } from '../lib/service';
 import { isValidEmail } from '../lib/validate';
@@ -11,8 +12,45 @@ export function formatIssueDate(iso: string): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// Supabase Storage serves a file as an attachment when ?download is set.
-const downloadUrl = (url: string) => `${url}${url.includes('?') ? '&' : '?'}download=`;
+// Supabase Storage serves a file as an attachment when ?download is set;
+// PDFs hosted on the site itself use the browser's download attribute.
+const isStorageUrl = (url: string) => url.includes('.supabase.co/storage/');
+const downloadUrl = (url: string) => (isStorageUrl(url) ? `${url}${url.includes('?') ? '&' : '?'}download=` : url);
+
+function fileNameFor(issue: PublicNewsletterIssue): string {
+  const slug = issue.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `${slug || 'rcfs-newsletter'}.pdf`;
+}
+
+function downloadIssue(issue: PublicNewsletterIssue) {
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    const a = document.createElement('a');
+    a.href = downloadUrl(issue.pdfUrl);
+    a.download = fileNameFor(issue);
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return;
+  }
+  Linking.openURL(downloadUrl(issue.pdfUrl));
+}
+
+// Front page of the issue at its natural A4 proportions (never cropped).
+const A4 = 595 / 842;
+function Cover({ issue, width }: { issue: PublicNewsletterIssue; width: number }) {
+  return (
+    <Pressable
+      onPress={() => Linking.openURL(issue.pdfUrl)}
+      accessibilityRole="link"
+      accessibilityLabel={`Open ${issue.title}`}
+      className="rounded-lg overflow-hidden bg-white border border-slate-200"
+      style={{ width, height: Math.round(width / A4) }}
+    >
+      <SafeImage src={issue.coverUrl} alt={`Front page of ${issue.title}`} fit="contain" style={{ width: '100%', height: '100%' }} />
+    </Pressable>
+  );
+}
 
 function IssueActions({ issue, onDark }: { issue: PublicNewsletterIssue; onDark?: boolean }) {
   return (
@@ -27,7 +65,7 @@ function IssueActions({ issue, onDark }: { issue: PublicNewsletterIssue; onDark?
         <Text className={`text-[15px] font-semibold ${onDark ? 'text-rotary-royal-deep' : 'text-white'}`}>Read</Text>
       </Pressable>
       <Pressable
-        onPress={() => Linking.openURL(downloadUrl(issue.pdfUrl))}
+        onPress={() => downloadIssue(issue)}
         accessibilityRole="link"
         accessibilityLabel={`Download ${issue.title} as PDF`}
         className={`min-h-[44px] px-5 rounded-full flex-row items-center gap-2 border ${onDark ? 'border-white/60 hover:bg-white/10' : 'border-slate-300 bg-white hover:border-rotary-royal'}`}
@@ -42,21 +80,29 @@ function IssueActions({ issue, onDark }: { issue: PublicNewsletterIssue; onDark?
 // The newest issue, shown large on the Newsletter page and the homepage.
 export function FeaturedIssue({ issue, label = 'Latest issue' }: { issue: PublicNewsletterIssue; label?: string }) {
   return (
-    <View className="bg-rotary-royal rounded-3xl p-6 sm:p-8 gap-5 md:flex-row md:items-center md:gap-8">
-      <View className="w-16 h-16 rounded-2xl bg-white/10 items-center justify-center">
-        <FileText size={30} color={colors.white} />
-      </View>
+    <View className="bg-rotary-royal rounded-3xl p-6 sm:p-8 gap-6 md:flex-row md:items-center md:gap-10">
+      {issue.coverUrl ? (
+        <View className="items-center md:items-start">
+          <Cover issue={issue} width={200} />
+        </View>
+      ) : (
+        <View className="w-16 h-16 rounded-2xl bg-white/10 items-center justify-center">
+          <FileText size={30} color={colors.white} />
+        </View>
+      )}
       <View className="gap-2 md:flex-1">
         <Text className="text-xs font-bold uppercase tracking-[0.16em] text-rotary-gold">{label}</Text>
         <Text className="font-display text-2xl sm:text-3xl font-extrabold text-white">{issue.title}</Text>
         <Text className="text-sm text-white/75">Published {formatIssueDate(issue.createdAt)}</Text>
         {issue.message ? (
-          <Text className="text-base leading-7 text-white/85" numberOfLines={4}>
+          <Text className="text-base leading-7 text-white/85" numberOfLines={5}>
             {issue.message}
           </Text>
         ) : null}
+        <View className="pt-3">
+          <IssueActions issue={issue} onDark />
+        </View>
       </View>
-      <IssueActions issue={issue} onDark />
     </View>
   );
 }
@@ -64,9 +110,13 @@ export function FeaturedIssue({ issue, label = 'Latest issue' }: { issue: Public
 export function IssueRow({ issue }: { issue: PublicNewsletterIssue }) {
   return (
     <View className="bg-white border border-slate-200 rounded-2xl p-5 gap-4 sm:flex-row sm:items-center">
-      <View className="w-12 h-12 rounded-xl bg-rotary-cream items-center justify-center">
-        <FileText size={22} color={colors.rotaryRoyal} />
-      </View>
+      {issue.coverUrl ? (
+        <Cover issue={issue} width={72} />
+      ) : (
+        <View className="w-12 h-12 rounded-xl bg-rotary-cream items-center justify-center">
+          <FileText size={22} color={colors.rotaryRoyal} />
+        </View>
+      )}
       <View className="gap-1 sm:flex-1">
         <Text className="text-lg font-bold text-rotary-royal-deep">{issue.title}</Text>
         <Text className="text-sm text-slate-500">{formatIssueDate(issue.createdAt)}</Text>

@@ -5,7 +5,7 @@ import { AlertTriangle, CheckCircle, FileText, Clock, Trash2 } from 'lucide-reac
 import { Alert } from '../lib/alert';
 import { RootStackParamList } from '../navigation/types';
 import { NewsletterIssue, adminListNewsletterIssues, adminCreateNewsletterIssue, adminSendNewsletterIssue, adminDeleteNewsletterIssue } from '../lib/service';
-import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, PdfPickerField, IconButton } from '../components/ui';
+import { ScreenScroll, ScreenTitle, Card, LoadingBlock, EmptyBlock, PrimaryButton, TextField, PdfPickerField, IconButton, ImagePickerField } from '../components/ui';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminNewsletter'>;
@@ -24,6 +24,7 @@ export default function AdminNewsletterScreen({}: Props) {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [pdfUrl, setPdfUrl] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
   const [creating, setCreating] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
 
@@ -48,10 +49,11 @@ export default function AdminNewsletterScreen({}: Props) {
     setError('');
     setNotice('');
     try {
-      const id = await adminCreateNewsletterIssue(title, message, pdfUrl);
+      const id = await adminCreateNewsletterIssue(title, message, pdfUrl, coverUrl);
       setTitle('');
       setMessage('');
       setPdfUrl('');
+      setCoverUrl('');
       await load();
       setSendingId(id);
       const count = await adminSendNewsletterIssue(id);
@@ -126,6 +128,12 @@ export default function AdminNewsletterScreen({}: Props) {
           multiline
         />
         <PdfPickerField label="Newsletter PDF" pdfUrl={pdfUrl} onChange={setPdfUrl} />
+        <ImagePickerField
+          label="Cover image (optional: a picture of the front page, shown on the website)"
+          imageUrl={coverUrl}
+          onChange={setCoverUrl}
+          folder="newsletters"
+        />
         <PrimaryButton
           label="Save & Send to Subscribers"
           onPress={handleCreateAndSend}
