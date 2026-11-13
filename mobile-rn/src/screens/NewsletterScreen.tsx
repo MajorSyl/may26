@@ -32,7 +32,7 @@ export default function NewsletterScreen(_props: Props) {
       <Section tone="cream" tight>
         <View className="rcfs-rise">
           <SectionHeading
-            eyebrow="The club newsletter"
+            eyebrow="The club's newsletter"
             title="Sunset Impact"
             intro="Stories of service from the Rotary Club of Freetown-Sunset: our projects, our members and the communities we serve. Read the latest edition, browse past issues or subscribe by email."
           />
