@@ -1118,9 +1118,11 @@ export interface AnalyticsSnapshot {
   admins: number;
 }
 
-async function countRows(table: string, filter?: (q: any) => any): Promise<number> {
+// `column` matters for tables with column-level permissions: a count must
+// only name columns the signed-in role may read (e.g. users -> 'uid').
+async function countRows(table: string, filter?: (q: any) => any, column = '*'): Promise<number> {
   const db = requireSupabase();
-  let query = db.from(table).select('*', { count: 'exact', head: true });
+  let query = db.from(table).select(column, { count: 'exact', head: true });
   if (filter) query = filter(query);
   const { count, error } = await query;
   if (error) throw error;
@@ -1129,7 +1131,7 @@ async function countRows(table: string, filter?: (q: any) => any): Promise<numbe
 
 export const adminGetAnalytics = async (): Promise<AnalyticsSnapshot> => {
   const [members, projects, events, inquiries, applications, rsvps, pendingSubmissions, admins] = await Promise.all([
-    countRows('users'),
+    countRows('users', undefined, 'uid'),
     countRows('projects', (q) => q.neq('id', 'settings_site_config')),
     countRows('events'),
     countRows('inquiries'),
